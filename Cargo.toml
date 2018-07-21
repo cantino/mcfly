@@ -4,3 +4,8 @@ version = "0.1.0"
 authors = ["Andrew Cantino <cantino@users.noreply.github.com>"]
 
 [dependencies]
+clap = "2.32.0"
+
+[dependencies.rusqlite]
+version = "0.13.0"
+features = ["bundled"]
