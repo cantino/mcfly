@@ -10,7 +10,11 @@ use std::fs;
 pub struct Command {
     pub id: i64,
     pub cmd: String,
-    pub rank: f64
+    pub rank: f64,
+    pub when: Option<i64>,
+    pub exit_code: Option<i32>,
+    pub dir: Option<String>,
+    pub old_dir: Option<String>
 }
 
 #[derive(Debug)]
@@ -28,7 +32,59 @@ impl History {
         }
     }
 
-    pub fn from_bash_history_path(path: PathBuf) -> History {
+    pub fn add(&self,
+               command: &String,
+               when: &Option<i64>,
+               exit_code: &Option<i32>,
+               dir: &Option<String>,
+               old_dir: &Option<String>) {
+        self.connection.execute(
+            "INSERT INTO commands (cmd, when_run, exit_code, dir, old_dir) VALUES (?1, ?2, ?3, ?4, ?5)",
+            &[
+                &command.to_owned(),
+                &when.to_owned(),
+                &exit_code.to_owned(),
+                &dir.to_owned(),
+                &old_dir.to_owned()
+            ]).expect("Insert to work");
+    }
+
+    pub fn find_matches(&self, cmd: &String) -> Vec<Command> {
+        let mut like_query = "%".to_string();
+        like_query.push_str(cmd);
+        like_query.push_str("%");
+
+        let query = "SELECT \
+                             id, cmd, when_run, exit_code, dir, old_dir, \
+                             (strftime('%s', 'now') - COALESCE(when_run, 0)) * 0.001 AS rank \
+                           FROM commands \
+                           WHERE cmd \
+                           LIKE (?) \
+                           ORDER BY rank ASC";
+        let mut statement = self.connection.prepare(query).unwrap();
+        let command_iter = statement.query_map(&[&like_query], |row| {
+            Command {
+                id: row.get(0),
+                cmd: row.get(1),
+                when: row.get(2),
+                exit_code: row.get(3),
+                dir: row.get(4),
+                old_dir: row.get(5),
+                rank: row.get(6)
+            }
+        }).expect("Query Map to work");
+
+        let mut names = Vec::new();
+        for command in command_iter {
+            names.push(command.expect("Unable to load command from DB"));
+        }
+
+        names
+    }
+
+    fn from_bash_history_path(path: PathBuf) -> History {
+        println!("Importing Bash history for the first time. One moment...");
+
         // Load this first to make sure it works before we create the DB.
         let bash_history = History::bash_history(path);
 
@@ -44,13 +100,13 @@ impl History {
             "CREATE TABLE commands( \
                       id INTEGER PRIMARY KEY AUTOINCREMENT, \
                       cmd TEXT NOT NULL, \
-                      time INTEGER, \
+                      when_run INTEGER, \
                       exit_code INTEGER, \
-                      pwd TEXT, \
-                      old_pwd TEXT \
+                      dir TEXT, \
+                      old_dir TEXT \
                   ); \
                   CREATE INDEX command_cmds ON commands (cmd); \
-                  CREATE INDEX command_pwds ON commands (pwd);"
+                  CREATE INDEX command_dirs ON commands (dir);"
         ).expect("Unable to initialize history db");
 
         {
@@ -58,47 +114,17 @@ impl History {
                 .prepare("INSERT INTO commands (cmd) VALUES (?)")
                 .expect("Unable to prepare insert");
             for command in &bash_history {
-                statement.execute(&[command]);
+                statement.execute(&[command]).expect("Insert to work");
             }
         }
 
         History { connection }
     }
 
-    pub fn from_db_path(path: PathBuf) -> History {
+    fn from_db_path(path: PathBuf) -> History {
         let connection = Connection::open(path)
             .expect("Unable to open history database");
         History { connection }
-    }
-
-    pub fn find_matches(&self, cmd: &String) -> Vec<Command> {
-        let mut like_query = "%".to_string();
-        like_query.push_str(cmd);
-        like_query.push_str("%");
-
-        let query = "SELECT \
-                             id, \
-                             cmd, \
-                             (strftime('%s','now') - COALESCE(time, 0)) * 0.001 AS rank \
-                           FROM commands \
-                           WHERE cmd \
-                           LIKE (?) \
-                           ORDER BY rank ASC";
-        let mut statement = self.connection.prepare(query).unwrap();
-        let command_iter = statement.query_map(&[&like_query], |row| {
-            Command {
-                id: row.get(0),
-                cmd: row.get(1),
-                rank: row.get(2)
-            }
-        }).unwrap();
-
-        let mut names = Vec::new();
-        for command in command_iter {
-            names.push(command.expect("Unable to load command from DB"));
-        }
-
-        names
     }
 
     fn bash_history_file_path() -> PathBuf {

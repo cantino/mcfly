@@ -5,12 +5,12 @@ use bash_wizard::settings::Settings;
 use bash_wizard::settings::Mode;
 
 fn handle_addition(settings: &Settings, history: &mut History) {
-    println!("Implement me!");
+    history.add(&settings.command, &settings.when, &settings.exit_code, &settings.dir, &settings.old_dir)
 }
 
 fn handle_search(settings: &Settings, history: &History) {
     for history_match in history.find_matches(&settings.command) {
-        println!("{} - {} - {}", history_match.id, history_match.rank, history_match.cmd);
+        println!("{:?}", history_match);
     }
 }
 

@@ -1,8 +1,5 @@
-use std::env;
-
 use clap::{Arg, App, SubCommand};
 use clap::AppSettings;
-use std::num::ParseIntError;
 
 #[derive(Debug)]
 pub enum Mode {
@@ -16,7 +13,8 @@ pub struct Settings {
     pub command: String,
     pub when: Option<i64>,
     pub exit_code: Option<i32>,
-    pub dir: Option<String>
+    pub dir: Option<String>,
+    pub old_dir: Option<String>
 }
 
 impl Default for Settings {
@@ -26,7 +24,8 @@ impl Default for Settings {
             command: String::new(),
             when: None,
             exit_code: None,
-            dir: None
+            dir: None,
+            old_dir: None
         }
     }
 }
@@ -44,20 +43,26 @@ impl Settings {
                 .arg(Arg::with_name("exit")
                     .short("e")
                     .long("exit")
-                    .value_name("EXIT_STATUS")
-                    .help("Exit status of command")
+                    .value_name("EXIT_CODE")
+                    .help("Exit code of command")
                     .takes_value(true))
-                .arg(Arg::with_name("time")
-                    .short("t")
-                    .long("time")
-                    .value_name("TIME")
-                    .help("Time command was run as UNIX epoch")
+                .arg(Arg::with_name("when")
+                    .short("w")
+                    .long("when")
+                    .value_name("UNIX_EPOCH")
+                    .help("The time that the command was run")
                     .takes_value(true))
                 .arg(Arg::with_name("directory")
                     .short("d")
                     .long("dir")
-                    .value_name("DIR")
+                    .value_name("PATH")
                     .help("Directory where command was run")
+                    .takes_value(true))
+                .arg(Arg::with_name("old_directory")
+                    .short("o")
+                    .long("old-dir")
+                    .value_name("PATH")
+                    .help("The previous directory the user was in before running the command")
                     .takes_value(true))
                 .arg(Arg::with_name("command")
                     .help("The command that was run")
@@ -71,19 +76,19 @@ impl Settings {
                 .arg(Arg::with_name("exit")
                     .short("e")
                     .long("exit")
-                    .value_name("EXIT_STATUS")
-                    .help("Exit status of command")
+                    .value_name("EXIT_CODE")
+                    .help("Exit code of command")
                     .takes_value(true))
-                .arg(Arg::with_name("time")
-                    .short("t")
-                    .long("time")
-                    .value_name("TIME")
-                    .help("Time window command was run during (in seconds)")
+                .arg(Arg::with_name("within")
+                    .short("w")
+                    .long("within")
+                    .value_name("SECONDS")
+                    .help("Number of seconds ago that the command must have been run")
                     .takes_value(true))
                 .arg(Arg::with_name("directory")
                     .short("d")
                     .long("dir")
-                    .value_name("DIR")
+                    .value_name("PATH")
                     .help("Directory where command was run")
                     .takes_value(true))
                 .arg(Arg::with_name("command")
@@ -100,23 +105,26 @@ impl Settings {
         match matches.subcommand() {
             ("add", Some(add_matches)) =>{
                 settings.mode = Mode::Add;
-                if let Some(time) = add_matches.value_of("time") {
-                    settings.when = Some(value_t!(add_matches, "time", i64).unwrap_or_else(|e| e.exit()));
+                if let Some(_) = add_matches.value_of("when") {
+                    settings.when = Some(value_t!(add_matches, "when", i64).unwrap_or_else(|e| e.exit()));
                 }
-                if let Some(exit_code) = add_matches.value_of("exit") {
+                if let Some(_) = add_matches.value_of("exit") {
                     settings.exit_code = Some(value_t!(add_matches, "exit", i32).unwrap_or_else(|e| e.exit()));
                 }
                 if let Some(dir) = add_matches.value_of("directory") {
                     settings.dir = Some(dir.to_string());
                 }
+                if let Some(old_dir) = add_matches.value_of("old_directory") {
+                    settings.old_dir = Some(old_dir.to_string());
+                }
                 settings.command = add_matches.values_of("command").unwrap().collect::<Vec<_>>().join(" ");
             },
             ("search", Some(search_matches)) =>{
                 settings.mode = Mode::Search;
-                if let Some(time) = search_matches.value_of("time") {
-                    settings.when = Some(value_t!(search_matches, "time", i64).unwrap_or_else(|e| e.exit()));
+                if let Some(_) = search_matches.value_of("within") {
+                    settings.when = Some(value_t!(search_matches, "within", i64).unwrap_or_else(|e| e.exit()));
                 }
-                if let Some(exit_code) = search_matches.value_of("exit") {
+                if let Some(_) = search_matches.value_of("exit") {
                     settings.exit_code = Some(value_t!(search_matches, "exit", i32).unwrap_or_else(|e| e.exit()));
                 }
                 if let Some(dir) = search_matches.value_of("directory") {
