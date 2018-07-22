@@ -1,5 +1,9 @@
 use clap::{Arg, App, SubCommand};
 use clap::AppSettings;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
+use std::env;
+use bash_history;
 
 #[derive(Debug)]
 pub enum Mode {
@@ -50,25 +54,25 @@ impl Settings {
                     .short("w")
                     .long("when")
                     .value_name("UNIX_EPOCH")
-                    .help("The time that the command was run")
+                    .help("The time that the command was run (default now)")
                     .takes_value(true))
                 .arg(Arg::with_name("directory")
                     .short("d")
                     .long("dir")
                     .value_name("PATH")
-                    .help("Directory where command was run")
+                    .help("Directory where command was run (default $PWD)")
                     .takes_value(true))
                 .arg(Arg::with_name("old_directory")
                     .short("o")
                     .long("old-dir")
                     .value_name("PATH")
-                    .help("The previous directory the user was in before running the command")
+                    .help("The previous directory the user was in before running the command (default $OLDPWD)")
                     .takes_value(true))
                 .arg(Arg::with_name("command")
-                    .help("The command that was run")
+                    .help("The command that was run (default last line of ~/.bash_history)")
                     .value_name("COMMAND")
                     .multiple(true)
-                    .required(true)
+                    .required(false)
                     .index(1)))
             .subcommand(SubCommand::with_name("search")
                 .about("Search the history")
@@ -105,20 +109,34 @@ impl Settings {
         match matches.subcommand() {
             ("add", Some(add_matches)) =>{
                 settings.mode = Mode::Add;
-                if let Some(_) = add_matches.value_of("when") {
-                    settings.when = Some(value_t!(add_matches, "when", i64).unwrap_or_else(|e| e.exit()));
-                }
+
+                settings.when = Some(value_t!(add_matches, "when", i64).unwrap_or(
+                    SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64
+                ));
+
                 if let Some(_) = add_matches.value_of("exit") {
                     settings.exit_code = Some(value_t!(add_matches, "exit", i32).unwrap_or_else(|e| e.exit()));
                 }
+
                 if let Some(dir) = add_matches.value_of("directory") {
                     settings.dir = Some(dir.to_string());
+                } else {
+                    settings.dir = env::var("PWD").ok();
                 }
+
                 if let Some(old_dir) = add_matches.value_of("old_directory") {
                     settings.old_dir = Some(old_dir.to_string());
+                } else {
+                    settings.old_dir = env::var("OLDPWD").ok();
                 }
-                settings.command = add_matches.values_of("command").unwrap().collect::<Vec<_>>().join(" ");
+
+                if let Some(commands) = add_matches.values_of("command") {
+                    settings.command = commands.collect::<Vec<_>>().join(" ");
+                } else {
+                    settings.command = bash_history::last_history_line(&bash_history::bash_history_file_path()).expect("Command is required if ~/.bash_history is empty");
+                }
             },
+
             ("search", Some(search_matches)) =>{
                 settings.mode = Mode::Search;
                 if let Some(_) = search_matches.value_of("within") {

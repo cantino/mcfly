@@ -19,8 +19,6 @@ fn main() {
 
     let mut history = History::load();
 
-    println!("{}", settings.command);
-
     match settings.mode {
         Mode::Add => {
             handle_addition(&settings, &mut history);
