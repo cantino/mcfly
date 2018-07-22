@@ -5,6 +5,7 @@ authors = ["Andrew Cantino <cantino@users.noreply.github.com>"]
 
 [dependencies]
 clap = "2.32.0"
+rustyline = "1.0.0"
 
 [dependencies.rusqlite]
 version = "0.13.0"

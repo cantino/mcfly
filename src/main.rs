@@ -1,5 +1,6 @@
 extern crate bash_wizard;
 
+use bash_wizard::interface::Interface;
 use bash_wizard::history::History;
 use bash_wizard::settings::Settings;
 use bash_wizard::settings::Mode;
@@ -9,9 +10,8 @@ fn handle_addition(settings: &Settings, history: &mut History) {
 }
 
 fn handle_search(settings: &Settings, history: &History) {
-    for history_match in history.find_matches(&settings.command) {
-        println!("{:?}", history_match);
-    }
+    let interface = Interface::new(settings, history);
+    interface.show();
 }
 
 fn main() {
