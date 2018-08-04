@@ -16,6 +16,12 @@ pub struct Command {
     pub old_dir: Option<String>
 }
 
+impl From<Command> for String {
+    fn from(command: Command) -> Self {
+        command.cmd
+    }
+}
+
 #[derive(Debug)]
 pub struct History {
     pub connection: Connection
