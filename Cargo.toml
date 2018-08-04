@@ -5,7 +5,9 @@ authors = ["Andrew Cantino <cantino@users.noreply.github.com>"]
 
 [dependencies]
 clap = "2.32.0"
-rustyline = "1.0.0"
+termion = "1.5.1"
+unicode-segmentation = "1.2.1"
+libc = "0.2"
 
 [dependencies.rusqlite]
 version = "0.13.0"

@@ -4,14 +4,16 @@ use bash_wizard::interface::Interface;
 use bash_wizard::history::History;
 use bash_wizard::settings::Settings;
 use bash_wizard::settings::Mode;
+use bash_wizard::fake_typer;
 
 fn handle_addition(settings: &Settings, history: &mut History) {
     history.add(&settings.command, &settings.when, &settings.exit_code, &settings.dir, &settings.old_dir)
 }
 
 fn handle_search(settings: &Settings, history: &History) {
-    let interface = Interface::new(settings, history);
-    interface.show();
+    let command = Interface::new(settings, history).select();
+    fake_typer::use_tiocsti(&command);
+    fake_typer::use_tiocsti(&"\n".to_string());
 }
 
 fn main() {
