@@ -11,3 +11,4 @@ pub mod settings;
 pub mod bash_history;
 pub mod interface;
 pub mod fake_typer;
+pub mod command_input;
