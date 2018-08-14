@@ -42,8 +42,8 @@ impl <'a> Interface<'a> {
 
     pub fn select(&'a mut self) -> String {
         let stdin = stdin();
-//        let mut screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
-        let mut screen = stdout().into_raw_mode().unwrap();
+        let mut screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
+//        let mut screen = stdout().into_raw_mode().unwrap();
         write!(screen, "{}", clear::All).unwrap();
 
         self.prompt(&mut screen);
@@ -59,8 +59,10 @@ impl <'a> Interface<'a> {
                 Key::Ctrl('f') => self.input.move_cursor(Move::Forward),
                 Key::Ctrl('a') => self.input.move_cursor(Move::BOL),
                 Key::Ctrl('e') => self.input.move_cursor(Move::EOL),
-                Key::Ctrl('w') => self.input.delete(Move::BackwardWord),
+                Key::Ctrl('w') | Key::Alt('\x08') | Key::Alt('\x7f') => self.input.delete(Move::BackwardWord),
                 Key::Alt('d') => self.input.delete(Move::ForwardWord),
+                Key::Alt('b') => self.input.move_cursor(Move::BackwardWord),
+                Key::Alt('f') => self.input.move_cursor(Move::ForwardWord),
                 Key::Left => self.input.move_cursor(Move::Backward),
                 Key::Right => self.input.move_cursor(Move::Forward),
                 Key::Up | Key::PageUp => {},
@@ -90,10 +92,7 @@ impl <'a> Interface<'a> {
 // TODO:
 // Ctrl('X') + Ctrl('U') => undo
 // Ctrl('X') + Ctrl('G') => abort
-// Meta('\x08' | '\x7f') (meta backspace or meta delete) => kill previous word
-// Meta('b') => move back word
 // Meta('c') => capitalize word
-// Meta('f') => move forward word
 // Meta('l') => downcase word
 // Meta('t') => transpose words
 // Meta('u') => upcase word
