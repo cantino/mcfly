@@ -22,23 +22,22 @@ pub enum Move {
     BOL,
     EOL,
     BackwardWord,
-    ForwardWord(WordLocation),
+    ForwardWord,
     Backward,
     Forward,
+    Exact(usize)
 }
 
 #[derive(Debug)]
-pub enum WordLocation {
-    Start,
-    BeforeEnd,
-    AfterEnd,
-}
-
-#[derive(Debug)]
+/// CommandInput data structure
 pub struct CommandInput {
+    /// The command itself
     pub command: String,
+    /// The current cursor position
     pub cursor: usize,
+    /// A cache of the length of command in graphemes (not bytes or chars!)
     pub len: usize,
+    /// A cache of command's word boundaries in bytes (not graphemes or chars!)
     pub word_boundaries: Vec<usize>
 }
 
@@ -70,16 +69,105 @@ impl CommandInput {
             collect::<Vec<usize>>();
     }
 
+    /// Return the index of the grapheme cluster that represents the end of the previous word before
+    /// the cursor.
+    pub fn previous_word_boundary(&self) -> usize {
+        if self.cursor == 0 {
+            return 0;
+        }
+
+        let mut word_boundaries = self.
+            command.
+            split_word_bound_indices().
+            map(|(i, _)| i).
+            collect::<Vec<usize>>();
+
+        word_boundaries.push(self.command.len().to_owned());
+
+        let mut word_index: usize = 0;
+        let mut found_word: bool = false;
+        let command_copy = self.command.to_owned();
+        let vec = command_copy.grapheme_indices(true).
+            enumerate().
+            collect::<Vec<(usize, (usize, &str))>>();
+
+        for &(count, (offset, _)) in vec.iter().rev() {
+            if count <= self.cursor {
+                if !found_word && (vec[if count >= 1 { count - 1 } else { 0 }].1).1 == " " {
+                    continue; // Ignore leading spaces
+                } else if found_word {
+                    if offset == word_boundaries[word_index] {
+                        // We've found the previous word boundary.
+                        return count;
+                    }
+                } else {
+                    found_word = true;
+                    while word_boundaries[word_index] < offset {
+                        word_index += 1;
+                    }
+
+                    if word_index > 0 {
+                        word_index -= 1;
+                    }
+                }
+            }
+        }
+
+        0
+    }
+
+    /// Return the index of the grapheme cluster that represents the start of the next word after
+    /// the cursor.
+    pub fn next_word_boundary(&self) -> usize {
+        let command_copy = self.command.to_owned();
+
+        let grapheme_indices = command_copy.grapheme_indices(true);
+
+        let mut word_boundaries = self.
+            command.
+            split_word_bound_indices().
+            map(|(i, _)| i).
+            collect::<Vec<usize>>();
+
+        word_boundaries.push(self.command.len().to_owned());
+
+        let mut next_word_index: usize = 0;
+        let mut found_word: bool = false;
+
+        for (count, (offset, item)) in grapheme_indices.enumerate() {
+            if count >= self.cursor {
+                if !found_word && item == " " {
+                    continue; // Ignore leading spaces
+                } else if found_word {
+                    if offset == word_boundaries[next_word_index] {
+                        // We've found the next word boundary.
+                        return count;
+                    }
+                } else {
+                    found_word = true;
+
+                    while word_boundaries[next_word_index] <= offset {
+                        next_word_index += 1;
+                    }
+                }
+            }
+        }
+
+        self.len
+    }
+
     pub fn move_cursor(&mut self, direction: Move) {
         let mut tmp: isize = self.cursor as isize;
 
         match direction {
             Move::Backward => { tmp -= 1 },
+            Move::Exact(i) => { tmp = i as isize },
             Move::Forward => { tmp += 1 },
             Move::BOL => { tmp = 0 },
             Move::EOL => { tmp = self.len as isize },
 //            Move::BackwardWord => {
-//                split_word_bounds
+//                let (current_word_start, _) = self.current_word();
+//                tmp = current_word_start as isize;
 //            },
 //            Move::ForwardWord(WordLocation),
             _ => {}
@@ -96,7 +184,7 @@ impl CommandInput {
     pub fn delete(&mut self, cmd: Move) {
         let mut new_command = String::with_capacity(self.command.len());
         let command_copy = self.command.to_owned();
-        let vec = command_copy.graphemes(true);
+        let vec = command_copy.grapheme_indices(true);
 
         match cmd {
             Move::Backward => {
@@ -105,7 +193,7 @@ impl CommandInput {
                 }
                 self.move_cursor(Move::Backward);
 
-                for (count, item) in vec.enumerate() {
+                for (count, (_, item)) in vec.enumerate() {
                     if count != self.cursor {
                         new_command.push_str(item);
                     }
@@ -119,7 +207,7 @@ impl CommandInput {
                     return
                 }
 
-                for (count, item) in vec.enumerate() {
+                for (count, (_, item)) in vec.enumerate() {
                     if count != self.cursor {
                         new_command.push_str(item);
                     }
@@ -133,7 +221,7 @@ impl CommandInput {
                     return
                 }
 
-                for (count, item) in vec.enumerate() {
+                for (count, (_, item)) in vec.enumerate() {
                     if count < self.cursor {
                         new_command.push_str(item);
                     }
@@ -148,7 +236,7 @@ impl CommandInput {
                     return
                 }
 
-                for (count, item) in vec.enumerate() {
+                for (count, (_, item)) in vec.enumerate() {
                     if count >= self.cursor {
                         new_command.push_str(item);
                     }
@@ -158,6 +246,65 @@ impl CommandInput {
                 self.recompute_caches();
                 self.move_cursor(Move::BOL);
             },
+            Move::ForwardWord => {
+                if self.cursor == self.len {
+                    return
+                }
+
+                let next_word_boundary = self.next_word_boundary();
+
+                for (count, (_, item)) in vec.enumerate() {
+                    if count < self.cursor || count >= next_word_boundary {
+                        new_command.push_str(item);
+                    }
+                }
+
+                mem::replace(&mut self.command, new_command);
+                self.recompute_caches();
+//                self.move_cursor(Move::EOL);
+            },
+            Move::BackwardWord => {
+                if self.cursor == 0 {
+                    return
+                }
+
+                let previous_word_boundary = self.previous_word_boundary();
+
+                let mut removed_characters: usize = 0;
+
+                for (count, (_, item)) in vec.enumerate() {
+                    if count < previous_word_boundary || count >= self.cursor {
+                        new_command.push_str(item);
+                    } else {
+                        removed_characters += 1;
+                    }
+                }
+
+                mem::replace(&mut self.command, new_command);
+                self.recompute_caches();
+                let new_cursor_pos = self.cursor - removed_characters;
+                self.move_cursor(Move::Exact(new_cursor_pos));
+            }
+//            Move::BackwardWord => {
+//                if self.cursor == 0 {
+//                    return
+//                }
+//
+//                let (current_word_start, current_word_end) = self.current_word();
+//
+//                println!("\n\n{:?} - {} {}", self.word_boundaries, current_word_start, current_word_end);
+//
+//                self.move_cursor(Move::BackwardWord);
+//
+//                for (_, (index, item)) in vec.enumerate() {
+//                    if index < current_word_start || index > current_word_end {
+//                        new_command.push_str(item);
+//                    }
+//                }
+//
+//                mem::replace(&mut self.command, new_command);
+//                self.recompute_caches();
+//            },
             _ => unreachable!()
         }
     }
@@ -183,5 +330,75 @@ impl CommandInput {
         mem::replace(&mut self.command, new_command);
         self.recompute_caches();
         self.move_cursor(Move::Forward);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CommandInput;
+
+    #[test]
+    fn display_works() {
+        let input = CommandInput::from("foo bar baz");
+        assert_eq!(format!("{}", input), "foo bar baz");
+    }
+
+    #[test]
+    fn next_word_boundary_works() {
+        let mut input = CommandInput::from("foo bar baz");
+        input.cursor = 0;
+        assert_eq!(input.next_word_boundary(), 3);
+
+        input.cursor = 3;
+        assert_eq!(input.next_word_boundary(), 7);
+
+        input.cursor = 4;
+        assert_eq!(input.next_word_boundary(), 7);
+
+        input.cursor = 5;
+        assert_eq!(input.next_word_boundary(), 7);
+
+        input.cursor = 6;
+        assert_eq!(input.next_word_boundary(), 7);
+
+        input.cursor = 7;
+        assert_eq!(input.next_word_boundary(), 11);
+
+        input.cursor = 11;
+        assert_eq!(input.next_word_boundary(), 11);
+
+        input.cursor = 12;
+        assert_eq!(input.next_word_boundary(), 11);
+    }
+
+    #[test]
+    fn previous_word_boundary_works() {
+        let mut input = CommandInput::from("foo bar baz");
+        input.cursor = 0;
+        assert_eq!(input.previous_word_boundary(), 0);
+
+        input.cursor = 1;
+        assert_eq!(input.previous_word_boundary(), 0);
+
+        input.cursor = 3;
+        assert_eq!(input.previous_word_boundary(), 0);
+
+        input.cursor = 4;
+        assert_eq!(input.previous_word_boundary(), 0);
+
+        input.cursor = 5;
+        assert_eq!(input.previous_word_boundary(), 4);
+
+        input.cursor = 7;
+        assert_eq!(input.previous_word_boundary(), 4);
+
+        input.cursor = 8;
+        assert_eq!(input.previous_word_boundary(), 4);
+
+        input.cursor = 11;
+        assert_eq!(input.previous_word_boundary(), 8);
+
+        input.cursor = 12;
+        assert_eq!(input.previous_word_boundary(), 8);
     }
 }

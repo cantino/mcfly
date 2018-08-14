@@ -1,6 +1,6 @@
 use settings::Settings;
 use history::History;
-use command_input::{CommandInput, InputCommand, Move};
+use command_input::{CommandInput, Move};
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -51,7 +51,7 @@ impl <'a> Interface<'a> {
         for c in stdin.keys() {
             match c.unwrap() {
                 Key::Char('\n') | Key::Char('\r') | Key::Char('\t') | Key::Ctrl('j') => break,
-                Key::Esc | Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') => {
+                Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') => {
                     self.input.clear();
                     break
                 },
@@ -59,6 +59,8 @@ impl <'a> Interface<'a> {
                 Key::Ctrl('f') => self.input.move_cursor(Move::Forward),
                 Key::Ctrl('a') => self.input.move_cursor(Move::BOL),
                 Key::Ctrl('e') => self.input.move_cursor(Move::EOL),
+                Key::Ctrl('w') => self.input.delete(Move::BackwardWord),
+                Key::Alt('d') => self.input.delete(Move::ForwardWord),
                 Key::Left => self.input.move_cursor(Move::Backward),
                 Key::Right => self.input.move_cursor(Move::Forward),
                 Key::Up | Key::PageUp => {},
@@ -73,7 +75,7 @@ impl <'a> Interface<'a> {
                 Key::Ctrl(c) => self.debug(&mut screen, format!("Ctrl({})", c)),
                 Key::Alt(c) => self.debug(&mut screen, format!("Alt({})", c)),
                 Key::F(k) => self.debug(&mut screen, format!("F({})", k)),
-                Key::Insert | Key::Null | Key::__IsNotComplete => {}
+                Key::Insert | Key::Null | Key::__IsNotComplete | Key::Esc => {}
             }
 
             self.prompt(&mut screen);
@@ -91,7 +93,6 @@ impl <'a> Interface<'a> {
 // Meta('\x08' | '\x7f') (meta backspace or meta delete) => kill previous word
 // Meta('b') => move back word
 // Meta('c') => capitalize word
-// Meta('d') => kill next word
 // Meta('f') => move forward word
 // Meta('l') => downcase word
 // Meta('t') => transpose words
@@ -101,6 +102,5 @@ impl <'a> Interface<'a> {
 // Ctrl('s') => forward history search
 // Ctrl('t') => transpose characters
 // Ctrl('q') | Ctrl('v') => quoted insert
-// Ctrl('w') => kill previous word
 // Ctrl('y') => yank
 // Ctrl('_') => undo
