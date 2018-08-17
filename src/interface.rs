@@ -10,6 +10,7 @@ use termion::{cursor, clear, terminal_size};
 use std::io::{Write, stdout, stdin};
 use termion::screen::AlternateScreen;
 use history::Command;
+use termion::color;
 
 #[derive(Debug)]
 pub struct Interface<'a> {
@@ -17,6 +18,22 @@ pub struct Interface<'a> {
     history: &'a History,
     input: CommandInput,
     cursor: usize
+}
+
+pub trait GraphemeStrings {
+    fn push_grapheme_str<S: Into<String>>(&mut self, s: S, max_width: usize);
+}
+
+impl GraphemeStrings for String {
+    fn push_grapheme_str<S: Into<String>>(&mut self, s: S, max_width: usize) {
+        let initial_length = self.graphemes(true).count();
+        for (index, grapheme) in s.into().graphemes(true).enumerate() {
+            if initial_length + index >= max_width {
+                return;
+            }
+            self.push_str(grapheme);
+        }
+    }
 }
 
 impl <'a> Interface<'a> {
@@ -37,16 +54,32 @@ impl <'a> Interface<'a> {
         screen.flush().unwrap();
     }
 
-    pub fn truncate_for_display(command: &Command, search: &str, width: u16) -> String {
-        let cmd = command.cmd.graphemes(true);
-        let search = search.graphemes(true);
+    fn truncate_for_display(command: &Command, search: &str, width: u16) -> String {
+        let mut out = String::new();
 
+        let mut prev = 0;
 
-        format!("{}", command)
+        if !search.is_empty() {
+            for (index, _) in command.cmd.match_indices(search) {
+                if prev != index {
+                    out.push_grapheme_str(&command.cmd[prev..index], width as usize);
+                }
+                out.push_str(&color::Fg(color::Green).to_string());
+                out.push_grapheme_str(search, width as usize);
+                out.push_str(&color::Fg(color::Reset).to_string());
+                prev = index + search.len();
+            }
+        }
+
+        if prev != command.cmd.len() {
+            out.push_grapheme_str(&command.cmd[prev..], width as usize);
+        }
+
+        out
     }
 
     pub fn results<W: Write>(&'a self, screen: &mut W) {
-        write!(screen, "{}{}{}", cursor::Hide, cursor::Goto(1, 3), clear::AfterCursor).unwrap();
+        write!(screen, "{}{}{}", cursor::Hide, cursor::Goto(1, 3), clear::All).unwrap();
         let (width, height): (u16, u16) = terminal_size().unwrap();
         for (index, command) in self.history.find_matches(&self.input.command).iter().enumerate() {
             write!(screen, "{}{}",
@@ -58,7 +91,7 @@ impl <'a> Interface<'a> {
     }
 
     fn debug<W: Write, S: Into<String>>(&self, screen: &mut W, s: S) {
-        write!(screen, "{}{}{}", cursor::Goto(1, 10), clear::CurrentLine, s.into()).unwrap();
+        write!(screen, "{}{}{}", cursor::Goto(1, 2), clear::CurrentLine, s.into()).unwrap();
         screen.flush().unwrap();
     }
 
@@ -68,6 +101,7 @@ impl <'a> Interface<'a> {
         let mut screen = stdout().into_raw_mode().unwrap();
         write!(screen, "{}", clear::All).unwrap();
 
+        self.results(&mut screen);
         self.prompt(&mut screen);
 
         for c in stdin.keys() {
