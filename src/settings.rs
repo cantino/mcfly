@@ -99,7 +99,7 @@ impl Settings {
                     .help("The command search term(s)")
                     .value_name("COMMAND")
                     .multiple(true)
-                    .required(true)
+                    .required(false)
                     .index(1)))
             .get_matches();
 
@@ -148,7 +148,12 @@ impl Settings {
                 if let Some(dir) = search_matches.value_of("directory") {
                     settings.dir = Some(dir.to_string());
                 }
-                settings.command = search_matches.values_of("command").unwrap().collect::<Vec<_>>().join(" ");
+                if let Some(values) = search_matches.values_of("command") {
+                    settings.command = values.collect::<Vec<_>>().join(" ");
+                } else {
+                    settings.command = bash_history::last_history_line(&bash_history::bash_history_file_path()).expect("Command is required if ~/.bash_history is empty").trim_left_matches("#").to_string();
+                    bash_history::delete_last_history_entry_if_comment(&bash_history::bash_history_file_path());
+                }
             },
             ("", None)   => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
             _            => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()

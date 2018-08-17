@@ -8,6 +8,7 @@ clap = "2.32.0"
 termion = "1.5.1"
 unicode-segmentation = "1.2.1"
 libc = "0.2"
+regex = "1"
 
 [dependencies.rusqlite]
 version = "0.13.0"

@@ -7,7 +7,9 @@ use bash_wizard::settings::Mode;
 use bash_wizard::fake_typer;
 
 fn handle_addition(settings: &Settings, history: &mut History) {
-    history.add(&settings.command, &settings.when, &settings.exit_code, &settings.dir, &settings.old_dir);
+    if !settings.command.starts_with('#') { // Ignore commented lines
+        history.add(&settings.command, &settings.when, &settings.exit_code, &settings.dir, &settings.old_dir);
+    }
 }
 
 fn handle_search(settings: &Settings, history: &History) {

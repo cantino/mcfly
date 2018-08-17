@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use rusqlite::Connection;
 use std::fs;
 use bash_history;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct Command {
@@ -14,6 +15,12 @@ pub struct Command {
     pub exit_code: Option<i32>,
     pub dir: Option<String>,
     pub old_dir: Option<String>
+}
+
+impl fmt::Display for Command {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.cmd.fmt(f)
+    }
 }
 
 impl From<Command> for String {
@@ -73,7 +80,7 @@ impl History {
                            LIKE (?) \
                            ORDER BY rank ASC LIMIT ?";
         let mut statement = self.connection.prepare(query).unwrap();
-        let command_iter = statement.query_map(&[&like_query, &5], |row| {
+        let command_iter = statement.query_map(&[&like_query, &10], |row| {
             Command {
                 id: row.get(0),
                 cmd: row.get(1),

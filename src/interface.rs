@@ -1,13 +1,15 @@
 use settings::Settings;
 use history::History;
 use command_input::{CommandInput, Move};
+use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
-use termion::{cursor, clear};
+use termion::{cursor, clear, terminal_size};
 use std::io::{Write, stdout, stdin};
 use termion::screen::AlternateScreen;
+use history::Command;
 
 #[derive(Debug)]
 pub struct Interface<'a> {
@@ -35,6 +37,26 @@ impl <'a> Interface<'a> {
         screen.flush().unwrap();
     }
 
+    pub fn truncate_for_display(command: &Command, search: &str, width: u16) -> String {
+        let cmd = command.cmd.graphemes(true);
+        let search = search.graphemes(true);
+
+
+        format!("{}", command)
+    }
+
+    pub fn results<W: Write>(&'a self, screen: &mut W) {
+        write!(screen, "{}{}{}", cursor::Hide, cursor::Goto(1, 3), clear::AfterCursor).unwrap();
+        let (width, height): (u16, u16) = terminal_size().unwrap();
+        for (index, command) in self.history.find_matches(&self.input.command).iter().enumerate() {
+            write!(screen, "{}{}",
+                   cursor::Goto(1, index as u16 + 3),
+                   Interface::truncate_for_display(command, &self.input.command, width)
+            ).unwrap();
+        }
+        screen.flush().unwrap();
+    }
+
     fn debug<W: Write, S: Into<String>>(&self, screen: &mut W, s: S) {
         write!(screen, "{}{}{}", cursor::Goto(1, 10), clear::CurrentLine, s.into()).unwrap();
         screen.flush().unwrap();
@@ -42,8 +64,8 @@ impl <'a> Interface<'a> {
 
     pub fn select(&'a mut self) -> String {
         let stdin = stdin();
-        let mut screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
-//        let mut screen = stdout().into_raw_mode().unwrap();
+//        let mut screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
+        let mut screen = stdout().into_raw_mode().unwrap();
         write!(screen, "{}", clear::All).unwrap();
 
         self.prompt(&mut screen);
@@ -74,12 +96,19 @@ impl <'a> Interface<'a> {
                 Key::Home => self.input.move_cursor(Move::BOL),
                 Key::End => self.input.move_cursor(Move::EOL),
                 Key::Char(c) => self.input.insert(c),
-                Key::Ctrl(c) => self.debug(&mut screen, format!("Ctrl({})", c)),
-                Key::Alt(c) => self.debug(&mut screen, format!("Alt({})", c)),
-                Key::F(k) => self.debug(&mut screen, format!("F({})", k)),
+                Key::Ctrl(c) => {
+//                    self.debug(&mut screen, format!("Ctrl({})", c))
+                },
+                Key::Alt(c) => {
+//                    self.debug(&mut screen, format!("Alt({})", c))
+                },
+                Key::F(k) => {
+//                    self.debug(&mut screen, format!("F({})", k))
+                },
                 Key::Insert | Key::Null | Key::__IsNotComplete | Key::Esc => {}
             }
 
+            self.results(&mut screen);
             self.prompt(&mut screen);
         }
 

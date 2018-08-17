@@ -5,6 +5,7 @@ extern crate termion;
 extern crate unicode_segmentation;
 extern crate core;
 extern crate libc;
+extern crate regex;
 
 pub mod history;
 pub mod settings;
