@@ -51,6 +51,11 @@ impl CommandInput {
         self.recompute_caches();
     }
 
+    pub fn set(&mut self, str: &str) {
+        self.command = str.to_string();
+        self.recompute_caches();
+    }
+
     pub fn move_cursor(&mut self, direction: Move) {
         let mut tmp: isize = self.cursor as isize;
 
