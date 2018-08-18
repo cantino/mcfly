@@ -134,6 +134,10 @@ impl Settings {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
                 } else {
                     settings.command = bash_history::last_history_line(&bash_history::bash_history_file_path()).expect("Command is required if ~/.bash_history is empty");
+                    // CD shows PWD as the resulting directory, but we want it from the source directory.
+                    if settings.command.starts_with("cd ") || settings.command.starts_with("pushd ") {
+                        settings.dir = settings.old_dir.to_owned();
+                    }
                 }
             },
 

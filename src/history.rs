@@ -68,19 +68,24 @@ impl History {
     }
 
     pub fn find_matches(&self, cmd: &String) -> Vec<Command> {
+        let dir = env::current_dir().expect("Unable to determine current directory").to_string_lossy().into_owned();
+
         let mut like_query = "%".to_string();
         like_query.push_str(cmd);
         like_query.push_str("%");
 
-        let query = "SELECT \
-                             id, cmd, when_run, exit_code, dir, old_dir, \
-                             (strftime('%s', 'now') - COALESCE(when_run, 0)) * 0.001 AS rank \
-                           FROM commands \
-                           WHERE cmd \
-                           LIKE (?) \
-                           ORDER BY rank ASC LIMIT ?";
+        let query = "SELECT
+                             id, cmd, when_run, exit_code, dir, old_dir,
+                                 (strftime('%s', 'now') - COALESCE(when_run, 0)) * -0.00001 +
+                                 COALESCE(exit_code, 0) * -0.1 +
+                                 (CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) * 100
+                             AS rank
+                           FROM commands
+                           WHERE cmd
+                           LIKE (?)
+                           ORDER BY rank DESC LIMIT ?";
         let mut statement = self.connection.prepare(query).unwrap();
-        let command_iter = statement.query_map(&[&like_query, &10], |row| {
+        let command_iter = statement.query_map(&[&dir, &like_query, &10], |row| {
             Command {
                 id: row.get(0),
                 cmd: row.get(1),

@@ -49,7 +49,8 @@ impl <'a> Interface<'a> {
     }
 
     pub fn prompt<W: Write>(&self, screen: &mut W) {
-        write!(screen, "{}{}$ {}",
+        write!(screen, "{}{}{}$ {}",
+               color::Fg(color::LightWhite).to_string(),
                cursor::Goto(1, 1),
                clear::CurrentLine,
                self.input
@@ -70,18 +71,28 @@ impl <'a> Interface<'a> {
         }
 
         for (index, command) in self.matches.iter().enumerate() {
+            let mut fg = color::Fg(color::LightWhite).to_string();
+            let mut bg = color::Bg(color::Reset).to_string();
+
             if index == self.selection {
-                write!(screen, "{}", color::Bg(color::LightWhite)).unwrap();
+                fg = color::Fg(color::Black).to_string();
+                bg = color::Bg(color::LightWhite).to_string();
             }
+
+            write!(screen, "{}{}", fg, bg).unwrap();
 
             write!(screen, "{}{}",
                    cursor::Goto(1, index as u16 + 3),
-                   Interface::truncate_for_display(command, &self.input.command, width)
+                   Interface::truncate_for_display(command,
+                                                   &self.input.command,
+                                                   width,
+                                                   color::Fg(color::Green).to_string(),
+                                                   fg
+                   )
             ).unwrap();
 
-            if index == self.selection {
-                write!(screen, "{}", color::Bg(color::Reset)).unwrap();
-            }
+            write!(screen, "{}", color::Bg(color::Reset)).unwrap();
+            write!(screen, "{}", color::Fg(color::Reset)).unwrap();
         }
         screen.flush().unwrap();
     }
@@ -106,7 +117,9 @@ impl <'a> Interface<'a> {
     }
     
     fn accept_selection(&mut self) {
-        self.input.set(&self.matches[self.selection].cmd);
+        if self.matches.len() > 0 {
+            self.input.set(&self.matches[self.selection].cmd);
+        }
     }
 
     fn refresh_matches(&mut self) {
@@ -195,26 +208,30 @@ impl <'a> Interface<'a> {
         self.input.command.to_owned()
     }
 
-    fn truncate_for_display(command: &Command, search: &str, width: u16) -> String {
+    fn truncate_for_display(command: &Command, search: &str, width: u16, highlight_color: String, base_color: String) -> String {
         let mut out = String::new();
 
         let mut prev = 0;
 
+        let available_width: usize = (if width > 10 { width - 10 } else { 2 }) as usize;
+
         if !search.is_empty() {
             for (index, _) in command.cmd.match_indices(search) {
                 if prev != index {
-                    out.push_grapheme_str(&command.cmd[prev..index], width as usize);
+                    out.push_grapheme_str(&command.cmd[prev..index], available_width);
                 }
-                out.push_str(&color::Fg(color::Green).to_string());
-                out.push_grapheme_str(search, width as usize);
-                out.push_str(&color::Fg(color::Reset).to_string());
+                out.push_str(&highlight_color);
+                out.push_grapheme_str(search, available_width);
+                out.push_str(&base_color);
                 prev = index + search.len();
             }
         }
 
         if prev != command.cmd.len() {
-            out.push_grapheme_str(&command.cmd[prev..], width as usize);
+            out.push_grapheme_str(&command.cmd[prev..], available_width);
         }
+
+        out.push_grapheme_str(format!(" - {}", command.rank), available_width + 10);
 
         out
     }
