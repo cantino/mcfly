@@ -8,14 +8,16 @@ use bash_history;
 #[derive(Debug)]
 pub enum Mode {
     Add,
-    Search
+    Search,
+    Train
 }
 
 #[derive(Debug)]
 pub struct Settings {
     pub mode: Mode,
+    pub debug: bool,
     pub command: String,
-    pub when: Option<i64>,
+    pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub dir: Option<String>,
     pub old_dir: Option<String>
@@ -25,8 +27,9 @@ impl Default for Settings {
     fn default() -> Settings {
         Settings {
             mode: Mode::Add,
+            debug: false,
             command: String::new(),
-            when: None,
+            when_run: None,
             exit_code: None,
             dir: None,
             old_dir: None
@@ -41,6 +44,10 @@ impl Settings {
             .author(crate_authors!())
             .about("Wizardly Bash history")
             .setting(AppSettings::SubcommandRequiredElseHelp)
+            .arg(Arg::with_name("debug")
+                .short("d")
+                .long("debug")
+                .help("Debug"))
             .subcommand(SubCommand::with_name("add")
                 .about("Add commands to the history")
                 .aliases(&["a"])
@@ -101,16 +108,20 @@ impl Settings {
                     .multiple(true)
                     .required(false)
                     .index(1)))
+            .subcommand(SubCommand::with_name("train")
+                .about("Train the suggestion engine")
+                .aliases(&["t"]))
             .get_matches();
 
-
         let mut settings = Settings::default();
+
+        settings.debug = matches.is_present("debug");
 
         match matches.subcommand() {
             ("add", Some(add_matches)) =>{
                 settings.mode = Mode::Add;
 
-                settings.when = Some(value_t!(add_matches, "when", i64).unwrap_or(
+                settings.when_run = Some(value_t!(add_matches, "when", i64).unwrap_or(
                     SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64
                 ));
 
@@ -144,7 +155,7 @@ impl Settings {
             ("search", Some(search_matches)) =>{
                 settings.mode = Mode::Search;
                 if let Some(_) = search_matches.value_of("within") {
-                    settings.when = Some(value_t!(search_matches, "within", i64).unwrap_or_else(|e| e.exit()));
+                    settings.when_run = Some(value_t!(search_matches, "within", i64).unwrap_or_else(|e| e.exit()));
                 }
                 if let Some(_) = search_matches.value_of("exit") {
                     settings.exit_code = Some(value_t!(search_matches, "exit", i32).unwrap_or_else(|e| e.exit()));
@@ -158,6 +169,10 @@ impl Settings {
                     settings.command = bash_history::last_history_line(&bash_history::bash_history_file_path()).expect("Command is required if ~/.bash_history is empty").trim_left_matches("#").to_string();
                     bash_history::delete_last_history_entry_if_comment(&bash_history::bash_history_file_path());
                 }
+            },
+
+            ("train", Some(_train_matches)) =>{
+                settings.mode = Mode::Train;
             },
             ("", None)   => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
             _            => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()

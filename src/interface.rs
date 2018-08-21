@@ -28,14 +28,14 @@ pub enum MoveSelection {
 }
 
 pub trait GraphemeStrings {
-    fn push_grapheme_str<S: Into<String>>(&mut self, s: S, max_width: usize);
+    fn push_grapheme_str<S: Into<String>>(&mut self, s: S, max_width: u16);
 }
 
 impl GraphemeStrings for String {
-    fn push_grapheme_str<S: Into<String>>(&mut self, s: S, max_width: usize) {
+    fn push_grapheme_str<S: Into<String>>(&mut self, s: S, max_width: u16) {
         let initial_length = self.graphemes(true).count();
         for (index, grapheme) in s.into().graphemes(true).enumerate() {
-            if initial_length + index >= max_width {
+            if initial_length + index >= max_width as usize {
                 return;
             }
             self.push_str(grapheme);
@@ -87,7 +87,8 @@ impl <'a> Interface<'a> {
                                                    &self.input.command,
                                                    width,
                                                    color::Fg(color::Green).to_string(),
-                                                   fg
+                                                   fg,
+                                                   self.settings.debug
                    )
             ).unwrap();
 
@@ -124,7 +125,7 @@ impl <'a> Interface<'a> {
 
     fn refresh_matches(&mut self) {
         self.selection = 0;
-        self.matches = self.history.find_matches(&self.input.command);
+        self.matches = self.history.find_matches(&self.input.command, Some(10));
     }
 
     pub fn select(&'a mut self) -> String {
@@ -208,12 +209,11 @@ impl <'a> Interface<'a> {
         self.input.command.to_owned()
     }
 
-    fn truncate_for_display(command: &Command, search: &str, width: u16, highlight_color: String, base_color: String) -> String {
+    fn truncate_for_display(command: &Command, search: &str, width: u16, highlight_color: String, base_color: String, debug: bool) -> String {
         let mut out = String::new();
-
         let mut prev = 0;
-
-        let available_width: usize = (if width > 20 { width - 20 } else { 2 }) as usize;
+        let debug_space = if debug { 60 } else { 0 };
+        let available_width = if width > debug_space { width - debug_space } else { 2 };
 
         if !search.is_empty() {
             for (index, _) in command.cmd.match_indices(search) {
@@ -231,7 +231,9 @@ impl <'a> Interface<'a> {
             out.push_grapheme_str(&command.cmd[prev..], available_width);
         }
 
-        out.push_grapheme_str(format!("         {}", command.rank), available_width + 10);
+        if debug {
+            out.push_grapheme_str(format!("  {}rnk: {} age: {} ext: {} ls: {} ovlp: {} occ: {}{}", color::Fg(color::LightBlue).to_string(), command.rank, command.debug_age, command.debug_exit, command.debug_dir_match, command.debug_overlap, command.debug_occurrences, &base_color), available_width + debug_space);
+        }
 
         out
     }

@@ -6,15 +6,37 @@ use std::fs;
 use bash_history;
 use std::fmt;
 use std::time::Instant;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
+pub struct Weights {
+    age: f64,
+    exit: f64,
+    dir: f64,
+    overlap: f64,
+    occurrences: f64
+}
+
+impl Default for Weights {
+    fn default() -> Weights {
+        Weights { age: -0.01, exit: -1000.0, dir: 1000.0, overlap: 100.0, occurrences: 50.0 }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct Command {
     pub id: i64,
     pub cmd: String,
     pub rank: f64,
-    pub when: Option<i64>,
+    pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
-    pub dir: Option<String>
+    pub dir: Option<String>,
+    pub debug_age: f64,
+    pub debug_exit: f64,
+    pub debug_dir_match: f64,
+    pub debug_overlap: f64,
+    pub debug_occurrences: f64
 }
 
 impl fmt::Display for Command {
@@ -31,7 +53,8 @@ impl From<Command> for String {
 
 #[derive(Debug)]
 pub struct History {
-    pub connection: Connection
+    pub connection: Connection,
+    pub weights: Weights
 }
 
 impl History {
@@ -46,7 +69,7 @@ impl History {
 
     pub fn add(&self,
                command: &String,
-               when: &Option<i64>,
+               when_run: &Option<i64>,
                exit_code: &Option<i32>,
                dir: &Option<String>,
                old_dir: &Option<String>) {
@@ -59,7 +82,7 @@ impl History {
                 "INSERT INTO commands (cmd, when_run, exit_code, dir, old_dir) VALUES (?1, ?2, ?3, ?4, ?5)",
                 &[
                     &command.to_owned(),
-                    &when.to_owned(),
+                    &when_run.to_owned(),
                     &exit_code.to_owned(),
                     &dir.to_owned(),
                     &old_dir.to_owned()
@@ -67,34 +90,34 @@ impl History {
         }
     }
 
-    pub fn find_matches(&self, cmd: &String) -> Vec<Command> {
+    pub fn find_matches(&self, cmd: &String, num: Option<u16>) -> Vec<Command> {
         let mut like_query = "%".to_string();
         like_query.push_str(cmd);
         like_query.push_str("%");
 
-        let query = "SELECT
-                             id, cmd, when_run, exit_code, dir,
-                                 age * -0.01 +
-                                 exit_code * -1000.0 +
-                                 dir_match * 1000.0 +
-                                 overlap * 100.0 +
-                                 occurrences * 1.0
-                             AS rank
+        let query = "SELECT id, cmd, when_run, exit_code, dir, rank,
+                                  debug_age, debug_exit, debug_dir_match, debug_overlap, debug_occurrences
                            FROM contextual_commands
-                           WHERE cmd
-                           LIKE (?)
+                           WHERE cmd LIKE (?)
                            ORDER BY rank DESC LIMIT ?";
         let mut statement = self.connection.prepare(query).unwrap();
-        let command_iter = statement.query_map(&[&like_query, &10], |row| {
-            Command {
-                id: row.get(0),
-                cmd: row.get(1),
-                when: row.get(2),
-                exit_code: row.get(3),
-                dir: row.get(4),
-                rank: row.get(5)
-            }
-        }).expect("Query Map to work");
+        let command_iter = statement.query_map(
+            &[&like_query, &num.unwrap_or(10)],
+            |row| {
+                Command {
+                    id: row.get(0),
+                    cmd: row.get(1),
+                    when_run: row.get(2),
+                    exit_code: row.get(3),
+                    dir: row.get(4),
+                    rank: row.get(5),
+                    debug_age: row.get(6),
+                    debug_exit: row.get(7),
+                    debug_dir_match: row.get(8),
+                    debug_overlap: row.get(9),
+                    debug_occurrences: row.get(10)
+                }
+            }).expect("Query Map to work");
 
         let mut names = Vec::new();
         for command in command_iter {
@@ -104,29 +127,7 @@ impl History {
         names
     }
 
-    fn last_command(&self) -> Option<Command> {
-        let query = "SELECT id, cmd, when_run, exit_code, dir, 0 FROM commands ORDER BY id DESC LIMIT 1";
-        let mut statement = self.connection.prepare(query).unwrap();
-        let command_iter = statement.query_map(&[], |row| {
-            Command {
-                id: row.get(0),
-                cmd: row.get(1),
-                when: row.get(2),
-                exit_code: row.get(3),
-                dir: row.get(4),
-                rank: row.get(5)
-            }
-        }).expect("Query Map to work");
-
-        if let Some(Ok(last)) = command_iter.last() {
-            Some(last)
-        } else {
-            None
-        }
-    }
-
-    pub fn build_cache_table(&self) {
-        let dir = env::current_dir().expect("Unable to determine current directory").to_string_lossy().into_owned();
+    pub fn build_cache_table(&self, dir: Option<String>, start_time: Option<i64>, end_time: Option<i64>) {
         let lookback: u16 = 5;
         let now = Instant::now();
 
@@ -135,26 +136,58 @@ impl History {
             last_commands.push(String::from(""));
         }
 
+        let directory = dir.unwrap_or(
+            env::current_dir()
+                .expect("Unable to determine current directory")
+                .to_string_lossy()
+                .into_owned()
+            );
+
+        self.connection.execute("DROP TABLE IF EXISTS temp.contextual_commands;", &[])
+            .expect("Removal of temp table to work");
+
         self.connection.execute(
             "CREATE TEMP TABLE contextual_commands AS SELECT
-                  id,
-                  cmd,
-                  when_run,
-                  count(*) as occurrences,
-                  (strftime('%s', 'now') - COALESCE(when_run, 0)) AS age,
-                  COALESCE(exit_code, 0) AS exit_code,
-                  dir,
-                  (CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) AS dir_match,
-                  (SELECT count(DISTINCT c2.cmd) FROM commands c2 WHERE c2.id > c.id - ? AND c2.id < c.id AND c2.cmd IN (?, ?, ?, ?, ?)) AS overlap
-                  FROM commands c GROUP BY cmd ORDER BY id DESC; CREATE INDEX temp.MyIndex ON contextual_commands(id);",
+                  id, cmd, when_run, COALESCE(exit_code, 0) AS exit_code, dir,
+
+                  MIN(strftime('%s', 'now') - COALESCE(when_run, 0)) AS debug_age,
+                  MIN(COALESCE(exit_code, 0)) AS debug_exit,
+                  MAX(CASE WHEN dir = ?1 THEN 1.0 ELSE 0.0 END) AS debug_dir_match,
+                  MAX((SELECT count(DISTINCT c2.cmd) FROM commands c2 WHERE c2.id > c.id - ?2 AND c2.id < c.id AND c2.cmd IN (?3, ?4, ?5, ?6, ?7))) AS debug_overlap,
+                  count(*) AS debug_occurrences,
+
+                  MIN(strftime('%s', 'now') - COALESCE(when_run, 0)) * ?8 +
+                  MIN(COALESCE(exit_code, 0)) * ?9 +
+                  MAX(CASE WHEN dir = ?10 THEN 1.0 ELSE 0.0 END) * ?11 +
+                  MAX((SELECT count(DISTINCT c2.cmd) FROM commands c2 WHERE c2.id > c.id - ?12 AND c2.id < c.id AND c2.cmd IN (?13, ?14, ?15, ?16, ?17))) * ?18 +
+                  count(*) * ?19
+                  AS rank
+
+                  FROM commands c WHERE when_run > ?20 AND when_run < ?21 GROUP BY cmd ORDER BY id DESC;
+
+                  CREATE INDEX temp.MyIndex ON contextual_commands(id);",
             &[
-                &dir.to_owned(),
-                &lookback.to_owned(),
+                &directory,
+                &lookback,
                 &last_commands[0].to_owned(),
                 &last_commands[1].to_owned(),
                 &last_commands[2].to_owned(),
                 &last_commands[3].to_owned(),
-                &last_commands[4].to_owned()
+                &last_commands[4].to_owned(),
+                &self.weights.age,
+                &self.weights.exit,
+                &directory,
+                &self.weights.dir,
+                &lookback,
+                &last_commands[0].to_owned(),
+                &last_commands[1].to_owned(),
+                &last_commands[2].to_owned(),
+                &last_commands[3].to_owned(),
+                &last_commands[4].to_owned(),
+                &self.weights.overlap,
+                &self.weights.occurrences,
+                &start_time.unwrap_or(0).to_owned(),
+                &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned()
             ]).expect("Creation of temp table to work");
 
         let elapsed = now.elapsed();
@@ -162,21 +195,37 @@ impl History {
         println!("Seconds: {}", sec);
     }
 
-    pub fn last_command_strings(&self, num: u16) -> Vec<String> {
-        let query = "SELECT cmd FROM commands GROUP BY cmd ORDER BY id DESC LIMIT ?";
+    pub fn commands(&self, num: u16) -> Vec<Command> {
+        let query = "SELECT id, cmd, when_run, exit_code, dir, 0 FROM commands ORDER BY id DESC LIMIT ? OFFSET 1";
         let mut statement = self.connection.prepare(query).unwrap();
-        let command_iter = statement
-            .query_map(&[&num], |row| row.get(0))
-            .expect("Query Map to work");
+        let command_iter = statement.query_map(&[&num], |row| {
+            Command {
+                id: row.get(0),
+                cmd: row.get(1),
+                when_run: row.get(2),
+                exit_code: row.get(3),
+                dir: row.get(4),
+                rank: row.get(5),
+                .. Command::default()
+            }
+        }).expect("Query Map to work");
 
-        let mut vec: Vec<String> = Vec::new();
+        let mut vec = Vec::new();
         for result in command_iter {
-            if let Ok(string) = result {
-                vec.push(string);
+            if let Ok(command) = result {
+                vec.push(command);
             }
         }
 
         vec
+    }
+
+    fn last_command(&self) -> Option<Command> {
+        self.commands(1).get(0).map(|cmd| cmd.clone())
+    }
+
+    pub fn last_command_strings(&self, num: u16) -> Vec<String> {
+        self.commands(num).iter().map(|command| command.cmd.to_owned()).collect()
     }
 
     fn from_bash_history() -> History {
@@ -215,13 +264,13 @@ impl History {
             }
         }
 
-        History { connection }
+        History { connection, weights: Weights::default() }
     }
 
     fn from_db_path(path: PathBuf) -> History {
         let connection = Connection::open(path)
             .expect("Unable to open history database");
-        History { connection }
+        History { connection, weights: Weights::default() }
     }
 
     fn storage_dir_path() -> PathBuf {
