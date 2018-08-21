@@ -13,6 +13,7 @@ fn handle_addition(settings: &Settings, history: &mut History) {
 }
 
 fn handle_search(settings: &Settings, history: &History) {
+    history.build_cache_table();
     let command = Interface::new(settings, history).select();
     if command.len() > 0 && !command.is_empty() {
         fake_typer::use_tiocsti(&command);

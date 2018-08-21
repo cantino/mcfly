@@ -13,6 +13,6 @@ export PROMPT_COMMAND="__last_exit=\$?;history -a;bash_wizard add --exit \$__las
 # If interactive shell, bind to ctrl-r.
 if [[ $- =~ .*i.* ]]; then
   # bind "'\C-r': '\C-a RUST_BACKTRACE=1 bash_wizard search \'\C-e\'\C-j'"
-  bind "'\C-r': '\C-a\e# RUST_BACKTRACE=1 bash_wizard search\C-j'"
+  bind "'\C-r': '\C-a\e# bash_wizard search\C-j'"
 fi
 

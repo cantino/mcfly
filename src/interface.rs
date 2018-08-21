@@ -213,7 +213,7 @@ impl <'a> Interface<'a> {
 
         let mut prev = 0;
 
-        let available_width: usize = (if width > 10 { width - 10 } else { 2 }) as usize;
+        let available_width: usize = (if width > 20 { width - 20 } else { 2 }) as usize;
 
         if !search.is_empty() {
             for (index, _) in command.cmd.match_indices(search) {
@@ -231,7 +231,7 @@ impl <'a> Interface<'a> {
             out.push_grapheme_str(&command.cmd[prev..], available_width);
         }
 
-        out.push_grapheme_str(format!(" - {}", command.rank), available_width + 10);
+        out.push_grapheme_str(format!("         {}", command.rank), available_width + 10);
 
         out
     }
