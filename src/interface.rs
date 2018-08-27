@@ -66,7 +66,7 @@ impl <'a> Interface<'a> {
         write!(screen, "{}{}{}", cursor::Hide, cursor::Goto(1, 3), clear::All).unwrap();
         let (width, _height): (u16, u16) = terminal_size().unwrap();
 
-        if self.selection > self.matches.len() - 1 {
+        if self.matches.len() > 0 && self.selection > self.matches.len() - 1 {
             self.selection = self.matches.len() - 1;
         }
 

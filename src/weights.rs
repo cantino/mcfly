@@ -10,7 +10,7 @@ pub struct Weights {
 
 impl Default for Weights {
     fn default() -> Weights {
-        Weights { offset: 0.5, age: -1.0, exit: -1.0, dir: 1.0, overlap: 1.0, occurrences: 0.5 }
+        Weights { offset: 0.0, age: -0.1, exit: -5.0, dir: 1.0, overlap: 2.0, occurrences: 0.2 }
     }
 }
 

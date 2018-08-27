@@ -145,7 +145,7 @@ impl History {
                   id, cmd, when_run, exit_code, dir,
 
                   MIN((? - when_run) / ?) AS age_factor,
-                  MIN(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) AS exit_factor,
+                  MIN(CASE WHEN exit_code = 0 THEN 0.0 ELSE 1.0 END) AS exit_factor,
                   MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) AS dir_factor,
                   MAX((
                     SELECT count(DISTINCT c2.cmd) FROM commands c2
@@ -155,7 +155,7 @@ impl History {
 
                       ? +
                       MIN((? - when_run) / ?) * ? +
-                      MIN(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) * ? +
+                      MIN(CASE WHEN exit_code = 0 THEN 0.0 ELSE 1.0 END) * ? +
                       MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) * ? +
                       MAX((
                         SELECT count(DISTINCT c2.cmd) FROM commands c2
