@@ -117,7 +117,7 @@ impl History {
         let lookback: u16 = 5;
         let now = Instant::now();
 
-        let mut last_commands = self.last_command_strings(lookback, 1);
+        let mut last_commands = self.last_command_strings(lookback, 0);
         while last_commands.len() < lookback as usize {
             last_commands.push(String::from(""));
         }
@@ -164,7 +164,7 @@ impl History {
                       count(*) / ? * ?
                   AS rank
 
-                  FROM commands c WHERE when_run > ? AND when_run < ? GROUP BY cmd ORDER BY id DESC;
+                  FROM commands c WHERE when_run > ? AND when_run < ? GROUP BY cmd ORDER BY id DESC LIMIT -1 OFFSET 1;
 
                   CREATE INDEX temp.MyIndex ON contextual_commands(id);",
             &[
