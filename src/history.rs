@@ -117,7 +117,7 @@ impl History {
         let lookback: u16 = 5;
         let now = Instant::now();
 
-        let mut last_commands = self.last_command_strings(lookback);
+        let mut last_commands = self.last_command_strings(lookback, 1);
         while last_commands.len() < lookback as usize {
             last_commands.push(String::from(""));
         }
@@ -205,10 +205,10 @@ impl History {
         println!("Seconds: {}", sec);
     }
 
-    pub fn commands(&self, num: u16) -> Vec<Command> {
-        let query = "SELECT id, cmd, when_run, exit_code, dir, 0 FROM commands ORDER BY id DESC LIMIT ? OFFSET 1";
+    pub fn commands(&self, num: u16, offset: u16) -> Vec<Command> {
+        let query = "SELECT id, cmd, when_run, exit_code, dir, 0 FROM commands ORDER BY id DESC LIMIT ? OFFSET ?";
         let mut statement = self.connection.prepare(query).unwrap();
-        let command_iter = statement.query_map(&[&num], |row| {
+        let command_iter = statement.query_map(&[&num, &offset], |row| {
             Command {
                 id: row.get(0),
                 cmd: row.get(1),
@@ -230,12 +230,12 @@ impl History {
         vec
     }
 
-    fn last_command(&self) -> Option<Command> {
-        self.commands(1).get(0).map(|cmd| cmd.clone())
+    pub fn last_command(&self) -> Option<Command> {
+        self.commands(1, 0).get(0).map(|cmd| cmd.clone())
     }
 
-    pub fn last_command_strings(&self, num: u16) -> Vec<String> {
-        self.commands(num).iter().map(|command| command.cmd.to_owned()).collect()
+    pub fn last_command_strings(&self, num: u16, offset: u16) -> Vec<String> {
+        self.commands(num, offset).iter().map(|command| command.cmd.to_owned()).collect()
     }
 
     fn from_bash_history() -> History {

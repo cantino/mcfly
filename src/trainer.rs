@@ -19,7 +19,7 @@ impl <'a> Trainer<'a> {
 
         let depth = 1000;
 
-        let mut data_set = self.history.commands(depth);
+        let mut data_set = self.history.commands(depth, 0);
         thread_rng().shuffle(&mut data_set);
 
         for command in data_set.iter() {
