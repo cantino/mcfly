@@ -10,6 +10,7 @@ unicode-segmentation = "1.2.1"
 libc = "0.2"
 rand = "0.5.5"
 regex = "1"
+csv = "1"
 
 [dependencies.rusqlite]
 version = "0.14.0"

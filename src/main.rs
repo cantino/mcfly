@@ -5,6 +5,7 @@ use bash_wizard::history::History;
 use bash_wizard::settings::Settings;
 use bash_wizard::settings::Mode;
 use bash_wizard::trainer::Trainer;
+use bash_wizard::exporter::Exporter;
 use bash_wizard::fake_typer;
 
 fn handle_addition(settings: &Settings, history: &mut History) {
@@ -26,6 +27,10 @@ fn handle_train(settings: &Settings, history: &mut History) {
     Trainer::new(settings, history).train();
 }
 
+fn handle_export(settings: &Settings, history: &mut History) {
+    Exporter::new(settings, history).export();
+}
+
 fn main() {
     let settings = Settings::parse_args();
 
@@ -40,6 +45,9 @@ fn main() {
         },
         Mode::Train => {
             handle_train(&settings, &mut history);
+        },
+        Mode::Export => {
+            handle_export(&settings, &mut history);
         }
     }
 }

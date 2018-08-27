@@ -202,7 +202,7 @@ impl History {
 
         let elapsed = now.elapsed();
         let sec = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0);
-        println!("Seconds: {}", sec);
+//        println!("Seconds: {}", sec);
     }
 
     pub fn commands(&self, num: u16, offset: u16) -> Vec<Command> {

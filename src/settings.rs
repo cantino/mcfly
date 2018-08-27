@@ -9,7 +9,8 @@ use bash_history;
 pub enum Mode {
     Add,
     Search,
-    Train
+    Train,
+    Export
 }
 
 #[derive(Debug)]
@@ -20,7 +21,8 @@ pub struct Settings {
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub dir: Option<String>,
-    pub old_dir: Option<String>
+    pub old_dir: Option<String>,
+    pub file: Option<String>
 }
 
 impl Default for Settings {
@@ -32,7 +34,8 @@ impl Default for Settings {
             when_run: None,
             exit_code: None,
             dir: None,
-            old_dir: None
+            old_dir: None,
+            file: None
         }
     }
 }
@@ -109,8 +112,16 @@ impl Settings {
                     .required(false)
                     .index(1)))
             .subcommand(SubCommand::with_name("train")
-                .about("Train the suggestion engine")
-                .aliases(&["t"]))
+                .about("Train the suggestion engine"))
+            .subcommand(SubCommand::with_name("export")
+                .about("Export training data")
+                .arg(Arg::with_name("file")
+                    .short("f")
+                    .long("file")
+                    .value_name("PATH")
+                    .help("Output file path")
+                    .required(true)
+                    .takes_value(true)))
             .get_matches();
 
         let mut settings = Settings::default();
@@ -171,8 +182,12 @@ impl Settings {
                 }
             },
 
-            ("train", Some(_train_matches)) =>{
+            ("train", Some(_train_matches)) => {
                 settings.mode = Mode::Train;
+            },
+            ("export", Some(export_matches)) => {
+                settings.mode = Mode::Export;
+                settings.file = Some(export_matches.value_of("file").unwrap().to_string());
             },
             ("", None)   => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
             _            => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
