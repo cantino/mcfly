@@ -232,7 +232,7 @@ impl <'a> Interface<'a> {
         }
 
         if debug {
-            out.push_grapheme_str(format!("  {}rnk: {} age: {} ext: {} ls: {} ovlp: {} occ: {}{}", color::Fg(color::LightBlue).to_string(), command.rank, command.debug_age, command.debug_exit, command.debug_dir_match, command.debug_overlap, command.debug_occurrences, &base_color), available_width + debug_space);
+            out.push_grapheme_str(format!("  {}rnk: {} age: {} ext: {} ls: {} ovlp: {} occ: {}{}", color::Fg(color::LightBlue).to_string(), command.rank, command.age_factor, command.exit_factor, command.dir_factor, command.overlap_factor, command.occurrences_factor, &base_color), available_width + debug_space);
         }
 
         out

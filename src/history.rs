@@ -8,21 +8,7 @@ use std::fmt;
 use std::time::Instant;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-
-#[derive(Debug, Copy, Clone)]
-pub struct Weights {
-    age: f64,
-    exit: f64,
-    dir: f64,
-    overlap: f64,
-    occurrences: f64
-}
-
-impl Default for Weights {
-    fn default() -> Weights {
-        Weights { age: -0.01, exit: -1000.0, dir: 1000.0, overlap: 100.0, occurrences: 50.0 }
-    }
-}
+use weights::Weights;
 
 #[derive(Debug, Clone, Default)]
 pub struct Command {
@@ -32,11 +18,11 @@ pub struct Command {
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub dir: Option<String>,
-    pub debug_age: f64,
-    pub debug_exit: f64,
-    pub debug_dir_match: f64,
-    pub debug_overlap: f64,
-    pub debug_occurrences: f64
+    pub age_factor: f64,
+    pub exit_factor: f64,
+    pub dir_factor: f64,
+    pub overlap_factor: f64,
+    pub occurrences_factor: f64
 }
 
 impl fmt::Display for Command {
@@ -96,7 +82,7 @@ impl History {
         like_query.push_str("%");
 
         let query = "SELECT id, cmd, when_run, exit_code, dir, rank,
-                                  debug_age, debug_exit, debug_dir_match, debug_overlap, debug_occurrences
+                                  age_factor, exit_factor, dir_factor, overlap_factor, occurrences_factor
                            FROM contextual_commands
                            WHERE cmd LIKE (?)
                            ORDER BY rank DESC LIMIT ?";
@@ -111,11 +97,11 @@ impl History {
                     exit_code: row.get(3),
                     dir: row.get(4),
                     rank: row.get(5),
-                    debug_age: row.get(6),
-                    debug_exit: row.get(7),
-                    debug_dir_match: row.get(8),
-                    debug_overlap: row.get(9),
-                    debug_occurrences: row.get(10)
+                    age_factor: row.get(6),
+                    exit_factor: row.get(7),
+                    dir_factor: row.get(8),
+                    overlap_factor: row.get(9),
+                    occurrences_factor: row.get(10)
                 }
             }).expect("Query Map to work");
 
@@ -146,27 +132,44 @@ impl History {
         self.connection.execute("DROP TABLE IF EXISTS temp.contextual_commands;", &[])
             .expect("Removal of temp table to work");
 
+        let (when_run_min, when_run_max): (f64, f64) = self.connection
+            .query_row("SELECT MIN(when_run), MAX(when_run) FROM commands", &[],
+                       |row| (row.get(0), row.get(1))).expect("Query to work");
+
+        let max_occurrences: f64 = self.connection
+            .query_row("select count(*) as c FROM commands GROUP BY cmd order by c desc limit 1", &[],
+                       |row| row.get(0)).expect("Query to work");
+
         self.connection.execute(
             "CREATE TEMP TABLE contextual_commands AS SELECT
-                  id, cmd, when_run, COALESCE(exit_code, 0) AS exit_code, dir,
+                  id, cmd, when_run, exit_code, dir,
 
-                  MIN(strftime('%s', 'now') - COALESCE(when_run, 0)) AS debug_age,
-                  MIN(COALESCE(exit_code, 0)) AS debug_exit,
-                  MAX(CASE WHEN dir = ?1 THEN 1.0 ELSE 0.0 END) AS debug_dir_match,
-                  MAX((SELECT count(DISTINCT c2.cmd) FROM commands c2 WHERE c2.id > c.id - ?2 AND c2.id < c.id AND c2.cmd IN (?3, ?4, ?5, ?6, ?7))) AS debug_overlap,
-                  count(*) AS debug_occurrences,
+                  MIN((? - when_run) / ?) AS age_factor,
+                  MIN(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) AS exit_factor,
+                  MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) AS dir_factor,
+                  MAX((
+                    SELECT count(DISTINCT c2.cmd) FROM commands c2
+                    WHERE c2.id > c.id - ? AND c2.id < c.id AND c2.cmd IN (?, ?, ?, ?, ?)
+                  ) / ?) AS overlap_factor,
+                  count(*) / ? AS occurrences_factor,
 
-                  MIN(strftime('%s', 'now') - COALESCE(when_run, 0)) * ?8 +
-                  MIN(COALESCE(exit_code, 0)) * ?9 +
-                  MAX(CASE WHEN dir = ?10 THEN 1.0 ELSE 0.0 END) * ?11 +
-                  MAX((SELECT count(DISTINCT c2.cmd) FROM commands c2 WHERE c2.id > c.id - ?12 AND c2.id < c.id AND c2.cmd IN (?13, ?14, ?15, ?16, ?17))) * ?18 +
-                  count(*) * ?19
+                      ? +
+                      MIN((? - when_run) / ?) * ? +
+                      MIN(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) * ? +
+                      MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) * ? +
+                      MAX((
+                        SELECT count(DISTINCT c2.cmd) FROM commands c2
+                        WHERE c2.id > c.id - ? AND c2.id < c.id AND c2.cmd IN (?, ?, ?, ?, ?)
+                      ) / ?) * ? +
+                      count(*) / ? * ?
                   AS rank
 
-                  FROM commands c WHERE when_run > ?20 AND when_run < ?21 GROUP BY cmd ORDER BY id DESC;
+                  FROM commands c WHERE when_run > ? AND when_run < ? GROUP BY cmd ORDER BY id DESC;
 
                   CREATE INDEX temp.MyIndex ON contextual_commands(id);",
             &[
+                &when_run_max,
+                &(when_run_max - when_run_min),
                 &directory,
                 &lookback,
                 &last_commands[0].to_owned(),
@@ -174,6 +177,11 @@ impl History {
                 &last_commands[2].to_owned(),
                 &last_commands[3].to_owned(),
                 &last_commands[4].to_owned(),
+                &(lookback as f64),
+                &max_occurrences,
+                &self.weights.offset,
+                &when_run_max,
+                &(when_run_max - when_run_min),
                 &self.weights.age,
                 &self.weights.exit,
                 &directory,
@@ -184,7 +192,9 @@ impl History {
                 &last_commands[2].to_owned(),
                 &last_commands[3].to_owned(),
                 &last_commands[4].to_owned(),
+                &(lookback as f64),
                 &self.weights.overlap,
+                &max_occurrences,
                 &self.weights.occurrences,
                 &start_time.unwrap_or(0).to_owned(),
                 &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned()
@@ -246,8 +256,8 @@ impl History {
             "CREATE TABLE commands( \
                       id INTEGER PRIMARY KEY AUTOINCREMENT, \
                       cmd TEXT NOT NULL, \
-                      when_run INTEGER, \
-                      exit_code INTEGER, \
+                      when_run INTEGER NOT NULL, \
+                      exit_code INTEGER NOT NULL, \
                       dir TEXT, \
                       old_dir TEXT \
                   ); \
@@ -257,10 +267,11 @@ impl History {
 
         {
             let mut statement = connection
-                .prepare("INSERT INTO commands (cmd) VALUES (?)")
+                .prepare("INSERT INTO commands (cmd, when_run, exit_code) VALUES (?, ?, ?)")
                 .expect("Unable to prepare insert");
+            let epoch = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64;
             for command in &bash_history {
-                statement.execute(&[command]).expect("Insert to work");
+                statement.execute(&[command, &epoch, &0]).expect("Insert to work");
             }
         }
 

@@ -10,6 +10,7 @@ extern crate rand;
 
 pub mod history;
 pub mod settings;
+pub mod weights;
 pub mod bash_history;
 pub mod interface;
 pub mod fake_typer;
