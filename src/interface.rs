@@ -18,7 +18,8 @@ pub struct Interface<'a> {
     history: &'a History,
     input: CommandInput,
     selection: usize,
-    matches: Vec<Command>
+    matches: Vec<Command>,
+    run: bool
 }
 
 #[derive(Debug)]
@@ -45,7 +46,7 @@ impl GraphemeStrings for String {
 
 impl <'a> Interface<'a> {
     pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
-        Interface { settings, history, input: CommandInput::from(settings.command.to_owned()), selection: 0, matches: Vec::new() }
+        Interface { settings, history, input: CommandInput::from(settings.command.to_owned()), selection: 0, matches: Vec::new(), run: false }
     }
 
     pub fn prompt<W: Write>(&self, screen: &mut W) {
@@ -128,7 +129,7 @@ impl <'a> Interface<'a> {
         self.matches = self.history.find_matches(&self.input.command, Some(10));
     }
 
-    pub fn select(&'a mut self) -> String {
+    pub fn select(&'a mut self) -> (String, bool) {
         let stdin = stdin();
         let mut screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
 //        let mut screen = stdout().into_raw_mode().unwrap();
@@ -140,11 +141,18 @@ impl <'a> Interface<'a> {
 
         for c in stdin.keys() {
             match c.unwrap() {
-                Key::Char('\n') | Key::Char('\r') | Key::Char('\t') | Key::Ctrl('j') => {
+                Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
+                    self.run = true;
+                    self.accept_selection();
+                    break;
+                },
+                Key::Char('\t') => {
+                    self.run = false;
                     self.accept_selection();
                     break;
                 },
                 Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') => {
+                    self.run = false;
                     self.input.clear();
                     break
                 },
@@ -206,7 +214,7 @@ impl <'a> Interface<'a> {
 
         write!(screen, "{}{}", clear::All, cursor::Show).unwrap();
 
-        self.input.command.to_owned()
+        (self.input.command.to_owned(), self.run)
     }
 
     fn truncate_for_display(command: &Command, search: &str, width: u16, highlight_color: String, base_color: String, debug: bool) -> String {
