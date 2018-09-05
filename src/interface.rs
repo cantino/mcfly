@@ -1,7 +1,6 @@
 use settings::Settings;
 use history::History;
 use command_input::{CommandInput, Move};
-use unicode_segmentation::UnicodeSegmentation;
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -11,6 +10,7 @@ use std::io::{Write, stdout, stdin};
 use termion::screen::AlternateScreen;
 use history::Command;
 use termion::color;
+use fixed_length_grapheme_string::FixedLengthGraphemeString;
 
 #[derive(Debug)]
 pub struct Interface<'a> {
@@ -26,22 +26,6 @@ pub struct Interface<'a> {
 pub enum MoveSelection {
     Up,
     Down
-}
-
-pub trait GraphemeStrings {
-    fn push_grapheme_str<S: Into<String>>(&mut self, s: S, max_width: u16);
-}
-
-impl GraphemeStrings for String {
-    fn push_grapheme_str<S: Into<String>>(&mut self, s: S, max_width: u16) {
-        let initial_length = self.graphemes(true).count();
-        for (index, grapheme) in s.into().graphemes(true).enumerate() {
-            if initial_length + index >= max_width as usize {
-                return;
-            }
-            self.push_str(grapheme);
-        }
-    }
 }
 
 impl <'a> Interface<'a> {
@@ -218,32 +202,41 @@ impl <'a> Interface<'a> {
     }
 
     fn truncate_for_display(command: &Command, search: &str, width: u16, highlight_color: String, base_color: String, debug: bool) -> String {
-        let mut out = String::new();
         let mut prev = 0;
         let debug_space = if debug { 60 } else { 0 };
-        let available_width = if width > debug_space { width - debug_space } else { 2 };
+        let max_grapheme_length = if width > debug_space { width - debug_space } else { 2 };
+        let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
         if !search.is_empty() {
             for (index, _) in command.cmd.match_indices(search) {
                 if prev != index {
-                    out.push_grapheme_str(&command.cmd[prev..index], available_width);
+                    out.push_grapheme_str(&command.cmd[prev..index]);
                 }
                 out.push_str(&highlight_color);
-                out.push_grapheme_str(search, available_width);
+                out.push_grapheme_str(search);
                 out.push_str(&base_color);
                 prev = index + search.len();
             }
         }
 
         if prev != command.cmd.len() {
-            out.push_grapheme_str(&command.cmd[prev..], available_width);
+            out.push_grapheme_str(&command.cmd[prev..]);
         }
 
         if debug {
-            out.push_grapheme_str(format!("  {}rnk: {} age: {} ext: {} ls: {} ovlp: {} occ: {}{}", color::Fg(color::LightBlue).to_string(), command.rank, command.age_factor, command.exit_factor, command.dir_factor, command.overlap_factor, command.occurrences_factor, &base_color), available_width + debug_space);
+            out.max_grapheme_length += debug_space;
+            out.push_grapheme_str("  ");
+            out.push_str(&format!("{}", color::Fg(color::LightBlue)));
+            out.push_grapheme_str(format!("rnk: {} ", command.rank));
+            out.push_grapheme_str(format!("age: {} ", command.age_factor));
+            out.push_grapheme_str(format!("ext: {} ", command.exit_factor));
+            out.push_grapheme_str(format!("ls: {} ", command.dir_factor));
+            out.push_grapheme_str(format!("ovlp: {} ", command.overlap_factor));
+            out.push_grapheme_str(format!("occ: {}", command.occurrences_factor));
+            out.push_str(&base_color);
         }
 
-        out
+        out.string
     }
 }
 

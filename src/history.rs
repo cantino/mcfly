@@ -5,7 +5,7 @@ use rusqlite::Connection;
 use std::fs;
 use bash_history;
 use std::fmt;
-use std::time::Instant;
+//use std::time::Instant;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use weights::Weights;
@@ -115,7 +115,7 @@ impl History {
 
     pub fn build_cache_table(&self, dir: Option<String>, start_time: Option<i64>, end_time: Option<i64>) {
         let lookback: u16 = 5;
-        let now = Instant::now();
+//        let now = Instant::now();
 
         let mut last_commands = self.last_command_strings(lookback, 0);
         while last_commands.len() < lookback as usize {
@@ -200,8 +200,8 @@ impl History {
                 &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned()
             ]).expect("Creation of temp table to work");
 
-        let elapsed = now.elapsed();
-        let sec = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0);
+//        let elapsed = now.elapsed();
+//        let sec = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0);
 //        println!("Seconds: {}", sec);
     }
 

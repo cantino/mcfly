@@ -18,3 +18,4 @@ pub mod fake_typer;
 pub mod command_input;
 pub mod trainer;
 pub mod exporter;
+pub mod fixed_length_grapheme_string;
