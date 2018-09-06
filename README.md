@@ -2,10 +2,13 @@
 
 > NOTE: This open source project is pre-alpha. It works-- I'm using it every day-- but I haven't trained the prioritization linear perceptron yet because I'm still gathering training data, so the ordering is suboptimal.
 
+<img src="/docs/screenshot.png" alt="screenshot" width="400">
+
 ## Features
 
 * Rebinds `CTRL-R` to bring up a full-screen reverse history search with very smart prioritization.
 * Augments your shell history to track return status, timestamp, and execution directory.
+* Unicode support throughout.
 * Written in Rust, so it's super fast.
 
 ## Prioritization
