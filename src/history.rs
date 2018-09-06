@@ -45,7 +45,7 @@ pub struct History {
 
 impl History {
     pub fn load() -> History {
-        let db_path = History::bash_wizard_db_path();
+        let db_path = History::mcfly_db_path();
         if db_path.exists() {
             History::from_db_path(db_path)
         } else {
@@ -244,13 +244,13 @@ impl History {
         // Load this first to make sure it works before we create the DB.
         let bash_history = bash_history::full_history(&bash_history::bash_history_file_path());
 
-        // Make ~/.bash_wizard
+        // Make ~/.mcfly
         fs::create_dir_all(History::storage_dir_path())
             .expect(format!("Unable to create {:?}", History::storage_dir_path()).as_str());
 
-        // Make ~/.bash_wizard/history.db
-        let connection = Connection::open(History::bash_wizard_db_path())
-            .expect(format!("Unable to create history DB at {:?}", History::bash_wizard_db_path()).as_str());
+        // Make ~/.mcfly/history.db
+        let connection = Connection::open(History::mcfly_db_path())
+            .expect(format!("Unable to create history DB at {:?}", History::mcfly_db_path()).as_str());
 
         connection.execute_batch(
             "CREATE TABLE commands( \
@@ -287,10 +287,10 @@ impl History {
     fn storage_dir_path() -> PathBuf {
         env::home_dir()
             .expect("Unable to access home directory")
-            .join(PathBuf::from(".bash_wizard"))
+            .join(PathBuf::from(".mcfly"))
     }
 
-    fn bash_wizard_db_path() -> PathBuf {
+    fn mcfly_db_path() -> PathBuf {
         History::storage_dir_path()
             .join(PathBuf::from("history.db"))
     }

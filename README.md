@@ -1,4 +1,4 @@
-# Bash Wizard
+# McFly - futuristic shell history search
 
 ## TODO
 

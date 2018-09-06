@@ -42,10 +42,10 @@ impl Default for Settings {
 
 impl Settings {
     pub fn parse_args() -> Settings {
-        let matches = App::new("Bash Wizard")
+        let matches = App::new("McFly")
             .version(crate_version!())
             .author(crate_authors!())
-            .about("Wizardly Bash history")
+            .about("Futuristic shell history search")
             .setting(AppSettings::SubcommandRequiredElseHelp)
             .arg(Arg::with_name("debug")
                 .short("d")
