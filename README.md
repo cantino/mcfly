@@ -1,5 +1,7 @@
 # McFly - fly through your shell history
 
+> NOTE: This open source project is pre-alpha. It works-- I'm using it every day-- but I haven't trained the prioritization linear perceptron yet because I'm still gathering training data, so the ordering is suboptimal.
+
 ## Features
 
 * Rebinds `CTRL-R` to bring up a full-screen reverse history search with very smart prioritization.
