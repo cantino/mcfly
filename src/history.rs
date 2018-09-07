@@ -43,6 +43,8 @@ pub struct History {
     pub weights: Weights
 }
 
+const IGNORED_COMMANDS: [&str; 7] = ["pwd", "ls", "cd", "cd ..", "clear", "history", "mcfly search"];
+
 impl History {
     pub fn load() -> History {
         let db_path = History::mcfly_db_path();
@@ -64,15 +66,18 @@ impl History {
             Some(ref last_command) if !command.eq(&last_command.cmd) => true,
             Some(_) => false
         } {
-            self.connection.execute(
-                "INSERT INTO commands (cmd, when_run, exit_code, dir, old_dir) VALUES (?1, ?2, ?3, ?4, ?5)",
-                &[
-                    &command.to_owned(),
-                    &when_run.to_owned(),
-                    &exit_code.to_owned(),
-                    &dir.to_owned(),
-                    &old_dir.to_owned()
-                ]).expect("Insert to work");
+            if !IGNORED_COMMANDS.contains(&command.as_str()) {
+                self.connection.execute("INSERT INTO commands (cmd, when_run, exit_code, dir, old_dir) VALUES (?1, ?2, ?3, ?4, ?5)",
+                                        &[
+                                            &command.to_owned(),
+                                            &when_run.to_owned(),
+                                            &exit_code.to_owned(),
+                                            &dir.to_owned(),
+                                            &old_dir.to_owned()
+                                        ]).expect("Insert to work");
+            } else {
+                println!("Not inserted");
+            }
         }
     }
 
@@ -271,7 +276,9 @@ impl History {
                 .expect("Unable to prepare insert");
             let epoch = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64;
             for command in &bash_history {
-                statement.execute(&[command, &epoch, &0]).expect("Insert to work");
+                if !IGNORED_COMMANDS.contains(&command.as_str()) {
+                    statement.execute(&[command, &epoch, &0]).expect("Insert to work");
+                }
             }
         }
 
