@@ -227,12 +227,12 @@ impl <'a> Interface<'a> {
             out.max_grapheme_length += debug_space;
             out.push_grapheme_str("  ");
             out.push_str(&format!("{}", color::Fg(color::LightBlue)));
-            out.push_grapheme_str(format!("rnk: {} ", command.rank));
-            out.push_grapheme_str(format!("age: {} ", command.age_factor));
-            out.push_grapheme_str(format!("ext: {} ", command.exit_factor));
-            out.push_grapheme_str(format!("ls: {} ", command.dir_factor));
-            out.push_grapheme_str(format!("ovlp: {} ", command.overlap_factor));
-            out.push_grapheme_str(format!("occ: {}", command.occurrences_factor));
+            out.push_grapheme_str(format!("rnk: {:.*} ", 2, command.rank));
+            out.push_grapheme_str(format!("age: {:.*} ", 2, command.age_factor));
+            out.push_grapheme_str(format!("ext: {:.*} ", 2, command.exit_factor));
+            out.push_grapheme_str(format!("ls: {:.*} ", 2, command.dir_factor));
+            out.push_grapheme_str(format!("ovlp: {:.*} ", 2, command.overlap_factor));
+            out.push_grapheme_str(format!("occ: {:.*}", 2, command.occurrences_factor));
             out.push_str(&base_color);
         }
 
