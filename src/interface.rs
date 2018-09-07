@@ -135,7 +135,7 @@ impl <'a> Interface<'a> {
                     self.accept_selection();
                     break;
                 },
-                Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') => {
+                Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Esc | Key::Ctrl('r') => {
                     self.run = false;
                     self.input.clear();
                     break
@@ -189,7 +189,7 @@ impl <'a> Interface<'a> {
                 Key::F(_c) => {
 //                    self.debug(&mut screen, format!("F({})", c))
                 },
-                Key::Insert | Key::Null | Key::__IsNotComplete | Key::Esc => {}
+                Key::Insert | Key::Null | Key::__IsNotComplete => {}
             }
 
             self.results(&mut screen);
