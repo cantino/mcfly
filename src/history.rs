@@ -75,8 +75,6 @@ impl History {
                                             &dir.to_owned(),
                                             &old_dir.to_owned()
                                         ]).expect("Insert to work");
-            } else {
-                println!("Not inserted");
             }
         }
     }
