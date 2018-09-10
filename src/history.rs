@@ -20,6 +20,7 @@ pub struct Command {
     pub dir: Option<String>,
     pub age_factor: f64,
     pub exit_factor: f64,
+    pub recent_failure_factor: f64,
     pub dir_factor: f64,
     pub overlap_factor: f64,
     pub occurrences_factor: f64
@@ -85,7 +86,7 @@ impl History {
         like_query.push_str("%");
 
         let query = "SELECT id, cmd, when_run, exit_code, dir, rank,
-                                  age_factor, exit_factor, dir_factor, overlap_factor, occurrences_factor
+                                  age_factor, exit_factor, recent_failure_factor, dir_factor, overlap_factor, occurrences_factor
                            FROM contextual_commands
                            WHERE cmd LIKE (?)
                            ORDER BY rank DESC LIMIT ?";
@@ -102,9 +103,10 @@ impl History {
                     rank: row.get(5),
                     age_factor: row.get(6),
                     exit_factor: row.get(7),
-                    dir_factor: row.get(8),
-                    overlap_factor: row.get(9),
-                    occurrences_factor: row.get(10)
+                    recent_failure_factor: row.get(8),
+                    dir_factor: row.get(9),
+                    overlap_factor: row.get(10),
+                    occurrences_factor: row.get(11)
                 }
             }).expect("Query Map to work");
 
@@ -149,6 +151,7 @@ impl History {
 
                   MIN((? - when_run) / ?) AS age_factor,
                   MIN(CASE WHEN exit_code = 0 THEN 0.0 ELSE 1.0 END) AS exit_factor,
+                  MAX(CASE WHEN exit_code = 1 AND strftime('%s','now') - when_run < 120 THEN 1.0 ELSE 0.0 END) AS recent_failure_factor,
                   MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) AS dir_factor,
                   MAX((
                     SELECT count(DISTINCT c2.cmd) FROM commands c2
@@ -159,6 +162,7 @@ impl History {
                       ? +
                       MIN((? - when_run) / ?) * ? +
                       MIN(CASE WHEN exit_code = 0 THEN 0.0 ELSE 1.0 END) * ? +
+                      MAX(CASE WHEN exit_code = 1 AND strftime('%s','now') - when_run < 120 THEN 1.0 ELSE 0.0 END) * ? +
                       MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) * ? +
                       MAX((
                         SELECT count(DISTINCT c2.cmd) FROM commands c2
@@ -187,6 +191,7 @@ impl History {
                 &(when_run_max - when_run_min),
                 &self.weights.age,
                 &self.weights.exit,
+                &self.weights.recent_failure,
                 &directory,
                 &self.weights.dir,
                 &lookback,

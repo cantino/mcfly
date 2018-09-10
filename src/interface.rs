@@ -230,6 +230,7 @@ impl <'a> Interface<'a> {
             out.push_grapheme_str(format!("rnk: {:.*} ", 2, command.rank));
             out.push_grapheme_str(format!("age: {:.*} ", 2, command.age_factor));
             out.push_grapheme_str(format!("ext: {:.*} ", 2, command.exit_factor));
+            out.push_grapheme_str(format!("rflr: {:.*} ", 2, command.recent_failure_factor));
             out.push_grapheme_str(format!("ls: {:.*} ", 2, command.dir_factor));
             out.push_grapheme_str(format!("ovlp: {:.*} ", 2, command.overlap_factor));
             out.push_grapheme_str(format!("occ: {:.*}", 2, command.occurrences_factor));

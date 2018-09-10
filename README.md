@@ -43,8 +43,9 @@ Add `. /path/to/this/repository/mcfly-bash.sh` to your `~/.bashrc`.
 
 ## TODO
 
-* Make score be dependent on position in the top N suggestions, maybe scalled by index?
+* Allow last command if it's old.
+* Make score be dependent on position in the top N suggestions
 * Weird history issues between windows
-* Make context look at first N letters instead of full commands, or maybe ignore stuff in quotes?
+* Make context look at first N letters instead of full commands, or maybe ignore stuff in quotes? Make a template for each command that removes long numbers, anything in quotes, anything that looks like a path?
 * Add screencast.
 

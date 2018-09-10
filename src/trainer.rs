@@ -40,10 +40,10 @@ impl <'a> Trainer<'a> {
                         println!("My position: {:#?}", my_match);
 
                         // Update the weights such that our rank is closer to 1.0.
-                        self.history.weights = self.history.weights.online_update(lr*2.0, 1.0, my_match.age_factor, my_match.exit_factor, my_match.dir_factor, my_match.overlap_factor, my_match.occurrences_factor);
+                        self.history.weights = self.history.weights.online_update(lr*2.0, 1.0, my_match.age_factor, my_match.exit_factor,my_match.recent_failure_factor, my_match.dir_factor, my_match.overlap_factor, my_match.occurrences_factor);
                         if !winner.cmd.eq(&my_match.cmd) {
                             // Update the weights such that the winner's rank is closer to 0.0.
-                            self.history.weights = self.history.weights.online_update(lr, 0.0, winner.age_factor, winner.exit_factor, winner.dir_factor, winner.overlap_factor, winner.occurrences_factor);
+                            self.history.weights = self.history.weights.online_update(lr, 0.0, winner.age_factor, winner.exit_factor, winner.recent_failure_factor, winner.dir_factor, winner.overlap_factor, winner.occurrences_factor);
                         }
 
                         println!("New weights: {:#?}", self.history.weights);
