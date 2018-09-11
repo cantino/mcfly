@@ -50,7 +50,7 @@ impl <'a> Exporter<'a> {
     pub fn export(&mut self) {
         self.output_header();
 
-        let data_set = self.history.commands(50000, 0);
+        let data_set = self.history.commands(-1, 0);
 
         for command in data_set.iter() {
             if command.dir.is_none() || command.exit_code.is_none() || command.when_run.is_none() { continue }

@@ -5,15 +5,21 @@ use rusqlite::Connection;
 use std::fs;
 use bash_history;
 use std::fmt;
+use std::io;
+use std::io::Write;
 //use std::time::Instant;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use weights::Weights;
 
+use history::schema;
+use simplified_command::SimplifiedCommand;
+
 #[derive(Debug, Clone, Default)]
 pub struct Command {
     pub id: i64,
     pub cmd: String,
+    pub cmd_tpl: String,
     pub rank: f64,
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
@@ -49,11 +55,14 @@ const IGNORED_COMMANDS: [&str; 7] = ["pwd", "ls", "cd", "cd ..", "clear", "histo
 impl History {
     pub fn load() -> History {
         let db_path = History::mcfly_db_path();
+        let mut history;
         if db_path.exists() {
-            History::from_db_path(db_path)
+            history = History::from_db_path(db_path)
         } else {
-            History::from_bash_history()
+            history = History::from_bash_history()
         }
+        schema::migrate(&mut history);
+        history
     }
 
     pub fn add(&self,
@@ -68,9 +77,11 @@ impl History {
             Some(_) => false
         } {
             if !IGNORED_COMMANDS.contains(&command.as_str()) {
-                self.connection.execute("INSERT INTO commands (cmd, when_run, exit_code, dir, old_dir) VALUES (?1, ?2, ?3, ?4, ?5)",
+                let simplified_command = SimplifiedCommand::new(command.as_str(), true);
+                self.connection.execute("INSERT INTO commands (cmd, cmd_tpl, when_run, exit_code, dir, old_dir) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                                         &[
                                             &command.to_owned(),
+                                            &simplified_command.result.to_owned(),
                                             &when_run.to_owned(),
                                             &exit_code.to_owned(),
                                             &dir.to_owned(),
@@ -85,28 +96,29 @@ impl History {
         like_query.push_str(cmd);
         like_query.push_str("%");
 
-        let query = "SELECT id, cmd, when_run, exit_code, dir, rank,
+        let query = "SELECT id, cmd, cmd_tpl, when_run, exit_code, dir, rank,
                                   age_factor, exit_factor, recent_failure_factor, dir_factor, overlap_factor, occurrences_factor
                            FROM contextual_commands
                            WHERE cmd LIKE (?)
                            ORDER BY rank DESC LIMIT ?";
-        let mut statement = self.connection.prepare(query).unwrap();
+        let mut statement = self.connection.prepare(query).expect("Prepare to work");
         let command_iter = statement.query_map(
             &[&like_query, &num.unwrap_or(10)],
             |row| {
                 Command {
-                    id: row.get(0),
-                    cmd: row.get(1),
-                    when_run: row.get(2),
-                    exit_code: row.get(3),
-                    dir: row.get(4),
-                    rank: row.get(5),
-                    age_factor: row.get(6),
-                    exit_factor: row.get(7),
-                    recent_failure_factor: row.get(8),
-                    dir_factor: row.get(9),
-                    overlap_factor: row.get(10),
-                    occurrences_factor: row.get(11)
+                    id: row.get_checked(0).expect("id to be readable"),
+                    cmd: row.get_checked(1).expect("cmd to be readable"),
+                    cmd_tpl: row.get_checked(2).expect("cmd_tpl to be readable"),
+                    when_run: row.get_checked(3).expect("when_run to be readable"),
+                    exit_code: row.get_checked(4).expect("exit_code to be readable"),
+                    dir: row.get_checked(5).expect("dir to be readable"),
+                    age_factor: row.get_checked(7).expect("age_factor to be readable"),
+                    exit_factor: row.get_checked(8).expect("exit_factor to be readable"),
+                    recent_failure_factor: row.get_checked(9).expect("recent_failure_factor to be readable"),
+                    dir_factor: row.get_checked(10).expect("dir_factor to be readable"),
+                    overlap_factor: row.get_checked(11).expect("overlap_factor to be readable"),
+                    occurrences_factor: row.get_checked(12).expect("occurrences_factor to be readable"),
+                    rank: row.get_checked(6).expect("rank to be readable"),
                 }
             }).expect("Query Map to work");
 
@@ -119,10 +131,10 @@ impl History {
     }
 
     pub fn build_cache_table(&self, dir: Option<String>, start_time: Option<i64>, end_time: Option<i64>) {
-        let lookback: u16 = 5;
+        let lookback: u16 = 4;
 //        let now = Instant::now();
 
-        let mut last_commands = self.last_command_strings(lookback, 0);
+        let mut last_commands = self.last_command_templates(lookback as i16, 0);
         while last_commands.len() < lookback as usize {
             last_commands.push(String::from(""));
         }
@@ -137,9 +149,13 @@ impl History {
         self.connection.execute("DROP TABLE IF EXISTS temp.contextual_commands;", &[])
             .expect("Removal of temp table to work");
 
-        let (when_run_min, when_run_max): (f64, f64) = self.connection
+        let (mut when_run_min, when_run_max): (f64, f64) = self.connection
             .query_row("SELECT MIN(when_run), MAX(when_run) FROM commands", &[],
                        |row| (row.get(0), row.get(1))).expect("Query to work");
+
+        if when_run_min == when_run_max {
+            when_run_min -= 60.0 * 60.0;
+        }
 
         let max_occurrences: f64 = self.connection
             .query_row("select count(*) as c FROM commands GROUP BY cmd order by c desc limit 1", &[],
@@ -147,7 +163,7 @@ impl History {
 
         self.connection.execute(
             "CREATE TEMP TABLE contextual_commands AS SELECT
-                  id, cmd, when_run, exit_code, dir,
+                  id, cmd, cmd_tpl, when_run, exit_code, dir,
 
                   MIN((? - when_run) / ?) AS age_factor,
                   MIN(CASE WHEN exit_code = 0 THEN 0.0 ELSE 1.0 END) AS exit_factor,
@@ -155,7 +171,7 @@ impl History {
                   MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) AS dir_factor,
                   MAX((
                     SELECT count(DISTINCT c2.cmd) FROM commands c2
-                    WHERE c2.id > c.id - ? AND c2.id < c.id AND c2.cmd IN (?, ?, ?, ?, ?)
+                    WHERE c2.id >= c.id - ? AND c2.id < c.id AND c2.cmd_tpl IN (?, ?, ?, ?)
                   ) / ?) AS overlap_factor,
                   count(*) / ? AS occurrences_factor,
 
@@ -166,14 +182,12 @@ impl History {
                       MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) * ? +
                       MAX((
                         SELECT count(DISTINCT c2.cmd) FROM commands c2
-                        WHERE c2.id > c.id - ? AND c2.id < c.id AND c2.cmd IN (?, ?, ?, ?, ?)
+                        WHERE c2.id >= c.id - ? AND c2.id < c.id AND c2.cmd_tpl IN (?, ?, ?, ?)
                       ) / ?) * ? +
                       count(*) / ? * ?
                   AS rank
 
-                  FROM commands c WHERE when_run > ? AND when_run < ? GROUP BY cmd ORDER BY id DESC LIMIT -1 OFFSET 1;
-
-                  CREATE INDEX temp.MyIndex ON contextual_commands(id);",
+                  FROM commands c WHERE when_run > ? AND when_run < ? GROUP BY cmd ORDER BY id DESC LIMIT -1 OFFSET 1;",
             &[
                 &when_run_max,
                 &(when_run_max - when_run_min),
@@ -183,7 +197,6 @@ impl History {
                 &last_commands[1].to_owned(),
                 &last_commands[2].to_owned(),
                 &last_commands[3].to_owned(),
-                &last_commands[4].to_owned(),
                 &(lookback as f64),
                 &max_occurrences,
                 &self.weights.offset,
@@ -199,7 +212,6 @@ impl History {
                 &last_commands[1].to_owned(),
                 &last_commands[2].to_owned(),
                 &last_commands[3].to_owned(),
-                &last_commands[4].to_owned(),
                 &(lookback as f64),
                 &self.weights.overlap,
                 &max_occurrences,
@@ -208,22 +220,26 @@ impl History {
                 &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned()
             ]).expect("Creation of temp table to work");
 
+        self.connection.execute("CREATE INDEX temp.MyIndex ON contextual_commands(id);", &[])
+            .expect("Creation of index on temp table to work");
+
 //        let elapsed = now.elapsed();
 //        let sec = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0);
 //        println!("Seconds: {}", sec);
     }
 
-    pub fn commands(&self, num: u16, offset: u16) -> Vec<Command> {
-        let query = "SELECT id, cmd, when_run, exit_code, dir, 0 FROM commands ORDER BY id DESC LIMIT ? OFFSET ?";
+    pub fn commands(&self, num: i16, offset: u16) -> Vec<Command> {
+        let query = "SELECT id, cmd, cmd_tpl, when_run, exit_code, dir, 0 FROM commands ORDER BY id DESC LIMIT ? OFFSET ?";
         let mut statement = self.connection.prepare(query).unwrap();
         let command_iter = statement.query_map(&[&num, &offset], |row| {
             Command {
                 id: row.get(0),
                 cmd: row.get(1),
-                when_run: row.get(2),
-                exit_code: row.get(3),
-                dir: row.get(4),
-                rank: row.get(5),
+                cmd_tpl: row.get(2),
+                when_run: row.get(3),
+                exit_code: row.get(4),
+                dir: row.get(5),
+                rank: row.get(6),
                 .. Command::default()
             }
         }).expect("Query Map to work");
@@ -242,12 +258,13 @@ impl History {
         self.commands(1, 0).get(0).map(|cmd| cmd.clone())
     }
 
-    pub fn last_command_strings(&self, num: u16, offset: u16) -> Vec<String> {
-        self.commands(num, offset).iter().map(|command| command.cmd.to_owned()).collect()
+    pub fn last_command_templates(&self, num: i16, offset: u16) -> Vec<String> {
+        self.commands(num, offset).iter().map(|command| command.cmd_tpl.to_owned()).collect()
     }
 
     fn from_bash_history() -> History {
-        println!("Importing Bash history for the first time. One moment...");
+        print!("McFly: Importing Bash history for the first time. One moment...");
+        io::stdout().flush().unwrap();
 
         // Load this first to make sure it works before we create the DB.
         let bash_history = bash_history::full_history(&bash_history::bash_history_file_path());
@@ -264,6 +281,7 @@ impl History {
             "CREATE TABLE commands( \
                       id INTEGER PRIMARY KEY AUTOINCREMENT, \
                       cmd TEXT NOT NULL, \
+                      cmd_tpl TEXT, \
                       when_run INTEGER NOT NULL, \
                       exit_code INTEGER NOT NULL, \
                       dir TEXT, \
@@ -275,15 +293,20 @@ impl History {
 
         {
             let mut statement = connection
-                .prepare("INSERT INTO commands (cmd, when_run, exit_code) VALUES (?, ?, ?)")
+                .prepare("INSERT INTO commands (cmd, cmd_tpl, when_run, exit_code) VALUES (?, ?, ?, ?)")
                 .expect("Unable to prepare insert");
             let epoch = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64;
             for command in &bash_history {
                 if !IGNORED_COMMANDS.contains(&command.as_str()) {
-                    statement.execute(&[command, &epoch, &0]).expect("Insert to work");
+                    let simplified_command = SimplifiedCommand::new(command.as_str(), true);
+                    statement.execute(&[command, &simplified_command.result.to_owned(), &epoch, &0]).expect("Insert to work");
                 }
             }
         }
+
+        schema::first_time_setup(&connection);
+
+        println!("done.");
 
         History { connection, weights: Weights::default() }
     }
