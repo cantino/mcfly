@@ -19,6 +19,7 @@ pub struct Interface<'a> {
     input: CommandInput,
     selection: usize,
     matches: Vec<Command>,
+    debug: bool,
     run: bool
 }
 
@@ -30,7 +31,14 @@ pub enum MoveSelection {
 
 impl <'a> Interface<'a> {
     pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
-        Interface { settings, history, input: CommandInput::from(settings.command.to_owned()), selection: 0, matches: Vec::new(), run: false }
+        Interface {
+            settings, history,
+            input: CommandInput::from(settings.command.to_owned()),
+            selection: 0,
+            matches: Vec::new(),
+            run: false,
+            debug: settings.debug
+        }
     }
 
     pub fn prompt<W: Write>(&self, screen: &mut W) {
@@ -73,7 +81,7 @@ impl <'a> Interface<'a> {
                                                    width,
                                                    color::Fg(color::Green).to_string(),
                                                    fg,
-                                                   self.settings.debug
+                                                   self.debug
                    )
             ).unwrap();
 
@@ -152,6 +160,9 @@ impl <'a> Interface<'a> {
                     self.input.delete(Move::ForwardWord);
                     self.refresh_matches();
                 },
+                Key::Ctrl('v') => {
+                    self.debug = !self.debug;
+                },
                 Key::Alt('b') => self.input.move_cursor(Move::BackwardWord),
                 Key::Alt('f') => self.input.move_cursor(Move::ForwardWord),
                 Key::Left => self.input.move_cursor(Move::Backward),
@@ -229,9 +240,9 @@ impl <'a> Interface<'a> {
             out.push_str(&format!("{}", color::Fg(color::LightBlue)));
             out.push_grapheme_str(format!("rnk: {:.*} ", 2, command.rank));
             out.push_grapheme_str(format!("age: {:.*} ", 2, command.age_factor));
-            out.push_grapheme_str(format!("ext: {:.*} ", 2, command.exit_factor));
-            out.push_grapheme_str(format!("rflr: {:.*} ", 2, command.recent_failure_factor));
-            out.push_grapheme_str(format!("ls: {:.*} ", 2, command.dir_factor));
+            out.push_grapheme_str(format!("ext: {:.*} ", 0, command.exit_factor));
+            out.push_grapheme_str(format!("rflr: {:.*} ", 0, command.recent_failure_factor));
+            out.push_grapheme_str(format!("ls: {:.*} ", 0, command.dir_factor));
             out.push_grapheme_str(format!("ovlp: {:.*} ", 2, command.overlap_factor));
             out.push_grapheme_str(format!("occ: {:.*}", 2, command.occurrences_factor));
             out.push_str(&base_color);

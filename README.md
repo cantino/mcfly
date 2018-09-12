@@ -33,19 +33,24 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     cargo build --release
     ```
-1. Copy `./target/release/mcfly` into a location in your `$PATH`.
+1. Copy `./target/release/mcfly` into a location in your `$PATH`. (For example, you could create a directory at `~/bin`
+and add `export PATH="$PATH:$HOME/bin"` to your `.bash_profile`.)
 
 ### Enable in your shell
 
 #### Bash
 
-Add `. /path/to/this/repository/mcfly-bash.sh` to your `~/.bashrc`.
+Add `. /path/to/this/repository/mcfly-bash.sh` to your `~/.bash_profile` or `~/.bashrc` file.
 
-## TODO
+## Future / Upcoming Features
 
-* Allow last command if it's old.
-* Make score be dependent on position in the top N suggestions
-* Weird history issues between windows
-* Make context look at first N letters instead of full commands, or maybe ignore stuff in quotes? Make a template for each command that removes long numbers, anything in quotes, anything that looks like a path?
-* Add screencast.
-
+* Add screencast to README.
+* Fix history issues between windows by:
+  * Add terminal ID so that context can be terminal-dependent.
+  * Also use this to re-write Bash history file after adding and before history -r.
+  * Tell the user that McFly owns their history file now. This could fix all history bugs.
+* Allow suggesting of the last command seen if it's been a while.
+* Finish training the linear perceptron.
+* For training, make score be dependent on position in the top N suggestions
+* Learn common command options and autocomplete them in the suggestion UI?
+* Sort command line args when coming up with the template matching string.
