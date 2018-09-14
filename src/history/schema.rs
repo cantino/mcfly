@@ -37,7 +37,7 @@ pub fn migrate(history: &History) {
     if current_version < CURRENT_SCHEMA_VERSION {
         if current_version == 0 {
             print!("McFly: Upgrading McFly DB to version {}, please wait...", CURRENT_SCHEMA_VERSION);
-            io::stdout().flush().unwrap();
+            io::stdout().flush().expect("STDOUT flush should work");
 
             history.connection.execute_batch("ALTER TABLE commands ADD COLUMN cmd_tpl TEXT; UPDATE commands SET cmd_tpl = '';")
                 .expect("Unable to add cmd_tpl to commands");

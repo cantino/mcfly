@@ -55,12 +55,11 @@ const IGNORED_COMMANDS: [&str; 7] = ["pwd", "ls", "cd", "cd ..", "clear", "histo
 impl History {
     pub fn load() -> History {
         let db_path = History::mcfly_db_path();
-        let mut history;
-        if db_path.exists() {
-            history = History::from_db_path(db_path)
+        let mut history = if db_path.exists() {
+            History::from_db_path(db_path)
         } else {
-            history = History::from_bash_history()
-        }
+            History::from_bash_history()
+        };
         schema::migrate(&mut history);
         history
     }
@@ -264,7 +263,7 @@ impl History {
 
     fn from_bash_history() -> History {
         print!("McFly: Importing Bash history for the first time. One moment...");
-        io::stdout().flush().unwrap();
+        io::stdout().flush().expect("STDOUT flush should work");
 
         // Load this first to make sure it works before we create the DB.
         let bash_history = bash_history::full_history(&bash_history::bash_history_file_path());

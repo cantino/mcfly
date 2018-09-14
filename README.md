@@ -45,10 +45,11 @@ Add `. /path/to/this/repository/mcfly-bash.sh` to your `~/.bash_profile` or `~/.
 ## Future / Upcoming Features
 
 * Add screencast to README.
+* Figure out how to avoid messing up the scroll back buffer in terminals.
 * Fix history issues between windows by:
   * Add terminal ID so that context can be terminal-dependent.
-  * Also use this to re-write Bash history file after adding and before history -r.
-  * Tell the user that McFly owns their history file now. This could fix all history bugs.
+  * Also use this to re-write the Bash history file after adding and before history -r so that each terminal session's history is correct.
+  * Tell the user that McFly owns their history file now.
 * Allow suggesting of the last command seen if it's been a while.
 * Finish training the linear perceptron.
 * For training, make score be dependent on position in the top N suggestions
