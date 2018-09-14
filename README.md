@@ -28,7 +28,7 @@ When suggesting a command, McFly takes into consideration:
 
 ### Compile it yourself
 
-1. [Install Rust](https://www.rust-lang.org/en-US/install.html)
+1. [Install Rust 1.29 or later](https://www.rust-lang.org/en-US/install.html)
 1. Compile with optimizations
     ```bash
     cargo build --release
