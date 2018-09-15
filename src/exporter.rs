@@ -29,6 +29,7 @@ impl <'a> Exporter<'a> {
             "exit_factor",
             "dir_factor",
             "overlap_factor",
+            "immediate_overlap_factor",
             "occurrences_factor",
             "correct"
         ]).expect("Expected to write to CSV");
@@ -41,6 +42,7 @@ impl <'a> Exporter<'a> {
             format!("{}", winner.exit_factor),
             format!("{}", winner.dir_factor),
             format!("{}", winner.overlap_factor),
+            format!("{}", winner.immediate_overlap_factor),
             format!("{}", winner.occurrences_factor),
             if correct { String::from("1.0") } else { String::from("0.0") }
         ]).expect("Expected to write to CSV");

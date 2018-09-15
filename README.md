@@ -51,7 +51,10 @@ Add `. /path/to/this/repository/mcfly-bash.sh` to your `~/.bash_profile` or `~/.
   * Also use this to re-write the Bash history file after adding and before history -r so that each terminal session's history is correct.
   * Tell the user that McFly owns their history file now.
 * Allow suggesting of the last command seen if it's been a while.
-* Finish training the linear perceptron.
+* Better prioritization:
+  * Finish training the linear perceptron.
+  * Learn embeddings per template and use to predict the next embedding, then do approximate nearest neighbor lookup?
+    * Could train by predicting whether or not one command should follow another and doing gradient descent.
 * For training, make score be dependent on position in the top N suggestions
 * Learn common command options and autocomplete them in the suggestion UI?
 * Sort command line args when coming up with the template matching string.

@@ -214,7 +214,7 @@ impl <'a> Interface<'a> {
 
     fn truncate_for_display(command: &Command, search: &str, width: u16, highlight_color: String, base_color: String, debug: bool) -> String {
         let mut prev = 0;
-        let debug_space = if debug { 60 } else { 0 };
+        let debug_space = if debug { 70 } else { 0 };
         let max_grapheme_length = if width > debug_space { width - debug_space } else { 2 };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
@@ -244,6 +244,7 @@ impl <'a> Interface<'a> {
             out.push_grapheme_str(format!("rflr: {:.*} ", 0, command.recent_failure_factor));
             out.push_grapheme_str(format!("ls: {:.*} ", 3, command.dir_factor));
             out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.overlap_factor));
+            out.push_grapheme_str(format!("iovlp: {:.*} ", 3, command.immediate_overlap_factor));
             out.push_grapheme_str(format!("occ: {:.*}", 2, command.occurrences_factor));
             out.push_str(&base_color);
         }

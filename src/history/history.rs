@@ -29,6 +29,7 @@ pub struct Command {
     pub recent_failure_factor: f64,
     pub dir_factor: f64,
     pub overlap_factor: f64,
+    pub immediate_overlap_factor: f64,
     pub occurrences_factor: f64
 }
 
@@ -96,7 +97,8 @@ impl History {
         like_query.push_str("%");
 
         let query = "SELECT id, cmd, cmd_tpl, when_run, exit_code, dir, rank,
-                                  age_factor, exit_factor, recent_failure_factor, dir_factor, overlap_factor, occurrences_factor
+                                  age_factor, exit_factor, recent_failure_factor,
+                                  dir_factor, overlap_factor, immediate_overlap_factor, occurrences_factor
                            FROM contextual_commands
                            WHERE cmd LIKE (?)
                            ORDER BY rank DESC LIMIT ?";
@@ -111,13 +113,14 @@ impl History {
                     when_run: row.get_checked(3).expect("when_run to be readable"),
                     exit_code: row.get_checked(4).expect("exit_code to be readable"),
                     dir: row.get_checked(5).expect("dir to be readable"),
+                    rank: row.get_checked(6).expect("rank to be readable"),
                     age_factor: row.get_checked(7).expect("age_factor to be readable"),
                     exit_factor: row.get_checked(8).expect("exit_factor to be readable"),
                     recent_failure_factor: row.get_checked(9).expect("recent_failure_factor to be readable"),
                     dir_factor: row.get_checked(10).expect("dir_factor to be readable"),
                     overlap_factor: row.get_checked(11).expect("overlap_factor to be readable"),
-                    occurrences_factor: row.get_checked(12).expect("occurrences_factor to be readable"),
-                    rank: row.get_checked(6).expect("rank to be readable"),
+                    immediate_overlap_factor: row.get_checked(12).expect("immediate_overlap_factor to be readable"),
+                    occurrences_factor: row.get_checked(13).expect("occurrences_factor to be readable")
                 }
             }).expect("Query Map to work");
 
@@ -162,13 +165,8 @@ impl History {
 
         // For every unique command in the history, insert a single row into the temporary
         // contextual_commands table.
-        // What we really want is "how often does a command that looks like this get run in this directory or in this context?"
-        // What we have now is "how often does this exact command get run in this directory or in this context?"
-
-        ///         "INSERT INTO test (name) VALUES (:name)",
-        ///         &[(":name", &"one")],
-
-
+        //   What we really want is: "how often does a command that looks like this (our tpl) get run in this directory or in this context?"
+        //   What we have now is: "how often does this exact command get run in this directory or in this context?"
         self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
                   id, cmd, cmd_tpl, when_run, exit_code, dir,
@@ -186,6 +184,8 @@ impl History {
                     WHERE c2.id >= c.id - :lookback AND c2.id < c.id AND c2.cmd_tpl IN (:last_commands0, :last_commands1, :last_commands2)
                   ) / :lookback_f64) / :max_occurrences AS overlap_factor,
 
+                  SUM((SELECT count(*) FROM commands c2 WHERE c2.id = c.id - 1 AND c2.cmd_tpl = :last_commands0)) / :max_occurrences AS immediate_overlap_factor,
+
                   COUNT(*) / :max_occurrences AS occurrences_factor,
 
                   :offset +
@@ -197,6 +197,7 @@ impl History {
                     SELECT count(DISTINCT c2.cmd_tpl) FROM commands c2
                     WHERE c2.id >= c.id - :lookback AND c2.id < c.id AND c2.cmd_tpl IN (:last_commands0, :last_commands1, :last_commands2)
                   ) / :lookback_f64) / :max_occurrences * :overlap_weight +
+                  SUM((SELECT count(*) FROM commands c2 WHERE c2.id = c.id - 1 AND c2.cmd_tpl = :last_commands0)) / :max_occurrences * :immediate_overlap_weight +
                   COUNT(*) / :max_occurrences * :occurrences_weight
                   AS rank
 
@@ -213,6 +214,7 @@ impl History {
                 (":last_commands2", &last_commands[2].to_owned()),
                 (":offset", &self.weights.offset),
                 (":overlap_weight", &self.weights.overlap),
+                (":immediate_overlap_weight", &self.weights.immediate_overlap),
                 (":age_weight", &self.weights.age),
                 (":exit_weight", &self.weights.exit),
                 (":occurrences_weight", &self.weights.occurrences),
