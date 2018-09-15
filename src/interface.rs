@@ -242,8 +242,8 @@ impl <'a> Interface<'a> {
             out.push_grapheme_str(format!("age: {:.*} ", 2, command.age_factor));
             out.push_grapheme_str(format!("ext: {:.*} ", 0, command.exit_factor));
             out.push_grapheme_str(format!("rflr: {:.*} ", 0, command.recent_failure_factor));
-            out.push_grapheme_str(format!("ls: {:.*} ", 0, command.dir_factor));
-            out.push_grapheme_str(format!("ovlp: {:.*} ", 2, command.overlap_factor));
+            out.push_grapheme_str(format!("ls: {:.*} ", 3, command.dir_factor));
+            out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.overlap_factor));
             out.push_grapheme_str(format!("occ: {:.*}", 2, command.occurrences_factor));
             out.push_str(&base_color);
         }

@@ -130,7 +130,7 @@ impl History {
     }
 
     pub fn build_cache_table(&self, dir: Option<String>, start_time: Option<i64>, end_time: Option<i64>) {
-        let lookback: u16 = 4;
+        let lookback: u16 = 3;
 //        let now = Instant::now();
 
         let mut last_commands = self.last_command_templates(lookback as i16, 0);
@@ -160,63 +160,66 @@ impl History {
             .query_row("select count(*) as c FROM commands GROUP BY cmd order by c desc limit 1", &[],
                        |row| row.get(0)).expect("Query to work");
 
-        self.connection.execute(
+        // For every unique command in the history, insert a single row into the temporary
+        // contextual_commands table.
+        // What we really want is "how often does a command that looks like this get run in this directory or in this context?"
+        // What we have now is "how often does this exact command get run in this directory or in this context?"
+
+        ///         "INSERT INTO test (name) VALUES (:name)",
+        ///         &[(":name", &"one")],
+
+
+        self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
                   id, cmd, cmd_tpl, when_run, exit_code, dir,
 
-                  MIN((? - when_run) / ?) AS age_factor,
-                  MIN(CASE WHEN exit_code = 0 THEN 0.0 ELSE 1.0 END) AS exit_factor,
-                  MAX(CASE WHEN exit_code = 1 AND strftime('%s','now') - when_run < 120 THEN 1.0 ELSE 0.0 END) AS recent_failure_factor,
-                  MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) AS dir_factor,
-                  MAX((
-                    SELECT count(DISTINCT c2.cmd) FROM commands c2
-                    WHERE c2.id >= c.id - ? AND c2.id < c.id AND c2.cmd_tpl IN (?, ?, ?, ?)
-                  ) / ?) AS overlap_factor,
-                  count(*) / ? AS occurrences_factor,
+                  MIN((:when_run_max - when_run) / :when_run_spread) AS age_factor,
 
-                      ? +
-                      MIN((? - when_run) / ?) * ? +
-                      MIN(CASE WHEN exit_code = 0 THEN 0.0 ELSE 1.0 END) * ? +
-                      MAX(CASE WHEN exit_code = 1 AND strftime('%s','now') - when_run < 120 THEN 1.0 ELSE 0.0 END) * ? +
-                      MAX(CASE WHEN dir = ? THEN 1.0 ELSE 0.0 END) * ? +
-                      MAX((
-                        SELECT count(DISTINCT c2.cmd) FROM commands c2
-                        WHERE c2.id >= c.id - ? AND c2.id < c.id AND c2.cmd_tpl IN (?, ?, ?, ?)
-                      ) / ?) * ? +
-                      count(*) / ? * ?
+                  SUM(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) / COUNT(*) as exit_factor,
+
+                  MAX(CASE WHEN exit_code = 1 AND strftime('%s','now') - when_run < 120 THEN 1.0 ELSE 0.0 END) AS recent_failure_factor,
+
+                  SUM(CASE WHEN dir = :directory THEN 1.0 ELSE 0.0 END) / :max_occurrences as dir_factor,
+
+                  SUM((
+                    SELECT count(DISTINCT c2.cmd_tpl) FROM commands c2
+                    WHERE c2.id >= c.id - :lookback AND c2.id < c.id AND c2.cmd_tpl IN (:last_commands0, :last_commands1, :last_commands2)
+                  ) / :lookback_f64) / :max_occurrences AS overlap_factor,
+
+                  COUNT(*) / :max_occurrences AS occurrences_factor,
+
+                  :offset +
+                  MIN((:when_run_max - when_run) / :when_run_spread) * :age_weight +
+                  SUM(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) / COUNT(*) * :exit_weight +
+                  MAX(CASE WHEN exit_code = 1 AND strftime('%s','now') - when_run < 120 THEN 1.0 ELSE 0.0 END) * :recent_failure_weight +
+                  SUM(CASE WHEN dir = :directory THEN 1.0 ELSE 0.0 END) / :max_occurrences * :dir_weight +
+                  SUM((
+                    SELECT count(DISTINCT c2.cmd_tpl) FROM commands c2
+                    WHERE c2.id >= c.id - :lookback AND c2.id < c.id AND c2.cmd_tpl IN (:last_commands0, :last_commands1, :last_commands2)
+                  ) / :lookback_f64) / :max_occurrences * :overlap_weight +
+                  COUNT(*) / :max_occurrences * :occurrences_weight
                   AS rank
 
-                  FROM commands c WHERE when_run > ? AND when_run < ? GROUP BY cmd ORDER BY id DESC LIMIT -1 OFFSET 1;",
+                  FROM commands c WHERE when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC LIMIT -1 OFFSET 1;",
             &[
-                &when_run_max,
-                &(when_run_max - when_run_min),
-                &directory,
-                &lookback,
-                &last_commands[0].to_owned(),
-                &last_commands[1].to_owned(),
-                &last_commands[2].to_owned(),
-                &last_commands[3].to_owned(),
-                &(lookback as f64),
-                &max_occurrences,
-                &self.weights.offset,
-                &when_run_max,
-                &(when_run_max - when_run_min),
-                &self.weights.age,
-                &self.weights.exit,
-                &self.weights.recent_failure,
-                &directory,
-                &self.weights.dir,
-                &lookback,
-                &last_commands[0].to_owned(),
-                &last_commands[1].to_owned(),
-                &last_commands[2].to_owned(),
-                &last_commands[3].to_owned(),
-                &(lookback as f64),
-                &self.weights.overlap,
-                &max_occurrences,
-                &self.weights.occurrences,
-                &start_time.unwrap_or(0).to_owned(),
-                &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned()
+                (":when_run_max", &when_run_max),
+                (":when_run_spread", &(when_run_max - when_run_min)),
+                (":directory", &directory),
+                (":max_occurrences", &max_occurrences),
+                (":lookback", &lookback),
+                (":lookback_f64", &(lookback as f64)),
+                (":last_commands0", &last_commands[0].to_owned()),
+                (":last_commands1", &last_commands[1].to_owned()),
+                (":last_commands2", &last_commands[2].to_owned()),
+                (":offset", &self.weights.offset),
+                (":overlap_weight", &self.weights.overlap),
+                (":age_weight", &self.weights.age),
+                (":exit_weight", &self.weights.exit),
+                (":occurrences_weight", &self.weights.occurrences),
+                (":recent_failure_weight", &self.weights.recent_failure),
+                (":dir_weight", &self.weights.dir),
+                (":start_time", &start_time.unwrap_or(0).to_owned()),
+                (":end_time", &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned())
             ]).expect("Creation of temp table to work");
 
         self.connection.execute("CREATE INDEX temp.MyIndex ON contextual_commands(id);", &[])
