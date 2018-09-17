@@ -4,7 +4,8 @@
 if [[ "$__mcfly_loaded" == "loaded" ]]; then
   return 0
 fi
-__mcfly_loaded="loaded"
+export __mcfly_loaded="loaded"
+export MCFLY_SESSION_ID=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 24 | head -n 1)
 
 mcfly_cmd() {
   if [[ "$MCFLY_DEBUG" = "1" ]]; then

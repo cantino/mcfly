@@ -14,7 +14,7 @@ pub struct Exporter<'a> {
     writer: Box<Writer<File>>
 }
 
-impl <'a> Exporter<'a> {
+impl<'a> Exporter<'a> {
     pub fn new(settings: &'a Settings, history: &'a mut History) -> Exporter<'a> {
         let path = settings.file.clone().unwrap();
         let writer = Box::new(Writer::from_path(path)
@@ -52,14 +52,14 @@ impl <'a> Exporter<'a> {
     pub fn export(&mut self) {
         self.output_header();
 
-        let data_set = self.history.commands(-1, 0);
+        let data_set = self.history.commands(&None, -1, 0);
 
         for command in data_set.iter() {
-            if command.dir.is_none() || command.exit_code.is_none() || command.when_run.is_none() { continue }
-            if command.cmd.is_empty() { continue }
+            if command.dir.is_none() || command.exit_code.is_none() || command.when_run.is_none() { continue; }
+            if command.cmd.is_empty() { continue; }
 
             // Setup the cache for the time this command was recorded.
-            self.history.build_cache_table(command.dir.to_owned(), None, command.when_run);
+            self.history.build_cache_table(&command.dir, &Some(command.session_id.clone()), None, command.when_run);
 
             // Record how it would do by default.
             if let Some(winner) = self.history.find_matches(&String::new(), Some(1)).get(0) {
@@ -72,7 +72,7 @@ impl <'a> Exporter<'a> {
             }
 
             // Do a random substring.
-            let graphemes= command.cmd.graphemes(true);
+            let graphemes = command.cmd.graphemes(true);
             let mut substring = String::new();
             let start_prob = 1.0 / (command.cmd.graphemes(true).count() as f64);
             let avg_substring_length = 3.0;

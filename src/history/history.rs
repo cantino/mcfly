@@ -14,12 +14,15 @@ use weights::Weights;
 
 use history::schema;
 use simplified_command::SimplifiedCommand;
+use rusqlite::Row;
+use rusqlite::MappedRows;
 
 #[derive(Debug, Clone, Default)]
 pub struct Command {
     pub id: i64,
     pub cmd: String,
     pub cmd_tpl: String,
+    pub session_id: String,
     pub rank: f64,
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
@@ -56,37 +59,40 @@ const IGNORED_COMMANDS: [&str; 7] = ["pwd", "ls", "cd", "cd ..", "clear", "histo
 impl History {
     pub fn load() -> History {
         let db_path = History::mcfly_db_path();
-        let mut history = if db_path.exists() {
+        let history = if db_path.exists() {
             History::from_db_path(db_path)
         } else {
             History::from_bash_history()
         };
-        schema::migrate(&mut history);
+        schema::migrate(&history.connection);
         history
     }
 
     pub fn add(&self,
                command: &String,
+               session_id: &String,
                when_run: &Option<i64>,
                exit_code: &Option<i32>,
                dir: &Option<String>,
                old_dir: &Option<String>) {
-        if match self.last_command() {
+        // Ignore the previous command independent of Session ID or opening a new terminal window replays the last command in the history.
+        if match self.last_command(&None) {
             None => true,
             Some(ref last_command) if !command.eq(&last_command.cmd) => true,
             Some(_) => false
         } {
             if !IGNORED_COMMANDS.contains(&command.as_str()) {
                 let simplified_command = SimplifiedCommand::new(command.as_str(), true);
-                self.connection.execute("INSERT INTO commands (cmd, cmd_tpl, when_run, exit_code, dir, old_dir) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                                        &[
-                                            &command.to_owned(),
-                                            &simplified_command.result.to_owned(),
-                                            &when_run.to_owned(),
-                                            &exit_code.to_owned(),
-                                            &dir.to_owned(),
-                                            &old_dir.to_owned()
-                                        ]).expect("Insert to work");
+                self.connection.execute_named("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, dir, old_dir) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :dir, :old_dir)",
+                                              &[
+                                                  (":cmd", &command.to_owned()),
+                                                  (":cmd_tpl", &simplified_command.result.to_owned()),
+                                                  (":session_id", &session_id.to_owned()),
+                                                  (":when_run", &when_run.to_owned()),
+                                                  (":exit_code", &exit_code.to_owned()),
+                                                  (":dir", &dir.to_owned()),
+                                                  (":old_dir", &old_dir.to_owned()),
+                                              ]).expect("Insert to work");
             }
         }
     }
@@ -96,7 +102,7 @@ impl History {
         like_query.push_str(cmd);
         like_query.push_str("%");
 
-        let query = "SELECT id, cmd, cmd_tpl, when_run, exit_code, dir, rank,
+        let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, dir, rank,
                                   age_factor, exit_factor, recent_failure_factor,
                                   dir_factor, overlap_factor, immediate_overlap_factor, occurrences_factor
                            FROM contextual_commands
@@ -110,17 +116,18 @@ impl History {
                     id: row.get_checked(0).expect("id to be readable"),
                     cmd: row.get_checked(1).expect("cmd to be readable"),
                     cmd_tpl: row.get_checked(2).expect("cmd_tpl to be readable"),
-                    when_run: row.get_checked(3).expect("when_run to be readable"),
-                    exit_code: row.get_checked(4).expect("exit_code to be readable"),
-                    dir: row.get_checked(5).expect("dir to be readable"),
-                    rank: row.get_checked(6).expect("rank to be readable"),
-                    age_factor: row.get_checked(7).expect("age_factor to be readable"),
-                    exit_factor: row.get_checked(8).expect("exit_factor to be readable"),
-                    recent_failure_factor: row.get_checked(9).expect("recent_failure_factor to be readable"),
-                    dir_factor: row.get_checked(10).expect("dir_factor to be readable"),
-                    overlap_factor: row.get_checked(11).expect("overlap_factor to be readable"),
-                    immediate_overlap_factor: row.get_checked(12).expect("immediate_overlap_factor to be readable"),
-                    occurrences_factor: row.get_checked(13).expect("occurrences_factor to be readable")
+                    session_id: row.get_checked(3).expect("session_id to be readable"),
+                    when_run: row.get_checked(4).expect("when_run to be readable"),
+                    exit_code: row.get_checked(5).expect("exit_code to be readable"),
+                    dir: row.get_checked(6).expect("dir to be readable"),
+                    rank: row.get_checked(7).expect("rank to be readable"),
+                    age_factor: row.get_checked(8).expect("age_factor to be readable"),
+                    exit_factor: row.get_checked(9).expect("exit_factor to be readable"),
+                    recent_failure_factor: row.get_checked(10).expect("recent_failure_factor to be readable"),
+                    dir_factor: row.get_checked(11).expect("dir_factor to be readable"),
+                    overlap_factor: row.get_checked(12).expect("overlap_factor to be readable"),
+                    immediate_overlap_factor: row.get_checked(13).expect("immediate_overlap_factor to be readable"),
+                    occurrences_factor: row.get_checked(14).expect("occurrences_factor to be readable"),
                 }
             }).expect("Query Map to work");
 
@@ -132,21 +139,24 @@ impl History {
         names
     }
 
-    pub fn build_cache_table(&self, dir: Option<String>, start_time: Option<i64>, end_time: Option<i64>) {
+    pub fn build_cache_table(&self, dir: &Option<String>, session_id: &Option<String>, start_time: Option<i64>, end_time: Option<i64>) {
         let lookback: u16 = 3;
 //        let now = Instant::now();
 
-        let mut last_commands = self.last_command_templates(lookback as i16, 0);
-        while last_commands.len() < lookback as usize {
-            last_commands.push(String::from(""));
+        let mut last_commands = self.last_command_templates(session_id, lookback as i16, 0);
+        if last_commands.len() < lookback as usize {
+            last_commands = self.last_command_templates(&None, lookback as i16, 0);
+            while last_commands.len() < lookback as usize {
+                last_commands.push(String::from(""));
+            }
         }
 
-        let directory = dir.unwrap_or(
+        let directory = dir.to_owned().unwrap_or(
             env::current_dir()
                 .expect("Unable to determine current directory")
                 .to_string_lossy()
                 .into_owned()
-            );
+        );
 
         self.connection.execute("DROP TABLE IF EXISTS temp.contextual_commands;", &[])
             .expect("Removal of temp table to work");
@@ -169,7 +179,7 @@ impl History {
         //   What we have now is: "how often does this exact command get run in this directory or in this context?"
         self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
-                  id, cmd, cmd_tpl, when_run, exit_code, dir,
+                  id, cmd, cmd_tpl, session_id, when_run, exit_code, dir,
 
                   MIN((:when_run_max - when_run) / :when_run_spread) AS age_factor,
 
@@ -232,21 +242,33 @@ impl History {
 //        println!("Seconds: {}", sec);
     }
 
-    pub fn commands(&self, num: i16, offset: u16) -> Vec<Command> {
-        let query = "SELECT id, cmd, cmd_tpl, when_run, exit_code, dir, 0 FROM commands ORDER BY id DESC LIMIT ? OFFSET ?";
+    pub fn commands(&self, session_id: &Option<String>, num: i16, offset: u16) -> Vec<Command> {
+        let query = if session_id.is_none() {
+            "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, dir FROM commands ORDER BY id DESC LIMIT ? OFFSET ?"
+        } else {
+            "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, dir FROM commands WHERE session_id = ? ORDER BY id DESC LIMIT ? OFFSET ?"
+        };
+
         let mut statement = self.connection.prepare(query).unwrap();
-        let command_iter = statement.query_map(&[&num, &offset], |row| {
+
+        let closure: fn(&Row) -> Command = |row| {
             Command {
                 id: row.get(0),
                 cmd: row.get(1),
                 cmd_tpl: row.get(2),
-                when_run: row.get(3),
-                exit_code: row.get(4),
-                dir: row.get(5),
-                rank: row.get(6),
-                .. Command::default()
+                session_id: row.get(3),
+                when_run: row.get(4),
+                exit_code: row.get(5),
+                dir: row.get(6),
+                ..Command::default()
             }
-        }).expect("Query Map to work");
+        };
+
+        let command_iter: MappedRows<_> = if session_id.is_none() {
+            statement.query_map(&[&num, &offset], closure).expect("Query Map to work")
+        } else {
+            statement.query_map(&[&session_id.to_owned().unwrap(), &num, &offset], closure).expect("Query Map to work")
+        };
 
         let mut vec = Vec::new();
         for result in command_iter {
@@ -258,12 +280,12 @@ impl History {
         vec
     }
 
-    pub fn last_command(&self) -> Option<Command> {
-        self.commands(1, 0).get(0).map(|cmd| cmd.clone())
+    pub fn last_command(&self, session_id: &Option<String>) -> Option<Command> {
+        self.commands(session_id, 1, 0).get(0).map(|cmd| cmd.clone())
     }
 
-    pub fn last_command_templates(&self, num: i16, offset: u16) -> Vec<String> {
-        self.commands(num, offset).iter().map(|command| command.cmd_tpl.to_owned()).collect()
+    pub fn last_command_templates(&self, session_id: &Option<String>, num: i16, offset: u16) -> Vec<String> {
+        self.commands(session_id, num, offset).iter().map(|command| command.cmd_tpl.to_owned()).collect()
     }
 
     fn from_bash_history() -> History {
@@ -286,24 +308,26 @@ impl History {
                       id INTEGER PRIMARY KEY AUTOINCREMENT, \
                       cmd TEXT NOT NULL, \
                       cmd_tpl TEXT, \
+                      session_id TEXT NOT NULL, \
                       when_run INTEGER NOT NULL, \
                       exit_code INTEGER NOT NULL, \
                       dir TEXT, \
                       old_dir TEXT \
                   ); \
-                  CREATE INDEX command_cmds ON commands (cmd); \
+                  CREATE INDEX command_cmds ON commands (cmd);\
+                  CREATE INDEX command_session_id ON commands (session_id);\
                   CREATE INDEX command_dirs ON commands (dir);"
         ).expect("Unable to initialize history db");
 
         {
             let mut statement = connection
-                .prepare("INSERT INTO commands (cmd, cmd_tpl, when_run, exit_code) VALUES (?, ?, ?, ?)")
+                .prepare("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code) VALUES (?, ?, ?, ?, ?)")
                 .expect("Unable to prepare insert");
             let epoch = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64;
             for command in &bash_history {
                 if !IGNORED_COMMANDS.contains(&command.as_str()) {
                     let simplified_command = SimplifiedCommand::new(command.as_str(), true);
-                    statement.execute(&[command, &simplified_command.result.to_owned(), &epoch, &0]).expect("Insert to work");
+                    statement.execute(&[command, &simplified_command.result.to_owned(), &"IMPORTED", &epoch, &0]).expect("Insert to work");
                 }
             }
         }

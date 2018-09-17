@@ -17,6 +17,7 @@ pub enum Mode {
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
+    pub session_id: String,
     pub command: String,
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
@@ -30,6 +31,7 @@ impl Default for Settings {
         Settings {
             mode: Mode::Add,
             debug: false,
+            session_id: String::new(),
             command: String::new(),
             when_run: None,
             exit_code: None,
@@ -45,12 +47,18 @@ impl Settings {
         let matches = App::new("McFly")
             .version(crate_version!())
             .author(crate_authors!())
-            .about("Futuristic shell history search")
+            .about("Fly through your shell history")
             .setting(AppSettings::SubcommandRequiredElseHelp)
             .arg(Arg::with_name("debug")
                 .short("d")
                 .long("debug")
                 .help("Debug"))
+            .arg(Arg::with_name("session_id")
+                .short("s")
+                .long("session_id")
+                .help("Session ID to record or search under (defaults to $MCFLY_SESSION_ID)")
+                .value_name("SESSION_ID")
+                .takes_value(true))
             .subcommand(SubCommand::with_name("add")
                 .about("Add commands to the history")
                 .aliases(&["a"])
@@ -127,6 +135,10 @@ impl Settings {
         let mut settings = Settings::default();
 
         settings.debug = matches.is_present("debug");
+        settings.session_id = matches
+            .value_of("session_id")
+            .map(|s| s.to_string())
+            .unwrap_or(env::var("MCFLY_SESSION_ID").expect("Please ensure that MCFLY_SESSION_ID contains a random session ID."));
 
         match matches.subcommand() {
             ("add", Some(add_matches)) =>{
