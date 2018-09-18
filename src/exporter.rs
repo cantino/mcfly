@@ -59,7 +59,8 @@ impl<'a> Exporter<'a> {
             if command.cmd.is_empty() { continue; }
 
             // Setup the cache for the time this command was recorded.
-            self.history.build_cache_table(&command.dir, &Some(command.session_id.clone()), None, command.when_run);
+            // Unwrap is safe here because we check command.dir.is_none() above.
+            self.history.build_cache_table(&command.dir.to_owned().unwrap(), &Some(command.session_id.clone()), None, command.when_run);
 
             // Record how it would do by default.
             if let Some(winner) = self.history.find_matches(&String::new(), Some(1)).get(0) {

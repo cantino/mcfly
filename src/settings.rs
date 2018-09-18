@@ -19,9 +19,9 @@ pub struct Settings {
     pub debug: bool,
     pub session_id: String,
     pub command: String,
+    pub dir: String,
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
-    pub dir: Option<String>,
     pub old_dir: Option<String>,
     pub file: Option<String>
 }
@@ -30,14 +30,14 @@ impl Default for Settings {
     fn default() -> Settings {
         Settings {
             mode: Mode::Add,
-            debug: false,
-            session_id: String::new(),
             command: String::new(),
+            session_id: String::new(),
+            dir: String::new(),
             when_run: None,
             exit_code: None,
-            dir: None,
             old_dir: None,
-            file: None
+            file: None,
+            debug: false
         }
     }
 }
@@ -95,18 +95,6 @@ impl Settings {
             .subcommand(SubCommand::with_name("search")
                 .about("Search the history")
                 .aliases(&["s"])
-                .arg(Arg::with_name("exit")
-                    .short("e")
-                    .long("exit")
-                    .value_name("EXIT_CODE")
-                    .help("Exit code of command")
-                    .takes_value(true))
-                .arg(Arg::with_name("within")
-                    .short("w")
-                    .long("within")
-                    .value_name("SECONDS")
-                    .help("Number of seconds ago that the command must have been run")
-                    .takes_value(true))
                 .arg(Arg::with_name("directory")
                     .short("d")
                     .long("dir")
@@ -153,9 +141,9 @@ impl Settings {
                 }
 
                 if let Some(dir) = add_matches.value_of("directory") {
-                    settings.dir = Some(dir.to_string());
+                    settings.dir = dir.to_string();
                 } else {
-                    settings.dir = env::var("PWD").ok();
+                    settings.dir = env::var("PWD").expect("Unable to determine current directory");
                 }
 
                 if let Some(old_dir) = add_matches.value_of("old_directory") {
@@ -168,23 +156,20 @@ impl Settings {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
                 } else {
                     settings.command = bash_history::last_history_line(&bash_history::bash_history_file_path()).expect("Command is required if ~/.bash_history is empty");
-                    // CD shows PWD as the resulting directory, but we want it from the source directory.
-                    if settings.command.starts_with("cd ") || settings.command.starts_with("pushd ") {
-                        settings.dir = settings.old_dir.to_owned();
-                    }
+                }
+
+                // CD shows PWD as the resulting directory, but we want it from the source directory.
+                if settings.command.starts_with("cd ") || settings.command.starts_with("pushd ") || settings.command.starts_with("j ") {
+                    settings.dir = settings.old_dir.to_owned().unwrap_or(settings.dir);
                 }
             },
 
             ("search", Some(search_matches)) =>{
                 settings.mode = Mode::Search;
-                if let Some(_) = search_matches.value_of("within") {
-                    settings.when_run = Some(value_t!(search_matches, "within", i64).unwrap_or_else(|e| e.exit()));
-                }
-                if let Some(_) = search_matches.value_of("exit") {
-                    settings.exit_code = Some(value_t!(search_matches, "exit", i32).unwrap_or_else(|e| e.exit()));
-                }
                 if let Some(dir) = search_matches.value_of("directory") {
-                    settings.dir = Some(dir.to_string());
+                    settings.dir = dir.to_string();
+                } else {
+                    settings.dir = env::var("PWD").expect("Unable to determine current directory");
                 }
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");

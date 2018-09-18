@@ -1,4 +1,3 @@
-use settings::Settings;
 use history::History;
 use command_input::{CommandInput, Move};
 
@@ -14,7 +13,6 @@ use fixed_length_grapheme_string::FixedLengthGraphemeString;
 
 #[derive(Debug)]
 pub struct Interface<'a> {
-    settings: &'a Settings,
     history: &'a History,
     input: CommandInput,
     selection: usize,
@@ -30,14 +28,13 @@ pub enum MoveSelection {
 }
 
 impl <'a> Interface<'a> {
-    pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
+    pub fn new(command: &String, history: &'a History, debug: bool) -> Interface<'a> {
         Interface {
-            settings, history,
-            input: CommandInput::from(settings.command.to_owned()),
+            debug, history,
+            input: CommandInput::from(command.to_owned()),
             selection: 0,
             matches: Vec::new(),
-            run: false,
-            debug: settings.debug
+            run: false
         }
     }
 

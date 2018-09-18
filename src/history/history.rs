@@ -71,9 +71,9 @@ impl History {
     pub fn add(&self,
                command: &String,
                session_id: &String,
+               dir: &String,
                when_run: &Option<i64>,
                exit_code: &Option<i32>,
-               dir: &Option<String>,
                old_dir: &Option<String>) {
         // Ignore the previous command independent of Session ID or opening a new terminal window replays the last command in the history.
         if match self.last_command(&None) {
@@ -139,7 +139,7 @@ impl History {
         names
     }
 
-    pub fn build_cache_table(&self, dir: &Option<String>, session_id: &Option<String>, start_time: Option<i64>, end_time: Option<i64>) {
+    pub fn build_cache_table(&self, dir: &String, session_id: &Option<String>, start_time: Option<i64>, end_time: Option<i64>) {
         let lookback: u16 = 3;
 //        let now = Instant::now();
 
@@ -150,13 +150,6 @@ impl History {
                 last_commands.push(String::from(""));
             }
         }
-
-        let directory = dir.to_owned().unwrap_or(
-            env::current_dir()
-                .expect("Unable to determine current directory")
-                .to_string_lossy()
-                .into_owned()
-        );
 
         self.connection.execute("DROP TABLE IF EXISTS temp.contextual_commands;", &[])
             .expect("Removal of temp table to work");
@@ -215,7 +208,7 @@ impl History {
             &[
                 (":when_run_max", &when_run_max),
                 (":when_run_spread", &(when_run_max - when_run_min)),
-                (":directory", &directory),
+                (":directory", &dir.to_owned()),
                 (":max_occurrences", &max_occurrences),
                 (":lookback", &lookback),
                 (":lookback_f64", &(lookback as f64)),

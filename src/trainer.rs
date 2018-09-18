@@ -30,7 +30,8 @@ impl<'a> Trainer<'a> {
                 if command.cmd.is_empty() { continue; }
 
                 // What rank would this command have had at the time recorded?
-                self.history.build_cache_table(&command.dir, &Some(command.session_id.to_owned()), None, command.when_run);
+                // Unwrap is safe here because we check command.dir.is_none() above.
+                self.history.build_cache_table(&command.dir.to_owned().unwrap(), &Some(command.session_id.to_owned()), None, command.when_run);
 
                 if let Some(winner) = self.history.find_matches(&String::new(), Some(1)).get(0) {
                     let matches = self.history.find_matches(&command.cmd.to_owned(), Some(20));
