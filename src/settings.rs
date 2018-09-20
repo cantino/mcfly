@@ -4,6 +4,7 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use std::env;
 use bash_history;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub enum Mode {
@@ -18,11 +19,13 @@ pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
     pub session_id: String,
+    pub mcfly_history: PathBuf,
     pub command: String,
     pub dir: String,
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub old_dir: Option<String>,
+    pub append_to: Option<PathBuf>,
     pub file: Option<String>
 }
 
@@ -32,11 +35,13 @@ impl Default for Settings {
             mode: Mode::Add,
             command: String::new(),
             session_id: String::new(),
+            mcfly_history: PathBuf::new(),
             dir: String::new(),
             when_run: None,
             exit_code: None,
             old_dir: None,
             file: None,
+            append_to: None,
             debug: false
         }
     }
@@ -54,10 +59,14 @@ impl Settings {
                 .long("debug")
                 .help("Debug"))
             .arg(Arg::with_name("session_id")
-                .short("s")
                 .long("session_id")
                 .help("Session ID to record or search under (defaults to $MCFLY_SESSION_ID)")
                 .value_name("SESSION_ID")
+                .takes_value(true))
+            .arg(Arg::with_name("mcfly_history")
+                .long("mcfly_history")
+                .help("History file to read defaults from when adding or searching (defaults to $MCFLY_HISTORY)")
+                .value_name("MCFLY_HISTORY")
                 .takes_value(true))
             .subcommand(SubCommand::with_name("add")
                 .about("Add commands to the history")
@@ -67,6 +76,11 @@ impl Settings {
                     .long("exit")
                     .value_name("EXIT_CODE")
                     .help("Exit code of command")
+                    .takes_value(true))
+                .arg(Arg::with_name("append_to")
+                    .long("append-to")
+                    .value_name("HISTFILE")
+                    .help("Append new history to a shared history file (e.q., .bash_history)")
                     .takes_value(true))
                 .arg(Arg::with_name("when")
                     .short("w")
@@ -87,7 +101,7 @@ impl Settings {
                     .help("The previous directory the user was in before running the command (default $OLDPWD)")
                     .takes_value(true))
                 .arg(Arg::with_name("command")
-                    .help("The command that was run (default last line of ~/.bash_history)")
+                    .help("The command that was run (default last line of $MCFLY_HISTORY file)")
                     .value_name("COMMAND")
                     .multiple(true)
                     .required(false)
@@ -127,6 +141,12 @@ impl Settings {
             .value_of("session_id")
             .map(|s| s.to_string())
             .unwrap_or(env::var("MCFLY_SESSION_ID").expect("Please ensure that MCFLY_SESSION_ID contains a random session ID."));
+        settings.mcfly_history = PathBuf::from(
+            matches
+            .value_of("mcfly_history")
+            .map(|s| s.to_string())
+            .unwrap_or(env::var("MCFLY_HISTORY").expect("Please ensure that MCFLY_HISTORY is set."))
+        );
 
         match matches.subcommand() {
             ("add", Some(add_matches)) =>{
@@ -135,6 +155,10 @@ impl Settings {
                 settings.when_run = Some(value_t!(add_matches, "when", i64).unwrap_or(
                     SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64
                 ));
+
+                if let Some(append_to) = add_matches.value_of("append_to") {
+                    settings.append_to = Some(PathBuf::from(&append_to));
+                }
 
                 if let Some(_) = add_matches.value_of("exit") {
                     settings.exit_code = Some(value_t!(add_matches, "exit", i32).unwrap_or_else(|e| e.exit()));
@@ -155,7 +179,7 @@ impl Settings {
                 if let Some(commands) = add_matches.values_of("command") {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = bash_history::last_history_line(&bash_history::bash_history_file_path()).expect("Command is required if ~/.bash_history is empty");
+                    settings.command = bash_history::last_history_line(&settings.mcfly_history).unwrap_or(String::from(""));
                 }
 
                 // CD shows PWD as the resulting directory, but we want it from the source directory.
@@ -174,8 +198,8 @@ impl Settings {
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = bash_history::last_history_line(&bash_history::bash_history_file_path()).expect("Command is required if ~/.bash_history is empty").trim_left_matches("#").to_string();
-                    bash_history::delete_last_history_entry_if_comment(&bash_history::bash_history_file_path());
+                    settings.command = bash_history::last_history_line(&settings.mcfly_history).unwrap_or(String::from("")).trim_left_matches("#mcfly:").to_string();
+                    bash_history::delete_last_history_entry_if_search(&settings.mcfly_history);
                 }
             },
 

@@ -7,10 +7,10 @@ use mcfly::interface::Interface;
 use mcfly::settings::Mode;
 use mcfly::settings::Settings;
 use mcfly::trainer::Trainer;
+use mcfly::bash_history;
 
 fn handle_addition(settings: &Settings, history: &mut History) {
-    if !settings.command.starts_with('#') {
-        // Ignore commented lines
+    if history.should_add(&settings.command) {
         history.add(
             &settings.command,
             &settings.session_id,
@@ -19,6 +19,10 @@ fn handle_addition(settings: &Settings, history: &mut History) {
             &settings.exit_code,
             &settings.old_dir,
         );
+
+        if let Some(append_to) = &settings.append_to {
+            bash_history::append_history_entry(&settings.command, &append_to)
+        }
     }
 }
 

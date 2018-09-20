@@ -1,9 +1,12 @@
 use std::path::PathBuf;
 use std::env;
 use regex::Regex;
+use std::io::Write;
 use std::fs;
+use std::fs::OpenOptions;
 
 pub fn bash_history_file_path() -> PathBuf {
+    // TODO: This should read the HISTFILE environment variable and source from that file instead.
     env::home_dir()
         .expect("Unable to access home directory")
         .join(PathBuf::from(".bash_history"))
@@ -27,7 +30,7 @@ pub fn last_history_line(path: &PathBuf) -> Option<String> {
     full_history(path).last().map(|s| s.trim().to_string())
 }
 
-pub fn delete_last_history_entry_if_comment(path: &PathBuf) {
+pub fn delete_last_history_entry_if_search(path: &PathBuf) {
     let bash_history_contents = fs::read_to_string(&path)
         .expect(format!("{:?} file not found", &path).as_str());
 
@@ -42,7 +45,7 @@ pub fn delete_last_history_entry_if_comment(path: &PathBuf) {
         lines.pop();
     }
 
-    if lines.len() == 0 || !lines[lines.len() - 1].starts_with('#') {
+    if lines.len() == 0 || !lines[lines.len() - 1].starts_with("#mcfly:") {
         return; // Abort if empty or the last line isn't a comment.
     }
 
@@ -56,4 +59,16 @@ pub fn delete_last_history_entry_if_comment(path: &PathBuf) {
 
     fs::write(&path, lines.join("\n"))
         .expect(format!("Unable to update {:?}", &path).as_str());
+}
+
+pub fn append_history_entry(command: &String, path: &PathBuf) {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(path)
+        .unwrap();
+
+    if let Err(e) = writeln!(file, "{}", command) {
+        eprintln!("Couldn't append to file {:?}: {}", &path, e);
+    }
 }

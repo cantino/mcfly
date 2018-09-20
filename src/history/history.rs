@@ -68,6 +68,36 @@ impl History {
         history
     }
 
+    pub fn should_add(&self, command: &String) -> bool {
+        // Ignore empty commands.
+        if command.is_empty() {
+            return false;
+        }
+
+        // Ignore commands added via a ctrl-r search.
+        if command.starts_with("#mcfly:") {
+            return false;
+        }
+
+        // Ignore commands with a leading space.
+        if command.starts_with(' ') {
+            return false;
+        }
+
+        // Ignore blacklisted commands.
+        if IGNORED_COMMANDS.contains(&command.as_str()) {
+            return false;
+        }
+
+        // Ignore the previous command (independent of Session ID) so that opening a new terminal
+        // window won't replay the last command in the history.
+        let last_command = self.last_command(&None);
+        if last_command.is_none() {
+            return true;
+        }
+        !command.eq(&last_command.unwrap().cmd)
+    }
+
     pub fn add(&self,
                command: &String,
                session_id: &String,
@@ -75,26 +105,17 @@ impl History {
                when_run: &Option<i64>,
                exit_code: &Option<i32>,
                old_dir: &Option<String>) {
-        // Ignore the previous command independent of Session ID or opening a new terminal window replays the last command in the history.
-        if match self.last_command(&None) {
-            None => true,
-            Some(ref last_command) if !command.eq(&last_command.cmd) => true,
-            Some(_) => false
-        } {
-            if !IGNORED_COMMANDS.contains(&command.as_str()) {
-                let simplified_command = SimplifiedCommand::new(command.as_str(), true);
-                self.connection.execute_named("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, dir, old_dir) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :dir, :old_dir)",
-                                              &[
-                                                  (":cmd", &command.to_owned()),
-                                                  (":cmd_tpl", &simplified_command.result.to_owned()),
-                                                  (":session_id", &session_id.to_owned()),
-                                                  (":when_run", &when_run.to_owned()),
-                                                  (":exit_code", &exit_code.to_owned()),
-                                                  (":dir", &dir.to_owned()),
-                                                  (":old_dir", &old_dir.to_owned()),
-                                              ]).expect("Insert to work");
-            }
-        }
+        let simplified_command = SimplifiedCommand::new(command.as_str(), true);
+        self.connection.execute_named("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, dir, old_dir) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :dir, :old_dir)",
+                                      &[
+                                          (":cmd", &command.to_owned()),
+                                          (":cmd_tpl", &simplified_command.result.to_owned()),
+                                          (":session_id", &session_id.to_owned()),
+                                          (":when_run", &when_run.to_owned()),
+                                          (":exit_code", &exit_code.to_owned()),
+                                          (":dir", &dir.to_owned()),
+                                          (":old_dir", &old_dir.to_owned()),
+                                      ]).expect("Insert to work");
     }
 
     pub fn find_matches(&self, cmd: &String, num: Option<u16>) -> Vec<Command> {
