@@ -6,10 +6,8 @@ use std::fs;
 use std::fs::OpenOptions;
 
 pub fn bash_history_file_path() -> PathBuf {
-    // TODO: This should read the HISTFILE environment variable and source from that file instead.
-    env::home_dir()
-        .expect("Unable to access home directory")
-        .join(PathBuf::from(".bash_history"))
+    let path = PathBuf::from(env::var("HISTFILE").expect("Please ensure HISTFILE is set for your shell."));
+    fs::canonicalize(&path).expect("The contents of $HISTFILE appear invalid")
 }
 
 pub fn full_history(path: &PathBuf) -> Vec<String> {
