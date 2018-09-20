@@ -42,10 +42,15 @@ and add `export PATH="$PATH:$HOME/bin"` to your `.bash_profile`.)
 
 Add `. /path/to/this/repository/mcfly-bash.sh` to your `~/.bash_profile` or `~/.bashrc` file.
 
+## iTerm2
+
+To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this option is unchecked:
+
+<img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
+
 ## Future / Upcoming Features
 
 * Add screencast to README.
-* Figure out how to avoid messing up the scroll back buffer in terminals.
 * Allow suggesting of the last command seen if it's been a while.
 * Better prioritization:
   * Finish training the linear perceptron.
