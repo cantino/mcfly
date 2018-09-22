@@ -19,4 +19,5 @@ pub mod interface;
 pub mod settings;
 pub mod simplified_command;
 pub mod trainer;
+pub mod training_sample_generator;
 pub mod weights;

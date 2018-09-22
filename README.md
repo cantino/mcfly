@@ -51,6 +51,7 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 ## Future / Upcoming Features
 
 * Add screencast to README.
+* Detect folder renames?
 * Allow suggesting of the last command seen if it's been a while.
 * Better prioritization:
   * Finish training the linear perceptron.

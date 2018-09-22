@@ -160,7 +160,7 @@ impl History {
         names
     }
 
-    pub fn build_cache_table(&self, dir: &String, session_id: &Option<String>, start_time: Option<i64>, end_time: Option<i64>) {
+    pub fn build_cache_table(&self, dir: &String, session_id: &Option<String>, start_time: Option<i64>, end_time: Option<i64>, now: Option<i64>) {
         let lookback: u16 = 3;
 //        let now = Instant::now();
 
@@ -199,7 +199,7 @@ impl History {
 
                   SUM(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) / COUNT(*) as exit_factor,
 
-                  MAX(CASE WHEN exit_code = 1 AND strftime('%s','now') - when_run < 120 THEN 1.0 ELSE 0.0 END) AS recent_failure_factor,
+                  MAX(CASE WHEN exit_code = 1 AND :now - when_run < 120 THEN 1.0 ELSE 0.0 END) AS recent_failure_factor,
 
                   SUM(CASE WHEN dir = :directory THEN 1.0 ELSE 0.0 END) / :max_occurrences as dir_factor,
 
@@ -215,7 +215,7 @@ impl History {
                   :offset +
                   MIN((:when_run_max - when_run) / :when_run_spread) * :age_weight +
                   SUM(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) / COUNT(*) * :exit_weight +
-                  MAX(CASE WHEN exit_code = 1 AND strftime('%s','now') - when_run < 120 THEN 1.0 ELSE 0.0 END) * :recent_failure_weight +
+                  MAX(CASE WHEN exit_code = 1 AND :now - when_run < 120 THEN 1.0 ELSE 0.0 END) * :recent_failure_weight +
                   SUM(CASE WHEN dir = :directory THEN 1.0 ELSE 0.0 END) / :max_occurrences * :dir_weight +
                   SUM((
                     SELECT count(DISTINCT c2.cmd_tpl) FROM commands c2
@@ -245,7 +245,8 @@ impl History {
                 (":recent_failure_weight", &self.weights.recent_failure),
                 (":dir_weight", &self.weights.dir),
                 (":start_time", &start_time.unwrap_or(0).to_owned()),
-                (":end_time", &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned())
+                (":end_time", &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned()),
+                (":now", &now.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned())
             ]).expect("Creation of temp table to work");
 
         self.connection.execute("CREATE INDEX temp.MyIndex ON contextual_commands(id);", &[])
@@ -256,14 +257,15 @@ impl History {
 //        println!("Seconds: {}", sec);
     }
 
-    pub fn commands(&self, session_id: &Option<String>, num: i16, offset: u16) -> Vec<Command> {
+    pub fn commands(&self, session_id: &Option<String>, num: i16, offset: u16, random: bool) -> Vec<Command> {
+        let order = if random { "RANDOM()" } else { "id" };
         let query = if session_id.is_none() {
-            "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, dir FROM commands ORDER BY id DESC LIMIT ? OFFSET ?"
+            format!("SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, dir FROM commands ORDER BY {} DESC LIMIT ? OFFSET ?", order)
         } else {
-            "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, dir FROM commands WHERE session_id = ? ORDER BY id DESC LIMIT ? OFFSET ?"
+            format!("SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, dir FROM commands WHERE session_id = ? ORDER BY {} DESC LIMIT ? OFFSET ?", order)
         };
 
-        let mut statement = self.connection.prepare(query).unwrap();
+        let mut statement = self.connection.prepare(&query).unwrap();
 
         let closure: fn(&Row) -> Command = |row| {
             Command {
@@ -295,11 +297,11 @@ impl History {
     }
 
     pub fn last_command(&self, session_id: &Option<String>) -> Option<Command> {
-        self.commands(session_id, 1, 0).get(0).map(|cmd| cmd.clone())
+        self.commands(session_id, 1, 0, false).get(0).map(|cmd| cmd.clone())
     }
 
     pub fn last_command_templates(&self, session_id: &Option<String>, num: i16, offset: u16) -> Vec<String> {
-        self.commands(session_id, num, offset).iter().map(|command| command.cmd_tpl.to_owned()).collect()
+        self.commands(session_id, num, offset, false).iter().map(|command| command.cmd_tpl.to_owned()).collect()
     }
 
     fn from_bash_history() -> History {

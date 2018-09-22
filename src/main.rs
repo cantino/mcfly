@@ -27,7 +27,7 @@ fn handle_addition(settings: &Settings, history: &mut History) {
 }
 
 fn handle_search(settings: &Settings, history: &History) {
-    history.build_cache_table(&settings.dir.to_owned(), &Some(settings.session_id.to_owned()), None, None);
+    history.build_cache_table(&settings.dir.to_owned(), &Some(settings.session_id.to_owned()), None, None, None);
     let (command, run) = Interface::new(&settings.command, history, settings.debug).select();
     if command.len() > 0 && !command.is_empty() {
         fake_typer::use_tiocsti(&command);
