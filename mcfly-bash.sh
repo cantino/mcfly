@@ -16,14 +16,6 @@ else
   printf "Welcome to McFly\n" > $MCFLY_HISTORY
 fi
 
-mcfly_cmd() {
-  if [[ "$MCFLY_DEBUG" = "1" ]]; then
-    echo "RUST_BACKTRACE=1 mcfly"
-  else
-    echo "mcfly"
-  fi
-}
-
 # Ignore commands with a leading space
 export HISTCONTROL="ignorespace"
 
@@ -41,7 +33,7 @@ shopt -s histappend
 #   4. clear the in-memory history and reload it from $MCFLY_HISTORY (to remove instances of '#mcfly: ' from the
 #      local session history)
 #   5. run whatever was already in $PROMPT_COMMAND
-export PROMPT_COMMAND="__last_exit=\$?;history -a \$MCFLY_HISTORY;$(mcfly_cmd) add --exit \$__last_exit --append-to \$HISTFILE;history -cr \$MCFLY_HISTORY;${PROMPT_COMMAND}"
+export PROMPT_COMMAND="__last_exit=\$?;history -a \$MCFLY_HISTORY;mcfly add --exit \$__last_exit --append-to \$HISTFILE;history -cr \$MCFLY_HISTORY;${PROMPT_COMMAND}"
 
 # If this is an interactive shell, take ownership of ctrl-r.
 # The logic here is:
@@ -52,6 +44,6 @@ export PROMPT_COMMAND="__last_exit=\$?;history -a \$MCFLY_HISTORY;$(mcfly_cmd) a
 #      which should be the commented-out search from step #1. It will then remove that line from the history file and
 #      render the search UI pre-filled with it.
 if [[ $- =~ .*i.* ]]; then
-  bind "'\C-r': '\C-amcfly: \e# $(mcfly_cmd) search\C-j'"
+  bind "'\C-r': '\C-amcfly: \e# mcfly search\C-j'"
 fi
 

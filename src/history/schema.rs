@@ -3,7 +3,7 @@ use rusqlite::Connection;
 use std::io;
 use std::io::Write;
 
-pub const CURRENT_SCHEMA_VERSION: u16 = 2;
+pub const CURRENT_SCHEMA_VERSION: u16 = 3;
 
 pub fn first_time_setup(connection: &Connection) {
     make_schema_versions_table(connection);
@@ -43,6 +43,21 @@ pub fn migrate(connection: &Connection) {
             UPDATE commands SET session_id = 'UNKNOWN'; \
             CREATE INDEX command_session_id ON commands (session_id);")
             .expect("Unable to add session_id to commands");
+    }
+
+    if current_version < 3 {
+        connection.execute_batch(
+            "CREATE TABLE selected_commands( \
+              id INTEGER PRIMARY KEY AUTOINCREMENT, \
+              cmd TEXT NOT NULL, \
+              session_id TEXT NOT NULL, \
+              dir TEXT NOT NULL \
+            ); \
+            CREATE INDEX selected_command_session_cmds ON selected_commands (session_id, cmd); \
+            \
+            ALTER TABLE commands ADD COLUMN selected INTEGER; \
+            UPDATE commands SET selected = 0;")
+            .expect("Unable to add selected_commands");
     }
 
     if current_version < CURRENT_SCHEMA_VERSION {
