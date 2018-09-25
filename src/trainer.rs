@@ -40,7 +40,7 @@ impl<'a> Trainer<'a> {
 
             {
                 let generator = TrainingSampleGenerator::new(self.settings, self.history);
-                generator.generate(200, 5, |command: &Command, _max_occurrences: f64, correct: bool| {
+                generator.generate(200, |command: &Command, _max_occurrences: f64, correct: bool| {
                     let goal = if correct { 1.0 } else { 0.0 };
                     let prediction = weights.rank(command.age_factor, command.exit_factor, command.recent_failure_factor, command.selected_dir_factor, command.dir_factor, command.overlap_factor, command.immediate_overlap_factor, command.selected_occurrences_factor, command.occurrences_factor);
                     let prediction_minus_goal = prediction - goal;

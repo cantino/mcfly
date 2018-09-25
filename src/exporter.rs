@@ -69,7 +69,7 @@ impl<'a> Exporter<'a> {
         self.output_header();
 
         let generator = TrainingSampleGenerator::new(self.settings, self.history);
-        generator.generate(-1, 5, |command: &Command, max_occurrences: f64, correct: bool| {
+        generator.generate(-1, |command: &Command, max_occurrences: f64, correct: bool| {
             self.output_row(command, max_occurrences, correct);
         });
     }

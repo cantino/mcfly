@@ -51,12 +51,11 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 ## Future / Upcoming Features
 
 * Add screencast to README.
-* Detect folder renames?
-* Allow suggesting of the last command seen if it's been a while.
 * Better prioritization:
-  * Finish training the linear perceptron.
+  * Finish training the linear perceptron after gathering more selection data.
   * Learn embeddings per template and use to predict the next embedding, then do approximate nearest neighbor lookup?
     * Could train by predicting whether or not one command should follow another and doing gradient descent.
-* For training, make score be dependent on position in the top N suggestions
 * Learn common command options and autocomplete them in the suggestion UI?
 * Sort command line args when coming up with the template matching string.
+* Allow suggesting of the last command seen if it's been a while.
+* Detect folder renames?

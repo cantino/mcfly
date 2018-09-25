@@ -1,8 +1,9 @@
-use unicode_segmentation::UnicodeSegmentation;
+extern crate rand;
+
 use history::History;
 use settings::Settings;
 use history::Command;
-use rand::random;
+use rand::Rng;
 
 #[derive(Debug)]
 pub struct TrainingSampleGenerator<'a> {
@@ -15,7 +16,7 @@ impl<'a> TrainingSampleGenerator<'a> {
         TrainingSampleGenerator { settings, history }
     }
 
-    pub fn generate<F>(&self, records: i16, samples_per_record: u16, mut handler: F) where F: FnMut(&Command, f64, bool) {
+    pub fn generate<F>(&self, records: i16, mut handler: F) where F: FnMut(&Command, f64, bool) {
         let data_set = self.history.commands(&None, records, 0, true);
 
         let mut positive_examples = 0;
@@ -35,57 +36,31 @@ impl<'a> TrainingSampleGenerator<'a> {
                            |row| row.get(0)).unwrap_or(0.0);
             if max_occurrences == 0.0 { continue; }
 
-            // Record how it would do by default.
-            let results = self.history.find_matches(&String::new(), Some(10));
-            if let Some(our_command_index) = results.iter().position(|ref c| c.cmd.eq(&command.cmd)) {
-                let what_should_have_been_first = results.get(our_command_index).unwrap();
-                handler(what_should_have_been_first, max_occurrences, true);
-                positive_examples += 1;
-                for (index, command) in results.iter().enumerate() {
-                    if index != our_command_index {
-                        if negative_examples < positive_examples {
-                            handler(command, max_occurrences, false);
-                            negative_examples += 1;
-                        }
-                    }
-                }
-            }
-
-            // Do random substrings.
-            for _ in 0..samples_per_record {
-                let graphemes = command.cmd.graphemes(true);
-                let mut substring = String::new();
-                let start_prob = 1.0 / (command.cmd.graphemes(true).count() as f64);
-                let avg_substring_length = 3.0;
-                let stop_prob = 1.0 / avg_substring_length;
-
-                while substring.len() == 0 {
-                    let mut started = false;
-                    for grapheme in graphemes.clone() {
-                        if random::<f64>() < start_prob {
-                            // Start reading a substring.
-                            started = true;
-                        }
-
-                        if started {
-                            substring.push_str(grapheme);
-
-                            if random::<f64>() < stop_prob {
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                let results = self.history.find_matches(&substring, Some(20));
+            // Get the factors for this command at the time it was logged.
+            if positive_examples <= negative_examples {
+                let results = self.history.find_matches(&command.cmd, Some(10));
                 if let Some(our_command_index) = results.iter().position(|ref c| c.cmd.eq(&command.cmd)) {
                     let what_should_have_been_first = results.get(our_command_index).unwrap();
                     handler(what_should_have_been_first, max_occurrences, true);
                     positive_examples += 1;
-                    for (index, command) in results.iter().enumerate() {
-                        if index != our_command_index {
-                            if negative_examples < positive_examples {
-                                handler(command, max_occurrences, false);
+                }
+            }
+
+            if negative_examples <= positive_examples {
+                if rand::thread_rng().gen::<f64>() > 0.5 {
+                    // Get the factors for a top-5 other command that isn't the correct one.
+                    let results = self.history.find_matches(&String::new(), Some(5));
+                    if let Some(random_command) = rand::thread_rng().choose(&results.iter().filter(|c| !c.cmd.eq(&command.cmd)).collect::<Vec<&Command>>()) {
+                        handler(random_command, max_occurrences, false);
+                        negative_examples += 1;
+                    }
+                } else {
+                    // Get the factors for some other random command that could have been suggested at that time.
+                    if let Some(random_command) = rand::thread_rng().choose(&data_set) {
+                        let results = self.history.find_matches(&random_command.cmd, Some(1));
+                        if let Some(found_random_command) = results.get(0) {
+                            if !found_random_command.cmd.eq(&command.cmd) {
+                                handler(found_random_command, max_occurrences, false);
                                 negative_examples += 1;
                             }
                         }
