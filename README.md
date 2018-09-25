@@ -51,6 +51,7 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 ## Future / Upcoming Features
 
 * Add screencast to README.
+* Add keyboard shortcut to delete something from the history / make it not get suggested.
 * Better prioritization:
   * Finish training the linear perceptron after gathering more selection data.
   * Learn embeddings per template and use to predict the next embedding, then do approximate nearest neighbor lookup?

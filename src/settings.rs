@@ -198,7 +198,11 @@ impl Settings {
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = bash_history::last_history_line(&settings.mcfly_history).unwrap_or(String::from("")).trim_left_matches("#mcfly:").to_string();
+                    settings.command = bash_history::last_history_line(&settings.mcfly_history)
+                      .unwrap_or(String::from(""))
+                      .trim_left_matches("#mcfly: ")
+                      .trim_left_matches("#mcfly:")
+                      .to_string();
                     bash_history::delete_last_history_entry_if_search(&settings.mcfly_history);
                 }
             },
