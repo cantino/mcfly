@@ -274,7 +274,7 @@ impl History {
                   COUNT(*) / :max_occurrences * :occurrences_weight
                   AS rank
 
-                  FROM commands c WHERE when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC LIMIT -1 OFFSET 1;",
+                  FROM commands c WHERE when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC;",
             &[
                 (":when_run_max", &when_run_max),
                 (":when_run_spread", &(when_run_max - when_run_min)),
