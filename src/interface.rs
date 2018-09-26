@@ -10,15 +10,23 @@ use termion::screen::AlternateScreen;
 use history::Command;
 use termion::color;
 use fixed_length_grapheme_string::FixedLengthGraphemeString;
+use settings::Settings;
 
 #[derive(Debug)]
 pub struct Interface<'a> {
     history: &'a History,
+    settings: &'a Settings,
     input: CommandInput,
     selection: usize,
     matches: Vec<Command>,
     debug: bool,
     run: bool
+}
+
+#[derive(Debug)]
+pub struct SelectionResult {
+    pub run: bool,
+    pub selection: Option<String>
 }
 
 #[derive(Debug)]
@@ -28,17 +36,39 @@ pub enum MoveSelection {
 }
 
 impl <'a> Interface<'a> {
-    pub fn new(command: &String, history: &'a History, debug: bool) -> Interface<'a> {
+    pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
         Interface {
-            debug, history,
-            input: CommandInput::from(command.to_owned()),
+            history,
+            settings,
+            input: CommandInput::from(settings.command.to_owned()),
             selection: 0,
             matches: Vec::new(),
+            debug: settings.debug,
             run: false
         }
     }
 
-    pub fn prompt<W: Write>(&self, screen: &mut W) {
+    pub fn display(&mut self) -> SelectionResult {
+        self.history.build_cache_table(
+            &self.settings.dir.to_owned(),
+            &Some(self.settings.session_id.to_owned()),
+            None, None, None
+        );
+
+        self.select();
+
+        let command = self.input.command.to_owned();
+
+        if command.chars().into_iter().any(|c| !c.is_whitespace()) {
+            self.history.record_selected_from_ui(&command, &self.settings.session_id, &self.settings.dir);
+            SelectionResult { run: self.run, selection: Some(command) }
+        } else {
+            SelectionResult { run: self.run, selection: None }
+        }
+
+    }
+
+    fn prompt<W: Write>(&self, screen: &mut W) {
         write!(screen, "{}{}{}$ {}",
                color::Fg(color::LightWhite).to_string(),
                cursor::Goto(1, 1),
@@ -52,7 +82,7 @@ impl <'a> Interface<'a> {
         screen.flush().unwrap();
     }
 
-    pub fn results<W: Write>(&mut self, screen: &mut W) {
+    fn results<W: Write>(&mut self, screen: &mut W) {
         write!(screen, "{}{}{}", cursor::Hide, cursor::Goto(1, 3), clear::All).unwrap();
         let (width, _height): (u16, u16) = terminal_size().unwrap();
 
@@ -118,7 +148,7 @@ impl <'a> Interface<'a> {
         self.matches = self.history.find_matches(&self.input.command, Some(10));
     }
 
-    pub fn select(&'a mut self) -> (String, bool) {
+    fn select(&mut self) {
         let stdin = stdin();
         let mut screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
 //        let mut screen = stdout().into_raw_mode().unwrap();
@@ -205,8 +235,6 @@ impl <'a> Interface<'a> {
         }
 
         write!(screen, "{}{}", clear::All, cursor::Show).unwrap();
-
-        (self.input.command.to_owned(), self.run)
     }
 
     fn truncate_for_display(command: &Command, search: &str, width: u16, highlight_color: String, base_color: String, debug: bool) -> String {
