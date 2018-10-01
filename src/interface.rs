@@ -35,6 +35,10 @@ pub enum MoveSelection {
     Down
 }
 
+const PROMPT_LINE_INDEX: u16 = 3;
+const INFO_LINE_INDEX: u16 = 1;
+const RESULTS_TOP_INDEX: u16 = 5;
+
 impl <'a> Interface<'a> {
     pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
         Interface {
@@ -49,12 +53,7 @@ impl <'a> Interface<'a> {
     }
 
     pub fn display(&mut self) -> SelectionResult {
-        self.history.build_cache_table(
-            &self.settings.dir.to_owned(),
-            &Some(self.settings.session_id.to_owned()),
-            None, None, None
-        );
-
+        self.build_cache_table();
         self.select();
 
         let command = self.input.command.to_owned();
@@ -68,22 +67,45 @@ impl <'a> Interface<'a> {
 
     }
 
+    fn build_cache_table(&self) {
+        self.history.build_cache_table(
+            &self.settings.dir.to_owned(),
+            &Some(self.settings.session_id.to_owned()),
+            None, None, None
+        );
+    }
+
+    fn menubar<W: Write>(&self, screen: &mut W) {
+        let (width, _height): (u16, u16) = terminal_size().unwrap();
+        write!(screen, "{hide}{cursor}{clear}{fg}{bg}{text:width$}{reset_bg}",
+               hide = cursor::Hide,
+               fg = color::Fg(color::LightWhite).to_string(),
+               bg = color::Bg(color::LightBlue).to_string(),
+               cursor = cursor::Goto(1, INFO_LINE_INDEX),
+               clear = clear::CurrentLine,
+               text = "ESC - Exit | ⏎ - Run Selection | <TAB> - Edit Selection",
+               reset_bg = color::Bg(color::Reset).to_string(),
+               width = width as usize
+        ).unwrap();
+        screen.flush().unwrap();
+    }
+
     fn prompt<W: Write>(&self, screen: &mut W) {
         write!(screen, "{}{}{}$ {}",
                color::Fg(color::LightWhite).to_string(),
-               cursor::Goto(1, 1),
+               cursor::Goto(1, PROMPT_LINE_INDEX),
                clear::CurrentLine,
                self.input
         ).unwrap();
         write!(screen, "{}{}",
-               cursor::Goto(self.input.cursor as u16 + 3, 1),
+               cursor::Goto(self.input.cursor as u16 + 3, PROMPT_LINE_INDEX),
                cursor::Show
         ).unwrap();
         screen.flush().unwrap();
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {
-        write!(screen, "{}{}{}", cursor::Hide, cursor::Goto(1, 3), clear::All).unwrap();
+        write!(screen, "{}{}{}", cursor::Hide, cursor::Goto(1, RESULTS_TOP_INDEX), clear::All).unwrap();
         let (width, _height): (u16, u16) = terminal_size().unwrap();
 
         if self.matches.len() > 0 && self.selection > self.matches.len() - 1 {
@@ -102,7 +124,7 @@ impl <'a> Interface<'a> {
             write!(screen, "{}{}", fg, bg).unwrap();
 
             write!(screen, "{}{}",
-                   cursor::Goto(1, index as u16 + 3),
+                   cursor::Goto(1, index as u16 + RESULTS_TOP_INDEX),
                    Interface::truncate_for_display(command,
                                                    &self.input.command,
                                                    width,
@@ -156,6 +178,7 @@ impl <'a> Interface<'a> {
 
         self.refresh_matches();
         self.results(&mut screen);
+        self.menubar(&mut screen);
         self.prompt(&mut screen);
 
         for c in stdin.keys() {
@@ -231,6 +254,7 @@ impl <'a> Interface<'a> {
             }
 
             self.results(&mut screen);
+            self.menubar(&mut screen);
             self.prompt(&mut screen);
         }
 
