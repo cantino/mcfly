@@ -1,5 +1,6 @@
 extern crate mcfly;
 
+use mcfly::bash_history;
 use mcfly::exporter::Exporter;
 use mcfly::fake_typer;
 use mcfly::history::History;
@@ -7,7 +8,8 @@ use mcfly::interface::Interface;
 use mcfly::settings::Mode;
 use mcfly::settings::Settings;
 use mcfly::trainer::Trainer;
-use mcfly::bash_history;
+use std::path::PathBuf;
+use std::env;
 
 fn handle_addition(settings: &Settings, history: &mut History) {
     if history.should_add(&settings.command) {
@@ -20,8 +22,10 @@ fn handle_addition(settings: &Settings, history: &mut History) {
             &settings.old_dir,
         );
 
-        if let Some(append_to) = &settings.append_to {
-            bash_history::append_history_entry(&settings.command, &append_to)
+        if settings.append_to_histfile {
+            let histfile = PathBuf::from(env::var("HISTFILE")
+                .expect("Please ensure that HISTFILE is set."));
+            bash_history::append_history_entry(&settings.command, &histfile)
         }
     }
 }

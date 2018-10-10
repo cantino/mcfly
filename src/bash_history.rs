@@ -59,6 +59,20 @@ pub fn delete_last_history_entry_if_search(path: &PathBuf) {
         .expect(format!("Unable to update {:?}", &path).as_str());
 }
 
+pub fn delete_lines(path: &PathBuf, command: &str) {
+    let history_contents = fs::read_to_string(&path)
+        .expect(format!("{:?} file not found", &path).as_str());
+
+    let lines = history_contents
+        .split("\n")
+        .map(String::from)
+        .filter(|cmd| !cmd.eq(command))
+        .collect::<Vec<String>>();
+
+    fs::write(&path, lines.join("\n"))
+        .expect(format!("Unable to update {:?}", &path).as_str());
+}
+
 pub fn append_history_entry(command: &String, path: &PathBuf) {
     let mut file = OpenOptions::new()
         .write(true)

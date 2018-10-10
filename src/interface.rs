@@ -11,8 +11,8 @@ use history::Command;
 use termion::color;
 use fixed_length_grapheme_string::FixedLengthGraphemeString;
 use settings::Settings;
+use history_cleaner;
 
-#[derive(Debug)]
 pub struct Interface<'a> {
     history: &'a History,
     settings: &'a Settings,
@@ -20,24 +20,46 @@ pub struct Interface<'a> {
     selection: usize,
     matches: Vec<Command>,
     debug: bool,
-    run: bool
+    run: bool,
+    menu_mode: MenuMode
 }
 
-#[derive(Debug)]
 pub struct SelectionResult {
     pub run: bool,
     pub selection: Option<String>
 }
 
-#[derive(Debug)]
 pub enum MoveSelection {
     Up,
     Down
 }
 
+#[derive(PartialEq)]
+pub enum MenuMode {
+    Normal,
+    ConfirmDelete
+}
+
+impl MenuMode {
+    fn text(&self) -> &str {
+        match *self {
+            MenuMode::Normal => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F1 - Delete",
+            MenuMode::ConfirmDelete => "Delete selected command from the history? (Y/N)"
+        }
+    }
+
+    fn bg(&self) -> String {
+        match *self {
+            MenuMode::Normal => color::Bg(color::LightBlue).to_string(),
+            MenuMode::ConfirmDelete => color::Bg(color::Red).to_string()
+        }
+    }
+}
+
 const PROMPT_LINE_INDEX: u16 = 3;
 const INFO_LINE_INDEX: u16 = 1;
 const RESULTS_TOP_INDEX: u16 = 5;
+const RESULTS_TO_RETURN: u16 = 10;
 
 impl <'a> Interface<'a> {
     pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
@@ -48,7 +70,8 @@ impl <'a> Interface<'a> {
             selection: 0,
             matches: Vec::new(),
             debug: settings.debug,
-            run: false
+            run: false,
+            menu_mode: MenuMode::Normal
         }
     }
 
@@ -80,10 +103,10 @@ impl <'a> Interface<'a> {
         write!(screen, "{hide}{cursor}{clear}{fg}{bg}{text:width$}{reset_bg}",
                hide = cursor::Hide,
                fg = color::Fg(color::LightWhite).to_string(),
-               bg = color::Bg(color::LightBlue).to_string(),
+               bg = self.menu_mode.bg(),
                cursor = cursor::Goto(1, INFO_LINE_INDEX),
                clear = clear::CurrentLine,
-               text = "ESC - Exit | ⏎ - Run Selection | <TAB> - Edit Selection",
+               text = self.menu_mode.text(),
                reset_bg = color::Bg(color::Reset).to_string(),
                width = width as usize
         ).unwrap();
@@ -100,6 +123,14 @@ impl <'a> Interface<'a> {
         write!(screen, "{}{}",
                cursor::Goto(self.input.cursor as u16 + 3, PROMPT_LINE_INDEX),
                cursor::Show
+        ).unwrap();
+        screen.flush().unwrap();
+    }
+
+    fn debug_cursor<W: Write>(&self, screen: &mut W) {
+        write!(screen, "{}{}",
+               cursor::Hide,
+               cursor::Goto(0, RESULTS_TOP_INDEX + RESULTS_TO_RETURN + 1)
         ).unwrap();
         screen.flush().unwrap();
     }
@@ -165,9 +196,30 @@ impl <'a> Interface<'a> {
         }
     }
 
+    fn confirm(&mut self, confirmation: bool) {
+        if confirmation {
+            match self.menu_mode {
+                MenuMode::ConfirmDelete => self.delete_selection(),
+                _ => {}
+            };
+        }
+        self.menu_mode = MenuMode::Normal;
+    }
+
+    fn delete_selection(&mut self) {
+        if self.matches.len() > 0 {
+            {
+                let command = &self.matches[self.selection];
+                history_cleaner::clean(self.settings, self.history, &command.cmd);
+            }
+            self.build_cache_table();
+            self.refresh_matches();
+        }
+    }
+
     fn refresh_matches(&mut self) {
         self.selection = 0;
-        self.matches = self.history.find_matches(&self.input.command, Some(10));
+        self.matches = self.history.find_matches(&self.input.command, Some(RESULTS_TO_RETURN));
     }
 
     fn select(&mut self) {
@@ -182,75 +234,99 @@ impl <'a> Interface<'a> {
         self.prompt(&mut screen);
 
         for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
-                    self.run = true;
-                    self.accept_selection();
-                    break;
-                },
-                Key::Char('\t') => {
-                    self.run = false;
-                    self.accept_selection();
-                    break;
-                },
-                Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Esc | Key::Ctrl('r') => {
-                    self.run = false;
-                    self.input.clear();
-                    break
-                },
-                Key::Ctrl('b') => self.input.move_cursor(Move::Backward),
-                Key::Ctrl('f') => self.input.move_cursor(Move::Forward),
-                Key::Ctrl('a') => self.input.move_cursor(Move::BOL),
-                Key::Ctrl('e') => self.input.move_cursor(Move::EOL),
-                Key::Ctrl('w') | Key::Alt('\x08') | Key::Alt('\x7f') => {
-                    self.input.delete(Move::BackwardWord);
-                    self.refresh_matches();
-                },
-                Key::Alt('d') => {
-                    self.input.delete(Move::ForwardWord);
-                    self.refresh_matches();
-                },
-                Key::Ctrl('v') => {
-                    self.debug = !self.debug;
-                },
-                Key::Alt('b') => self.input.move_cursor(Move::BackwardWord),
-                Key::Alt('f') => self.input.move_cursor(Move::ForwardWord),
-                Key::Left => self.input.move_cursor(Move::Backward),
-                Key::Right => self.input.move_cursor(Move::Forward),
-                Key::Up | Key::PageUp => self.move_selection(MoveSelection::Up),
-                Key::Down | Key::PageDown => self.move_selection(MoveSelection::Down),
-                Key::Ctrl('k') => {
-                    self.input.delete(Move::EOL);
-                    self.refresh_matches();
-                },
-                Key::Ctrl('u') => {
-                    self.input.delete(Move::BOL);
-                    self.refresh_matches();
-                },
-                Key::Backspace | Key::Ctrl('h') => {
-                    self.input.delete(Move::Backward);
-                    self.refresh_matches();
-                },
-                Key::Delete => {
-                    self.input.delete(Move::Forward);
-                    self.refresh_matches();
-                },
-                Key::Home => self.input.move_cursor(Move::BOL),
-                Key::End => self.input.move_cursor(Move::EOL),
-                Key::Char(c) => {
-                    self.input.insert(c);
-                    self.refresh_matches();
-                },
-                Key::Ctrl(_c) => {
-//                    self.debug(&mut screen, format!("Ctrl({})", c))
-                },
-                Key::Alt(_c) => {
-//                    self.debug(&mut screen, format!("Alt({})", c))
-                },
-                Key::F(_c) => {
-//                    self.debug(&mut screen, format!("F({})", c))
-                },
-                Key::Insert | Key::Null | Key::__IsNotComplete => {}
+            self.debug_cursor(&mut screen);
+
+            if self.menu_mode != MenuMode::Normal {
+                match c.unwrap() {
+                    Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Ctrl('r') => {
+                        self.run = false;
+                        self.input.clear();
+                        break
+                    },
+                    Key::Char('y') | Key::Char('Y') => {
+                        self.confirm(true);
+                    },
+                    Key::Char('n') | Key::Char('N') | Key::Esc => {
+                        self.confirm(false);
+                    },
+                    _ => {}
+                }
+            } else {
+                match c.unwrap() {
+                    Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
+                        self.run = true;
+                        self.accept_selection();
+                        break;
+                    },
+                    Key::Char('\t') => {
+                        self.run = false;
+                        self.accept_selection();
+                        break;
+                    },
+                    Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Esc | Key::Ctrl('r') => {
+                        self.run = false;
+                        self.input.clear();
+                        break
+                    },
+                    Key::Ctrl('b') => self.input.move_cursor(Move::Backward),
+                    Key::Ctrl('f') => self.input.move_cursor(Move::Forward),
+                    Key::Ctrl('a') => self.input.move_cursor(Move::BOL),
+                    Key::Ctrl('e') => self.input.move_cursor(Move::EOL),
+                    Key::Ctrl('w') | Key::Alt('\x08') | Key::Alt('\x7f') => {
+                        self.input.delete(Move::BackwardWord);
+                        self.refresh_matches();
+                    },
+                    Key::Alt('d') => {
+                        self.input.delete(Move::ForwardWord);
+                        self.refresh_matches();
+                    },
+                    Key::Ctrl('v') => {
+                        self.debug = !self.debug;
+                    },
+                    Key::Alt('b') => self.input.move_cursor(Move::BackwardWord),
+                    Key::Alt('f') => self.input.move_cursor(Move::ForwardWord),
+                    Key::Left => self.input.move_cursor(Move::Backward),
+                    Key::Right => self.input.move_cursor(Move::Forward),
+                    Key::Up | Key::PageUp => self.move_selection(MoveSelection::Up),
+                    Key::Down | Key::PageDown => self.move_selection(MoveSelection::Down),
+                    Key::Ctrl('k') => {
+                        self.input.delete(Move::EOL);
+                        self.refresh_matches();
+                    },
+                    Key::Ctrl('u') => {
+                        self.input.delete(Move::BOL);
+                        self.refresh_matches();
+                    },
+                    Key::Backspace | Key::Ctrl('h') => {
+                        self.input.delete(Move::Backward);
+                        self.refresh_matches();
+                    },
+                    Key::Delete => {
+                        self.input.delete(Move::Forward);
+                        self.refresh_matches();
+                    },
+                    Key::Home => self.input.move_cursor(Move::BOL),
+                    Key::End => self.input.move_cursor(Move::EOL),
+                    Key::Char(c) => {
+                        self.input.insert(c);
+                        self.refresh_matches();
+                    },
+                    Key::F(1) => {
+                        if self.matches.len() > 0 {
+                            self.menu_mode = MenuMode::ConfirmDelete;
+                        }
+                    },
+                    Key::Ctrl(_c) => {
+//                      self.debug(&mut screen, format!("Ctrl({})", c))
+                    },
+                    Key::Alt(_c) => {
+//                      self.debug(&mut screen, format!("Alt({})", c))
+                    },
+                    Key::F(_c) => {
+//                      self.debug(&mut screen, format!("F({})", c))
+                    },
+                    Key::Insert | Key::Null | Key::__IsNotComplete => {}
+                }
             }
 
             self.results(&mut screen);

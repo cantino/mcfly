@@ -357,6 +357,18 @@ impl History {
         self.commands(session_id, num, offset, false).iter().map(|command| command.cmd_tpl.to_owned()).collect()
     }
 
+    pub fn delete_command(&self, command: &str) {
+        self.connection
+            .execute_named("DELETE FROM selected_commands WHERE cmd = :command",
+                           &[(":command", &command)])
+            .expect("DELETE from selected_commands to work");
+
+        self.connection
+            .execute_named("DELETE FROM commands WHERE cmd = :command",
+                           &[(":command", &command)])
+            .expect("DELETE from commands to work");
+    }
+
     fn from_bash_history() -> History {
         print!("McFly: Importing Bash history for the first time. One moment...");
         io::stdout().flush().expect("STDOUT flush should work");

@@ -25,7 +25,7 @@ pub struct Settings {
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub old_dir: Option<String>,
-    pub append_to: Option<PathBuf>,
+    pub append_to_histfile: bool,
     pub file: Option<String>
 }
 
@@ -41,7 +41,7 @@ impl Default for Settings {
             exit_code: None,
             old_dir: None,
             file: None,
-            append_to: None,
+            append_to_histfile: false,
             debug: false
         }
     }
@@ -65,7 +65,7 @@ impl Settings {
                 .takes_value(true))
             .arg(Arg::with_name("mcfly_history")
                 .long("mcfly_history")
-                .help("History file to read defaults from when adding or searching (defaults to $MCFLY_HISTORY)")
+                .help("Shell history file to read from when adding or searching (defaults to $MCFLY_HISTORY)")
                 .value_name("MCFLY_HISTORY")
                 .takes_value(true))
             .subcommand(SubCommand::with_name("add")
@@ -77,11 +77,9 @@ impl Settings {
                     .value_name("EXIT_CODE")
                     .help("Exit code of command")
                     .takes_value(true))
-                .arg(Arg::with_name("append_to")
-                    .long("append-to")
-                    .value_name("HISTFILE")
-                    .help("Append new history to a shared history file (e.q., .bash_history)")
-                    .takes_value(true))
+                .arg(Arg::with_name("append_to_histfile")
+                    .long("append-to-histfile")
+                    .help("Also append new history to $HISTFILE (e.q., .bash_history)"))
                 .arg(Arg::with_name("when")
                     .short("w")
                     .long("when")
@@ -156,9 +154,7 @@ impl Settings {
                     SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64
                 ));
 
-                if let Some(append_to) = add_matches.value_of("append_to") {
-                    settings.append_to = Some(PathBuf::from(&append_to));
-                }
+                settings.append_to_histfile = add_matches.is_present("append_to_histfile");
 
                 if let Some(_) = add_matches.value_of("exit") {
                     settings.exit_code = Some(value_t!(add_matches, "exit", i32).unwrap_or_else(|e| e.exit()));

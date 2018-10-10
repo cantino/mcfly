@@ -15,6 +15,7 @@ pub mod exporter;
 pub mod fake_typer;
 pub mod fixed_length_grapheme_string;
 pub mod history;
+pub mod history_cleaner;
 pub mod interface;
 pub mod settings;
 pub mod simplified_command;
