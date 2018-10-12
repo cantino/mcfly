@@ -3,6 +3,9 @@ name = "mcfly"
 version = "0.1.0"
 authors = ["Andrew Cantino <cantino@users.noreply.github.com>"]
 
+[profile.release]
+lto = true
+
 [dependencies]
 clap = "2.32.0"
 termion = "1.5.1"

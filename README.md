@@ -9,20 +9,23 @@
 * Rebinds `CTRL-R` to bring up a full-screen reverse history search with very smart prioritization.
 * Augments your shell history to track return status, timestamp, and execution directory.
 * Unicode support throughout.
-* Written in Rust, so it's super fast.
+* Also writes to your existing shell history file so you can stop using McFly whenever you want.
+* Simple command to scrub a history item from the database and shell history.
+* Designed to be extensible in the future for other shells.
+* Written in Rust, so it's fast and reliable.
 
 ## Prioritization
 
 The key feature of McFly is smart command prioritization. The goal is for the command you want
-to run to be as close to the first suggestion as possible.
+to run to always be one of the suggestions.
 
 When suggesting a command, McFly takes into consideration:
 
 * The directory where you ran the command. You're more likely to run the same command in the same directory in the future.
-* What commands you typed  before the command (e.g., the command's context).
+* What commands you typed before the command (e.g., the command's context).
 * How often you run the command.
-* When you ran the command.
-* The command's exit status. You probably don't want to run old failed commands.
+* When you last ran the command.
+* The command's historical exit status. You probably don't want to run old failed commands.
 
 ## Installation
 
