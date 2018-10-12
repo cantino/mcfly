@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/cantino/mcfly.svg?branch=master)](https://travis-ci.org/cantino/mcfly)
+
 # McFly - fly through your shell history
 
 > NOTE: This open source project is pre-alpha. It works-- I'm using it every day-- but I haven't trained the prioritization linear perceptron yet because I'm still gathering training data, so the ordering is suboptimal.
