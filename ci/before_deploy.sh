@@ -22,6 +22,7 @@ main() {
     strip target/$TARGET/release/mcfly
 
     cp target/$TARGET/release/mcfly $stage/
+    cp mcfly-bash.sh $stage/
 
     cd $stage
     tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz *
