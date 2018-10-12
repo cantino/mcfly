@@ -1,6 +1,5 @@
-use std::env;
 use std::path::PathBuf;
-
+use dirs::home_dir;
 use rusqlite::Connection;
 use std::fs;
 use bash_history;
@@ -436,7 +435,7 @@ impl History {
     }
 
     fn storage_dir_path() -> PathBuf {
-        env::home_dir()
+        home_dir()
             .expect("Unable to access home directory")
             .join(PathBuf::from(".mcfly"))
     }

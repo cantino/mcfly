@@ -2,6 +2,7 @@
 extern crate clap;
 extern crate core;
 extern crate csv;
+extern crate dirs;
 extern crate libc;
 extern crate rand;
 extern crate regex;
