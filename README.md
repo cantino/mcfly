@@ -31,7 +31,48 @@ When suggesting a command, McFly takes into consideration:
 
 ## Installation
 
-### Compile it yourself
+### Install with Homebrew
+
+1. Install the tap:
+    ```bash
+    brew tap cantino/mcfly https://github.com/cantino/mcfly
+    ```
+1. Install `mcfly`:
+    ```bash
+    brew install mcfly
+    ```
+1. Add the following to your `~/.bash_profile`:
+    ```bash
+    if [ -f $(brew --prefix mcfly)/mcfly-bash.sh ]; then
+      . $(brew --prefix mcfly)/mcfly-bash.sh
+    fi
+    ```
+
+#### Uninstalling with Homebrew
+
+1. Remove `mcfly`:
+    ```bash
+    brew uninstall mcfly
+    ```
+1. Remove the tap:
+    ```bash
+    brew untap cantino/mcfly
+    ```
+1. Remove the lines you added to `~/.bash_profile`.
+
+### Installing manually from GitHub
+
+1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
+1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bash_profile`.)
+1. Copy `mcfly-bash.sh` to a known location.
+1. Add the following to your `~/.bash_profile`:
+    ```bash
+    if [ -f /path/to/mcfly-bash.sh ]; then
+      . /path/to/mcfly-bash.sh
+    fi
+    ```
+
+### Install manually from source
 
 1. [Install Rust 1.29 or later](https://www.rust-lang.org/en-US/install.html)
 1. Compile with optimizations
@@ -40,12 +81,12 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Copy `./target/release/mcfly` into a location in your `$PATH`. (For example, you could create a directory at `~/bin`
 and add `export PATH="$PATH:$HOME/bin"` to your `.bash_profile`.)
-
-### Enable in your shell
-
-#### Bash
-
-Add `. /path/to/this/repository/mcfly-bash.sh` to your `~/.bash_profile` or `~/.bashrc` file.
+1. Add the following to your `~/.bash_profile`:
+    ```bash
+    if [ -f /path/to/mcfly-bash.sh ]; then
+      . /path/to/mcfly-bash.sh
+    fi
+    ```
 
 ## iTerm2
 
