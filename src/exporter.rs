@@ -27,6 +27,7 @@ impl<'a> Exporter<'a> {
         let mut writer = self.writer.borrow_mut();
         writer.write_record(&[
             "age_factor",
+            "length_factor",
             "exit_factor",
             "recent_failure_factor",
             "selected_dir_factor",
@@ -35,19 +36,16 @@ impl<'a> Exporter<'a> {
             "immediate_overlap_factor",
             "selected_occurrences_factor",
             "occurrences_factor",
-            "unnormalized_dir_factor",
-            "unnormalized_overlap_factor",
-            "unnormalized_immediate_overlap_factor",
-            "unnormalized_occurrences_factor",
             "correct"
         ]).expect("Expected to write to CSV");
         writer.flush().expect("Expected to flush CSV");
     }
 
-    fn output_row(&self, winner: &Command, max_occurrences: f64, correct: bool) {
+    fn output_row(&self, winner: &Command, correct: bool) {
         let mut writer = self.writer.borrow_mut();
         writer.write_record(&[
             format!("{}", winner.age_factor),
+            format!("{}", winner.length_factor),
             format!("{}", winner.exit_factor),
             format!("{}", winner.recent_failure_factor),
             format!("{}", winner.selected_dir_factor),
@@ -56,10 +54,6 @@ impl<'a> Exporter<'a> {
             format!("{}", winner.immediate_overlap_factor),
             format!("{}", winner.selected_occurrences_factor),
             format!("{}", winner.occurrences_factor),
-            format!("{}", winner.dir_factor * max_occurrences),
-            format!("{}", winner.overlap_factor * max_occurrences),
-            format!("{}", winner.immediate_overlap_factor * max_occurrences),
-            format!("{}", winner.occurrences_factor * max_occurrences),
             if correct { String::from("1.0") } else { String::from("0.0") }
         ]).expect("Expected to write to CSV");
         writer.flush().expect("Expected to flush CSV");
@@ -69,8 +63,8 @@ impl<'a> Exporter<'a> {
         self.output_header();
 
         let generator = TrainingSampleGenerator::new(self.settings, self.history);
-        generator.generate(-1, |command: &Command, max_occurrences: f64, correct: bool| {
-            self.output_row(command, max_occurrences, correct);
+        generator.generate(-1, |command: &Command, correct: bool| {
+            self.output_row(command, correct);
         });
     }
 }

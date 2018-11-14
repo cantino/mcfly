@@ -365,14 +365,15 @@ impl <'a> Interface<'a> {
             out.push_str(&format!("{}", color::Fg(color::LightBlue)));
             out.push_grapheme_str(format!("rnk: {:.*} ", 2, command.rank));
             out.push_grapheme_str(format!("age: {:.*} ", 2, command.age_factor));
+            out.push_grapheme_str(format!("lng: {:.*} ", 2, command.length_factor));
             out.push_grapheme_str(format!("ext: {:.*} ", 0, command.exit_factor));
-            out.push_grapheme_str(format!("rflr: {:.*} ", 0, command.recent_failure_factor));
-            out.push_grapheme_str(format!("sls: {:.*} ", 3, command.selected_dir_factor));
-            out.push_grapheme_str(format!("ls: {:.*} ", 3, command.dir_factor));
+            out.push_grapheme_str(format!("r_ext: {:.*} ", 0, command.recent_failure_factor));
+            out.push_grapheme_str(format!("dir: {:.*} ", 3, command.dir_factor));
+            out.push_grapheme_str(format!("s_dir: {:.*} ", 3, command.selected_dir_factor));
             out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.overlap_factor));
-            out.push_grapheme_str(format!("iovlp: {:.*} ", 3, command.immediate_overlap_factor));
-            out.push_grapheme_str(format!("socc: {:.*} ", 2, command.selected_occurrences_factor));
+            out.push_grapheme_str(format!("i_ovlp: {:.*} ", 3, command.immediate_overlap_factor));
             out.push_grapheme_str(format!("occ: {:.*}", 2, command.occurrences_factor));
+            out.push_grapheme_str(format!("s_occ: {:.*} ", 2, command.selected_occurrences_factor));
             out.push_str(&base_color);
         }
 

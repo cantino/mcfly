@@ -28,6 +28,7 @@ pub struct Command {
     pub selected: bool,
     pub dir: Option<String>,
     pub age_factor: f64,
+    pub length_factor: f64,
     pub exit_factor: f64,
     pub recent_failure_factor: f64,
     pub selected_dir_factor: f64,
@@ -158,7 +159,7 @@ impl History {
         like_query.push_str("%");
 
         let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
-                                  age_factor, exit_factor, recent_failure_factor,
+                                  age_factor, length_factor, exit_factor, recent_failure_factor,
                                   selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
                                   selected_occurrences_factor, occurrences_factor
                            FROM contextual_commands
@@ -179,14 +180,15 @@ impl History {
                     dir: row.get_checked(7).expect("dir to be readable"),
                     rank: row.get_checked(8).expect("rank to be readable"),
                     age_factor: row.get_checked(9).expect("age_factor to be readable"),
-                    exit_factor: row.get_checked(10).expect("exit_factor to be readable"),
-                    recent_failure_factor: row.get_checked(11).expect("recent_failure_factor to be readable"),
-                    selected_dir_factor: row.get_checked(12).expect("selected_dir_factor to be readable"),
-                    dir_factor: row.get_checked(13).expect("dir_factor to be readable"),
-                    overlap_factor: row.get_checked(14).expect("overlap_factor to be readable"),
-                    immediate_overlap_factor: row.get_checked(15).expect("immediate_overlap_factor to be readable"),
-                    selected_occurrences_factor: row.get_checked(16).expect("selected_occurrences_factor to be readable"),
-                    occurrences_factor: row.get_checked(17).expect("occurrences_factor to be readable"),
+                    length_factor: row.get_checked(10).expect("length_factor to be readable"),
+                    exit_factor: row.get_checked(11).expect("exit_factor to be readable"),
+                    recent_failure_factor: row.get_checked(12).expect("recent_failure_factor to be readable"),
+                    selected_dir_factor: row.get_checked(13).expect("selected_dir_factor to be readable"),
+                    dir_factor: row.get_checked(14).expect("dir_factor to be readable"),
+                    overlap_factor: row.get_checked(15).expect("overlap_factor to be readable"),
+                    immediate_overlap_factor: row.get_checked(16).expect("immediate_overlap_factor to be readable"),
+                    selected_occurrences_factor: row.get_checked(17).expect("selected_occurrences_factor to be readable"),
+                    occurrences_factor: row.get_checked(18).expect("occurrences_factor to be readable"),
                 }
             }).expect("Query Map to work");
 
@@ -229,46 +231,72 @@ impl History {
             .query_row("SELECT COUNT(*) AS c FROM commands WHERE selected = 1 GROUP BY cmd ORDER BY c DESC LIMIT 1", &[],
                        |row| row.get(0)).unwrap_or(1.0);
 
-        // For every unique command in the history, insert a single row into the temporary
-        // contextual_commands table.
-        //   What we really want is: "how often does a command that looks like this (our tpl) get run in this directory or in this context?"
-        //   What we have now is: "how often does this exact command get run in this directory or in this context?"
+        let max_length: f64 = self.connection
+            .query_row("SELECT MAX(LENGTH(cmd)) FROM commands", &[],
+                       |row| row.get(0)).unwrap_or(100.0);
+
+        // What I want:
+        // # of times this command has been seen / max # of times any single command has been seen
+        // # of times this command has been selected / # of times this command has been run
+        // # of times this command has been selected / max # of times any command has been selected
+        // # of times run in this directory / # of times run anywhere
+        // # of times selected in this dir / # of times selected anywhere
+        // # of times selected anywhere / # of times run anywhere
+        // sum of the overlap scores for this command in the history relative to the last three commands / # times in the history
+        // # of times the command before this one shows up before this one in the past / # of times this command has been run
+        // Could choose to let the network normalize these, but I think that's hard for it?
+
+        // What I have:
         self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
                   id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir,
 
-                  MIN((:when_run_max - when_run) / :when_run_spread) AS age_factor,
+                  /* length of the command string */
+                  LENGTH(c.cmd) / :max_length AS length_factor,
 
+                  /* age of the last execution of this command (0.0 is new, 1.0 is old) */
+                  MIN((:when_run_max - when_run) / :history_duration) AS age_factor,
+
+                  /* average error state (1: always successful, 0: always errors) */
                   SUM(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) / COUNT(*) as exit_factor,
 
-                  MAX(CASE WHEN exit_code = 1 AND :now - when_run < 120 THEN 1.0 ELSE 0.0 END) AS recent_failure_factor,
+                  /* recent failure (1 if failed recently, 0 if not) */
+                  MAX(CASE WHEN exit_code != 0 AND :now - when_run < 120 THEN 1.0 ELSE 0.0 END) AS recent_failure_factor,
 
-                  SUM(CASE WHEN dir = :directory THEN 1.0 ELSE 0.0 END) / :max_occurrences as dir_factor,
+                  /* percentage run in this directory (1: always run in this directory, 0: never run in this directory) */
+                  SUM(CASE WHEN dir = :directory THEN 1.0 ELSE 0.0 END) / COUNT(*) as dir_factor,
 
-                  SUM(CASE WHEN dir = :directory AND selected = 1 THEN 1.0 ELSE 0.0 END) / :max_selected_occurrences as selected_dir_factor,
+                  /* percentage of time selected in this directory (1: only selected in this dir, 0: only selected elsewhere) */
+                  SUM(CASE WHEN dir = :directory AND selected = 1 THEN 1.0 ELSE 0.0 END) / (SUM(CASE WHEN selected = 1 THEN 1.0 ELSE 0.0 END) + 1) as selected_dir_factor,
 
+                  /* average contextual overlap of this command (0: none of the last 3 commands has ever overlapped with this command, 1: all of the last three commands always overlap with this command) */
                   SUM((
-                    SELECT count(DISTINCT c2.cmd_tpl) FROM commands c2
+                    SELECT COUNT(DISTINCT c2.cmd_tpl) FROM commands c2
                     WHERE c2.id >= c.id - :lookback AND c2.id < c.id AND c2.cmd_tpl IN (:last_commands0, :last_commands1, :last_commands2)
-                  ) / :lookback_f64) / :max_occurrences AS overlap_factor,
+                  ) / :lookback_f64) / COUNT(*) AS overlap_factor,
 
-                  SUM((SELECT count(*) FROM commands c2 WHERE c2.id = c.id - 1 AND c2.cmd_tpl = :last_commands0)) / :max_occurrences AS immediate_overlap_factor,
+                  /* average overlap with the last command (0: this command never follows the last command, 1: this command always follows the last command) */
+                  SUM((SELECT COUNT(*) FROM commands c2 WHERE c2.id = c.id - 1 AND c2.cmd_tpl = :last_commands0)) / COUNT(*) AS immediate_overlap_factor,
 
+                  /* percentage selected (1: this is the most commonly selected command, 0: this command is never selected) */
                   SUM(CASE WHEN selected = 1 THEN 1.0 ELSE 0.0 END) / :max_selected_occurrences AS selected_occurrences_factor,
 
+                  /* percentage of time this command is run relative to the most common command (1: this is the most common command, 0: this is the least common command) */
                   COUNT(*) / :max_occurrences AS occurrences_factor,
 
+                  /* linear function with weights */
                   :offset +
-                  MIN((:when_run_max - when_run) / :when_run_spread) * :age_weight +
+                  LENGTH(c.cmd) / :max_length * :length_weight +
+                  MIN((:when_run_max - when_run) / :history_duration) * :age_weight +
                   SUM(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) / COUNT(*) * :exit_weight +
-                  MAX(CASE WHEN exit_code = 1 AND :now - when_run < 120 THEN 1.0 ELSE 0.0 END) * :recent_failure_weight +
-                  SUM(CASE WHEN dir = :directory THEN 1.0 ELSE 0.0 END) / :max_occurrences * :dir_weight +
-                  SUM(CASE WHEN dir = :directory AND selected = 1 THEN 1.0 ELSE 0.0 END) / :max_selected_occurrences * :selected_dir_weight +
+                  MAX(CASE WHEN exit_code != 0 AND :now - when_run < 120 THEN 1.0 ELSE 0.0 END) * :recent_failure_weight +
+                  SUM(CASE WHEN dir = :directory THEN 1.0 ELSE 0.0 END) / COUNT(*) * :dir_weight +
+                  SUM(CASE WHEN dir = :directory AND selected = 1 THEN 1.0 ELSE 0.0 END) / (SUM(CASE WHEN selected = 1 THEN 1.0 ELSE 0.0 END) + 1) * :selected_dir_weight +
                   SUM((
-                    SELECT count(DISTINCT c2.cmd_tpl) FROM commands c2
+                    SELECT COUNT(DISTINCT c2.cmd_tpl) FROM commands c2
                     WHERE c2.id >= c.id - :lookback AND c2.id < c.id AND c2.cmd_tpl IN (:last_commands0, :last_commands1, :last_commands2)
-                  ) / :lookback_f64) / :max_occurrences * :overlap_weight +
-                  SUM((SELECT count(*) FROM commands c2 WHERE c2.id = c.id - 1 AND c2.cmd_tpl = :last_commands0)) / :max_occurrences * :immediate_overlap_weight +
+                  ) / :lookback_f64) / COUNT(*) * :overlap_weight +
+                  SUM((SELECT COUNT(*) FROM commands c2 WHERE c2.id = c.id - 1 AND c2.cmd_tpl = :last_commands0)) / COUNT(*) * :immediate_overlap_weight +
                   SUM(CASE WHEN selected = 1 THEN 1.0 ELSE 0.0 END) / :max_selected_occurrences * :selected_occurrences_weight +
                   COUNT(*) / :max_occurrences * :occurrences_weight
                   AS rank
@@ -276,9 +304,10 @@ impl History {
                   FROM commands c WHERE when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC;",
             &[
                 (":when_run_max", &when_run_max),
-                (":when_run_spread", &(when_run_max - when_run_min)),
+                (":history_duration", &(when_run_max - when_run_min)),
                 (":directory", &dir.to_owned()),
                 (":max_occurrences", &max_occurrences),
+                (":max_length", &max_length),
                 (":max_selected_occurrences", &max_selected_occurrences),
                 (":lookback", &lookback),
                 (":lookback_f64", &(lookback as f64)),
@@ -289,6 +318,7 @@ impl History {
                 (":overlap_weight", &self.weights.overlap),
                 (":immediate_overlap_weight", &self.weights.immediate_overlap),
                 (":age_weight", &self.weights.age),
+                (":length_weight", &self.weights.length),
                 (":exit_weight", &self.weights.exit),
                 (":occurrences_weight", &self.weights.occurrences),
                 (":selected_occurrences_weight", &self.weights.selected_occurrences),
