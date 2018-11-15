@@ -12,6 +12,7 @@ use simplified_command::SimplifiedCommand;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use weights::Weights;
+use std::time::Instant;
 
 #[derive(Debug, Clone, Default)]
 pub struct Command {
@@ -232,7 +233,6 @@ impl History {
         now: Option<i64>,
     ) {
         let lookback: u16 = 3;
-        //        let now = Instant::now();
 
         let mut last_commands = self.last_command_templates(session_id, lookback as i16, 0);
         if last_commands.len() < lookback as usize {
@@ -287,10 +287,13 @@ impl History {
         // # of times the command before this one shows up before this one in the past / # of times this command has been run
         // Could choose to let the network normalize these, but I think that's hard for it?
 
-        // What I have:
+        let beginning_of_execution = Instant::now();
         self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
                   id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir,
+
+                  /* to be filled in later */
+                  0.0 AS rank,
 
                   /* length of the command string */
                   LENGTH(c.cmd) / :max_length AS length_factor,
@@ -323,24 +326,7 @@ impl History {
                   SUM(CASE WHEN selected = 1 THEN 1.0 ELSE 0.0 END) / :max_selected_occurrences AS selected_occurrences_factor,
 
                   /* percentage of time this command is run relative to the most common command (1: this is the most common command, 0: this is the least common command) */
-                  COUNT(*) / :max_occurrences AS occurrences_factor,
-
-                  /* linear function with weights */
-                  :offset +
-                  LENGTH(c.cmd) / :max_length * :length_weight +
-                  MIN((:when_run_max - when_run) / :history_duration) * :age_weight +
-                  SUM(CASE WHEN exit_code = 0 THEN 1.0 ELSE 0.0 END) / COUNT(*) * :exit_weight +
-                  MAX(CASE WHEN exit_code != 0 AND :now - when_run < 120 THEN 1.0 ELSE 0.0 END) * :recent_failure_weight +
-                  SUM(CASE WHEN dir = :directory THEN 1.0 ELSE 0.0 END) / COUNT(*) * :dir_weight +
-                  SUM(CASE WHEN dir = :directory AND selected = 1 THEN 1.0 ELSE 0.0 END) / (SUM(CASE WHEN selected = 1 THEN 1.0 ELSE 0.0 END) + 1) * :selected_dir_weight +
-                  SUM((
-                    SELECT COUNT(DISTINCT c2.cmd_tpl) FROM commands c2
-                    WHERE c2.id >= c.id - :lookback AND c2.id < c.id AND c2.cmd_tpl IN (:last_commands0, :last_commands1, :last_commands2)
-                  ) / :lookback_f64) / COUNT(*) * :overlap_weight +
-                  SUM((SELECT COUNT(*) FROM commands c2 WHERE c2.id = c.id - 1 AND c2.cmd_tpl = :last_commands0)) / COUNT(*) * :immediate_overlap_weight +
-                  SUM(CASE WHEN selected = 1 THEN 1.0 ELSE 0.0 END) / :max_selected_occurrences * :selected_occurrences_weight +
-                  COUNT(*) / :max_occurrences * :occurrences_weight
-                  AS rank
+                  COUNT(*) / :max_occurrences AS occurrences_factor
 
                   FROM commands c WHERE when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC;",
             &[
@@ -355,6 +341,26 @@ impl History {
                 (":last_commands0", &last_commands[0].to_owned()),
                 (":last_commands1", &last_commands[1].to_owned()),
                 (":last_commands2", &last_commands[2].to_owned()),
+                (":start_time", &start_time.unwrap_or(0).to_owned()),
+                (":end_time", &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned()),
+                (":now", &now.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned())
+            ]).expect("Creation of temp table to work");
+
+        self.connection.execute_named(
+            "UPDATE contextual_commands SET rank =
+                      :offset +
+                      length_factor * :length_weight +
+                      age_factor * :age_weight +
+                      exit_factor * :exit_weight +
+                      recent_failure_factor * :recent_failure_weight +
+                      dir_factor * :dir_weight +
+                      selected_dir_factor * :selected_dir_weight +
+                      overlap_factor * :overlap_weight +
+                      immediate_overlap_factor * :immediate_overlap_weight +
+                      selected_occurrences_factor * :selected_occurrences_weight +
+                      occurrences_factor * :occurrences_weight;
+                  ",
+            &[
                 (":offset", &self.weights.offset),
                 (":overlap_weight", &self.weights.overlap),
                 (":immediate_overlap_weight", &self.weights.immediate_overlap),
@@ -366,10 +372,7 @@ impl History {
                 (":recent_failure_weight", &self.weights.recent_failure),
                 (":dir_weight", &self.weights.dir),
                 (":selected_dir_weight", &self.weights.selected_dir),
-                (":start_time", &start_time.unwrap_or(0).to_owned()),
-                (":end_time", &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned()),
-                (":now", &now.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned())
-            ]).expect("Creation of temp table to work");
+            ]).expect("Ranking of temp table to work");
 
         self.connection
             .execute(
@@ -378,9 +381,9 @@ impl History {
             )
             .expect("Creation of index on temp table to work");
 
-        //        let elapsed = now.elapsed();
-        //        let sec = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0);
-        //        println!("Seconds: {}", sec);
+        let elapsed = beginning_of_execution.elapsed();
+        let sec = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0);
+        println!("Seconds: {}", sec);
     }
 
     pub fn commands(
