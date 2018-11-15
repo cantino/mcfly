@@ -1,6 +1,6 @@
 extern crate rand;
 
-use history::Command;
+use history::Factors;
 use history::History;
 use rand::Rng;
 use settings::Settings;
@@ -41,27 +41,27 @@ impl Default for Weights {
 }
 
 impl Weights {
-    pub fn rank(&self, command: &Command) -> f64 {
+    pub fn rank(&self, factors: &Factors) -> f64 {
         self.offset
-            + command.age_factor * self.age
-            + command.length_factor * self.length
-            + command.exit_factor * self.exit
-            + command.recent_failure_factor * self.recent_failure
-            + command.selected_dir_factor * self.selected_dir
-            + command.dir_factor * self.dir
-            + command.overlap_factor * self.overlap
-            + command.immediate_overlap_factor * self.immediate_overlap
-            + command.selected_occurrences_factor * self.selected_occurrences
-            + command.occurrences_factor * self.occurrences
+            + factors.age_factor * self.age
+            + factors.length_factor * self.length
+            + factors.exit_factor * self.exit
+            + factors.recent_failure_factor * self.recent_failure
+            + factors.selected_dir_factor * self.selected_dir
+            + factors.dir_factor * self.dir
+            + factors.overlap_factor * self.overlap
+            + factors.immediate_overlap_factor * self.immediate_overlap
+            + factors.selected_occurrences_factor * self.selected_occurrences
+            + factors.occurrences_factor * self.occurrences
     }
 
     pub fn error(&self, settings: &Settings, history: &History, records: i16) -> f64 {
         let generator = TrainingSampleGenerator::new(settings, history);
         let mut error = 0.0;
         let mut samples = 0.0;
-        generator.generate(records, |command: &Command, correct: bool| {
+        generator.generate(records, |factors: &Factors, correct: bool| {
             let goal = if correct { 1.0 } else { 0.0 };
-            let prediction = self.rank(command);
+            let prediction = self.rank(&factors);
             error += (prediction - goal).powi(2);
             samples += 1.0;
         });

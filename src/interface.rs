@@ -419,22 +419,16 @@ impl<'a> Interface<'a> {
             out.push_grapheme_str("  ");
             out.push_str(&format!("{}", color::Fg(color::LightBlue)));
             out.push_grapheme_str(format!("rnk: {:.*} ", 2, command.rank));
-            out.push_grapheme_str(format!("age: {:.*} ", 2, command.age_factor));
-            out.push_grapheme_str(format!("lng: {:.*} ", 2, command.length_factor));
-            out.push_grapheme_str(format!("ext: {:.*} ", 0, command.exit_factor));
-            out.push_grapheme_str(format!("r_ext: {:.*} ", 0, command.recent_failure_factor));
-            out.push_grapheme_str(format!("dir: {:.*} ", 3, command.dir_factor));
-            out.push_grapheme_str(format!("s_dir: {:.*} ", 3, command.selected_dir_factor));
-            out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.overlap_factor));
-            out.push_grapheme_str(format!(
-                "i_ovlp: {:.*} ",
-                3, command.immediate_overlap_factor
-            ));
-            out.push_grapheme_str(format!("occ: {:.*}", 2, command.occurrences_factor));
-            out.push_grapheme_str(format!(
-                "s_occ: {:.*} ",
-                2, command.selected_occurrences_factor
-            ));
+            out.push_grapheme_str(format!("age: {:.*} ", 2, command.factors.age_factor));
+            out.push_grapheme_str(format!("lng: {:.*} ", 2, command.factors.length_factor));
+            out.push_grapheme_str(format!("ext: {:.*} ", 0, command.factors.exit_factor));
+            out.push_grapheme_str(format!("r_ext: {:.*} ", 0, command.factors.recent_failure_factor));
+            out.push_grapheme_str(format!("dir: {:.*} ", 3, command.factors.dir_factor));
+            out.push_grapheme_str(format!("s_dir: {:.*} ", 3, command.factors.selected_dir_factor));
+            out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.factors.overlap_factor));
+            out.push_grapheme_str(format!("i_ovlp: {:.*} ", 3, command.factors.immediate_overlap_factor));
+            out.push_grapheme_str(format!("occ: {:.*}", 2, command.factors.occurrences_factor));
+            out.push_grapheme_str(format!("s_occ: {:.*} ", 2, command.factors.selected_occurrences_factor));
             out.push_str(&base_color);
         }
 

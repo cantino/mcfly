@@ -4,6 +4,7 @@ use history::Command;
 use history::History;
 use rand::Rng;
 use settings::Settings;
+use history::Factors;
 
 #[derive(Debug)]
 pub struct TrainingSampleGenerator<'a> {
@@ -18,7 +19,7 @@ impl<'a> TrainingSampleGenerator<'a> {
 
     pub fn generate<F>(&self, records: i16, mut handler: F)
     where
-        F: FnMut(&Command, bool),
+        F: FnMut(&Factors, bool),
     {
         let data_set = self.history.commands(&None, records, 0, true);
 
@@ -50,7 +51,7 @@ impl<'a> TrainingSampleGenerator<'a> {
                     results.iter().position(|ref c| c.cmd.eq(&command.cmd))
                 {
                     let what_should_have_been_first = results.get(our_command_index).unwrap();
-                    handler(what_should_have_been_first, true);
+                    handler(&what_should_have_been_first.factors, true);
                     positive_examples += 1;
                 }
             }
@@ -63,7 +64,7 @@ impl<'a> TrainingSampleGenerator<'a> {
                     .filter(|c| !c.cmd.eq(&command.cmd))
                     .collect::<Vec<&Command>>())
                 {
-                    handler(random_command, false);
+                    handler(&random_command.factors, false);
                     negative_examples += 1;
                 }
             }

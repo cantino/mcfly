@@ -16,16 +16,7 @@ use std::time::UNIX_EPOCH;
 use weights::Weights;
 
 #[derive(Debug, Clone, Default)]
-pub struct Command {
-    pub id: i64,
-    pub cmd: String,
-    pub cmd_tpl: String,
-    pub session_id: String,
-    pub rank: f64,
-    pub when_run: Option<i64>,
-    pub exit_code: Option<i32>,
-    pub selected: bool,
-    pub dir: Option<String>,
+pub struct Factors {
     pub age_factor: f64,
     pub length_factor: f64,
     pub exit_factor: f64,
@@ -36,6 +27,20 @@ pub struct Command {
     pub immediate_overlap_factor: f64,
     pub selected_occurrences_factor: f64,
     pub occurrences_factor: f64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Command {
+    pub id: i64,
+    pub cmd: String,
+    pub cmd_tpl: String,
+    pub session_id: String,
+    pub rank: f64,
+    pub when_run: Option<i64>,
+    pub exit_code: Option<i32>,
+    pub selected: bool,
+    pub dir: Option<String>,
+    pub factors: Factors
 }
 
 impl fmt::Display for Command {
@@ -198,21 +203,23 @@ impl History {
                     selected: row.get_checked(6).expect("selected to be readable"),
                     dir: row.get_checked(7).expect("dir to be readable"),
                     rank: row.get_checked(8).expect("rank to be readable"),
-                    age_factor: row.get_checked(9).expect("age_factor to be readable"),
-                    length_factor: row.get_checked(10).expect("length_factor to be readable"),
-                    exit_factor: row.get_checked(11).expect("exit_factor to be readable"),
-                    recent_failure_factor: row.get_checked(12)
-                        .expect("recent_failure_factor to be readable"),
-                    selected_dir_factor: row.get_checked(13)
-                        .expect("selected_dir_factor to be readable"),
-                    dir_factor: row.get_checked(14).expect("dir_factor to be readable"),
-                    overlap_factor: row.get_checked(15).expect("overlap_factor to be readable"),
-                    immediate_overlap_factor: row.get_checked(16)
-                        .expect("immediate_overlap_factor to be readable"),
-                    selected_occurrences_factor: row.get_checked(17)
-                        .expect("selected_occurrences_factor to be readable"),
-                    occurrences_factor: row.get_checked(18)
-                        .expect("occurrences_factor to be readable"),
+                    factors: Factors {
+                        age_factor: row.get_checked(9).expect("age_factor to be readable"),
+                        length_factor: row.get_checked(10).expect("length_factor to be readable"),
+                        exit_factor: row.get_checked(11).expect("exit_factor to be readable"),
+                        recent_failure_factor: row.get_checked(12)
+                            .expect("recent_failure_factor to be readable"),
+                        selected_dir_factor: row.get_checked(13)
+                            .expect("selected_dir_factor to be readable"),
+                        dir_factor: row.get_checked(14).expect("dir_factor to be readable"),
+                        overlap_factor: row.get_checked(15).expect("overlap_factor to be readable"),
+                        immediate_overlap_factor: row.get_checked(16)
+                            .expect("immediate_overlap_factor to be readable"),
+                        selected_occurrences_factor: row.get_checked(17)
+                            .expect("selected_occurrences_factor to be readable"),
+                        occurrences_factor: row.get_checked(18)
+                            .expect("occurrences_factor to be readable"),
+                    }
                 },
             )
             .expect("Query Map to work");
@@ -340,8 +347,8 @@ impl History {
         self.connection
             .execute(
                 "UPDATE contextual_commands
-                 SET rank = nn_rank(length_factor, age_factor, exit_factor,
-                                    recent_failure_factor, dir_factor, selected_dir_factor,
+                 SET rank = nn_rank(age_factor, length_factor, exit_factor,
+                                    recent_failure_factor, selected_dir_factor, dir_factor,
                                     overlap_factor, immediate_overlap_factor,
                                     selected_occurrences_factor, occurrences_factor);",
                 NO_PARAMS,

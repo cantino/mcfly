@@ -2,10 +2,10 @@ use history::History;
 use settings::Settings;
 
 use csv::Writer;
-use history::Command;
 use std::cell::RefCell;
 use std::fs::File;
 use training_sample_generator::TrainingSampleGenerator;
+use history::Factors;
 
 #[derive(Debug)]
 pub struct Exporter<'a> {
@@ -47,20 +47,20 @@ impl<'a> Exporter<'a> {
         writer.flush().expect("Expected to flush CSV");
     }
 
-    fn output_row(&self, winner: &Command, correct: bool) {
+    fn output_row(&self, factors: &Factors, correct: bool) {
         let mut writer = self.writer.borrow_mut();
         writer
             .write_record(&[
-                format!("{}", winner.age_factor),
-                format!("{}", winner.length_factor),
-                format!("{}", winner.exit_factor),
-                format!("{}", winner.recent_failure_factor),
-                format!("{}", winner.selected_dir_factor),
-                format!("{}", winner.dir_factor),
-                format!("{}", winner.overlap_factor),
-                format!("{}", winner.immediate_overlap_factor),
-                format!("{}", winner.selected_occurrences_factor),
-                format!("{}", winner.occurrences_factor),
+                format!("{}", factors.age_factor),
+                format!("{}", factors.length_factor),
+                format!("{}", factors.exit_factor),
+                format!("{}", factors.recent_failure_factor),
+                format!("{}", factors.selected_dir_factor),
+                format!("{}", factors.dir_factor),
+                format!("{}", factors.overlap_factor),
+                format!("{}", factors.immediate_overlap_factor),
+                format!("{}", factors.selected_occurrences_factor),
+                format!("{}", factors.occurrences_factor),
                 if correct {
                     String::from("1.0")
                 } else {
@@ -75,8 +75,8 @@ impl<'a> Exporter<'a> {
         self.output_header();
 
         let generator = TrainingSampleGenerator::new(self.settings, self.history);
-        generator.generate(-1, |command: &Command, correct: bool| {
-            self.output_row(command, correct);
+        generator.generate(-1, |factors: &Factors, correct: bool| {
+            self.output_row(factors, correct);
         });
     }
 }
