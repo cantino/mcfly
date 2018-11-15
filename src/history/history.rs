@@ -7,12 +7,13 @@ use std::io;
 use std::io::Write;
 use std::path::PathBuf;
 //use std::time::Instant;
+use history::db_extensions;
 use history::schema;
 use simplified_command::SimplifiedCommand;
+use std::time::Instant;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use weights::Weights;
-use std::time::Instant;
 
 #[derive(Debug, Clone, Default)]
 pub struct Command {
@@ -276,17 +277,7 @@ impl History {
             })
             .unwrap_or(100.0);
 
-        // What I want:
-        // # of times this command has been seen / max # of times any single command has been seen
-        // # of times this command has been selected / # of times this command has been run
-        // # of times this command has been selected / max # of times any command has been selected
-        // # of times run in this directory / # of times run anywhere
-        // # of times selected in this dir / # of times selected anywhere
-        // # of times selected anywhere / # of times run anywhere
-        // sum of the overlap scores for this command in the history relative to the last three commands / # times in the history
-        // # of times the command before this one shows up before this one in the past / # of times this command has been run
-        // Could choose to let the network normalize these, but I think that's hard for it?
-
+        #[allow(unused_variables)]
         let beginning_of_execution = Instant::now();
         self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
@@ -346,33 +337,16 @@ impl History {
                 (":now", &now.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64).to_owned())
             ]).expect("Creation of temp table to work");
 
-        self.connection.execute_named(
-            "UPDATE contextual_commands SET rank =
-                      :offset +
-                      length_factor * :length_weight +
-                      age_factor * :age_weight +
-                      exit_factor * :exit_weight +
-                      recent_failure_factor * :recent_failure_weight +
-                      dir_factor * :dir_weight +
-                      selected_dir_factor * :selected_dir_weight +
-                      overlap_factor * :overlap_weight +
-                      immediate_overlap_factor * :immediate_overlap_weight +
-                      selected_occurrences_factor * :selected_occurrences_weight +
-                      occurrences_factor * :occurrences_weight;
-                  ",
-            &[
-                (":offset", &self.weights.offset),
-                (":overlap_weight", &self.weights.overlap),
-                (":immediate_overlap_weight", &self.weights.immediate_overlap),
-                (":age_weight", &self.weights.age),
-                (":length_weight", &self.weights.length),
-                (":exit_weight", &self.weights.exit),
-                (":occurrences_weight", &self.weights.occurrences),
-                (":selected_occurrences_weight", &self.weights.selected_occurrences),
-                (":recent_failure_weight", &self.weights.recent_failure),
-                (":dir_weight", &self.weights.dir),
-                (":selected_dir_weight", &self.weights.selected_dir),
-            ]).expect("Ranking of temp table to work");
+        self.connection
+            .execute(
+                "UPDATE contextual_commands
+                 SET rank = nn_rank(length_factor, age_factor, exit_factor,
+                                    recent_failure_factor, dir_factor, selected_dir_factor,
+                                    overlap_factor, immediate_overlap_factor,
+                                    selected_occurrences_factor, occurrences_factor);",
+                NO_PARAMS,
+            )
+            .expect("Ranking of temp table to work");
 
         self.connection
             .execute(
@@ -381,9 +355,7 @@ impl History {
             )
             .expect("Creation of index on temp table to work");
 
-        let elapsed = beginning_of_execution.elapsed();
-        let sec = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1000_000_000.0);
-        println!("Seconds: {}", sec);
+        //        println!("Seconds: {}", (beginning_of_execution.elapsed().as_secs() as f64) + (beginning_of_execution.elapsed().subsec_nanos() as f64 / 1000_000_000.0));
     }
 
     pub fn commands(
@@ -495,6 +467,7 @@ impl History {
                 History::mcfly_db_path()
             ).as_str(),
         );
+        db_extensions::add_db_functions(&connection);
 
         connection.execute_batch(
             "CREATE TABLE commands( \
@@ -558,6 +531,7 @@ impl History {
 
     fn from_db_path(path: PathBuf) -> History {
         let connection = Connection::open(path).expect("Unable to open history database");
+        db_extensions::add_db_functions(&connection);
         History {
             connection,
             weights: Weights::default(),
