@@ -1,4 +1,4 @@
-use rusqlite::Connection;
+use rusqlite::{Connection, NO_PARAMS};
 use simplified_command::SimplifiedCommand;
 use std::io;
 use std::io::Write;
@@ -14,9 +14,9 @@ pub fn migrate(connection: &Connection) {
     make_schema_versions_table(connection);
 
     let current_version: u16 = connection
-        .query_row::<Option<u16>, _>(
+        .query_row::<Option<u16>, _, _>(
             "select max(version) FROM schema_versions ORDER BY version DESC LIMIT 1",
-            &[],
+            NO_PARAMS,
             |row| row.get(0),
         )
         .expect("Query to work")
@@ -38,13 +38,13 @@ pub fn migrate(connection: &Connection) {
             .expect("Unable to add cmd_tpl to commands");
 
         let mut statement = connection
-            .prepare("UPDATE commands SET cmd_tpl = ? WHERE id = ?")
+            .prepare("UPDATE commands SET cmd_tpl = :cmd_tpl WHERE id = :id")
             .expect("Unable to prepare update");
 
         for (id, cmd) in cmd_strings(connection) {
             let simplified_command = SimplifiedCommand::new(cmd.as_str(), true);
             statement
-                .execute(&[&simplified_command.result, &id])
+                .execute_named(&[(":cmd_tpl", &simplified_command.result), (":id", &id)])
                 .expect("Insert to work");
         }
     }
@@ -107,7 +107,7 @@ fn cmd_strings(connection: &Connection) -> Vec<(i64, String)> {
     let query = "SELECT id, cmd FROM commands ORDER BY id DESC";
     let mut statement = connection.prepare(query).unwrap();
     let command_iter = statement
-        .query_map(&[], |row| (row.get(0), row.get(1)))
+        .query_map(NO_PARAMS, |row| (row.get(0), row.get(1)))
         .expect("Query Map to work");
 
     let mut vec = Vec::new();

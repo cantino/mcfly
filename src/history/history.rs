@@ -1,20 +1,17 @@
 use bash_history;
 use dirs::home_dir;
-use rusqlite::Connection;
+use rusqlite::{Connection, MappedRows, Row, NO_PARAMS};
 use std::fmt;
 use std::fs;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
 //use std::time::Instant;
+use history::schema;
+use simplified_command::SimplifiedCommand;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use weights::Weights;
-
-use history::schema;
-use rusqlite::MappedRows;
-use rusqlite::Row;
-use simplified_command::SimplifiedCommand;
 
 #[derive(Debug, Clone, Default)]
 pub struct Command {
@@ -183,36 +180,39 @@ impl History {
                                   selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
                                   selected_occurrences_factor, occurrences_factor
                            FROM contextual_commands
-                           WHERE cmd LIKE (?)
-                           ORDER BY rank DESC LIMIT ?";
+                           WHERE cmd LIKE (:like)
+                           ORDER BY rank DESC LIMIT :limit";
         let mut statement = self.connection.prepare(query).expect("Prepare to work");
         let command_iter = statement
-            .query_map(&[&like_query, &num.unwrap_or(10)], |row| Command {
-                id: row.get_checked(0).expect("id to be readable"),
-                cmd: row.get_checked(1).expect("cmd to be readable"),
-                cmd_tpl: row.get_checked(2).expect("cmd_tpl to be readable"),
-                session_id: row.get_checked(3).expect("session_id to be readable"),
-                when_run: row.get_checked(4).expect("when_run to be readable"),
-                exit_code: row.get_checked(5).expect("exit_code to be readable"),
-                selected: row.get_checked(6).expect("selected to be readable"),
-                dir: row.get_checked(7).expect("dir to be readable"),
-                rank: row.get_checked(8).expect("rank to be readable"),
-                age_factor: row.get_checked(9).expect("age_factor to be readable"),
-                length_factor: row.get_checked(10).expect("length_factor to be readable"),
-                exit_factor: row.get_checked(11).expect("exit_factor to be readable"),
-                recent_failure_factor: row.get_checked(12)
-                    .expect("recent_failure_factor to be readable"),
-                selected_dir_factor: row.get_checked(13)
-                    .expect("selected_dir_factor to be readable"),
-                dir_factor: row.get_checked(14).expect("dir_factor to be readable"),
-                overlap_factor: row.get_checked(15).expect("overlap_factor to be readable"),
-                immediate_overlap_factor: row.get_checked(16)
-                    .expect("immediate_overlap_factor to be readable"),
-                selected_occurrences_factor: row.get_checked(17)
-                    .expect("selected_occurrences_factor to be readable"),
-                occurrences_factor: row.get_checked(18)
-                    .expect("occurrences_factor to be readable"),
-            })
+            .query_map_named(
+                &[(":like", &like_query), (":limit", &num.unwrap_or(10))],
+                |row| Command {
+                    id: row.get_checked(0).expect("id to be readable"),
+                    cmd: row.get_checked(1).expect("cmd to be readable"),
+                    cmd_tpl: row.get_checked(2).expect("cmd_tpl to be readable"),
+                    session_id: row.get_checked(3).expect("session_id to be readable"),
+                    when_run: row.get_checked(4).expect("when_run to be readable"),
+                    exit_code: row.get_checked(5).expect("exit_code to be readable"),
+                    selected: row.get_checked(6).expect("selected to be readable"),
+                    dir: row.get_checked(7).expect("dir to be readable"),
+                    rank: row.get_checked(8).expect("rank to be readable"),
+                    age_factor: row.get_checked(9).expect("age_factor to be readable"),
+                    length_factor: row.get_checked(10).expect("length_factor to be readable"),
+                    exit_factor: row.get_checked(11).expect("exit_factor to be readable"),
+                    recent_failure_factor: row.get_checked(12)
+                        .expect("recent_failure_factor to be readable"),
+                    selected_dir_factor: row.get_checked(13)
+                        .expect("selected_dir_factor to be readable"),
+                    dir_factor: row.get_checked(14).expect("dir_factor to be readable"),
+                    overlap_factor: row.get_checked(15).expect("overlap_factor to be readable"),
+                    immediate_overlap_factor: row.get_checked(16)
+                        .expect("immediate_overlap_factor to be readable"),
+                    selected_occurrences_factor: row.get_checked(17)
+                        .expect("selected_occurrences_factor to be readable"),
+                    occurrences_factor: row.get_checked(18)
+                        .expect("occurrences_factor to be readable"),
+                },
+            )
             .expect("Query Map to work");
 
         let mut names = Vec::new();
@@ -243,13 +243,13 @@ impl History {
         }
 
         self.connection
-            .execute("DROP TABLE IF EXISTS temp.contextual_commands;", &[])
+            .execute("DROP TABLE IF EXISTS temp.contextual_commands;", NO_PARAMS)
             .expect("Removal of temp table to work");
 
         let (mut when_run_min, when_run_max): (f64, f64) = self.connection
             .query_row(
                 "SELECT MIN(when_run), MAX(when_run) FROM commands",
-                &[],
+                NO_PARAMS,
                 |row| (row.get(0), row.get(1)),
             )
             .expect("Query to work");
@@ -261,17 +261,17 @@ impl History {
         let max_occurrences: f64 = self.connection
             .query_row(
                 "SELECT COUNT(*) AS c FROM commands GROUP BY cmd ORDER BY c DESC LIMIT 1",
-                &[],
+                NO_PARAMS,
                 |row| row.get(0),
             )
             .unwrap_or(1.0);
 
         let max_selected_occurrences: f64 = self.connection
-            .query_row("SELECT COUNT(*) AS c FROM commands WHERE selected = 1 GROUP BY cmd ORDER BY c DESC LIMIT 1", &[],
+            .query_row("SELECT COUNT(*) AS c FROM commands WHERE selected = 1 GROUP BY cmd ORDER BY c DESC LIMIT 1", NO_PARAMS,
                        |row| row.get(0)).unwrap_or(1.0);
 
         let max_length: f64 = self.connection
-            .query_row("SELECT MAX(LENGTH(cmd)) FROM commands", &[], |row| {
+            .query_row("SELECT MAX(LENGTH(cmd)) FROM commands", NO_PARAMS, |row| {
                 row.get(0)
             })
             .unwrap_or(100.0);
@@ -372,7 +372,10 @@ impl History {
             ]).expect("Creation of temp table to work");
 
         self.connection
-            .execute("CREATE INDEX temp.MyIndex ON contextual_commands(id);", &[])
+            .execute(
+                "CREATE INDEX temp.MyIndex ON contextual_commands(id);",
+                NO_PARAMS,
+            )
             .expect("Creation of index on temp table to work");
 
         //        let elapsed = now.elapsed();
@@ -389,9 +392,9 @@ impl History {
     ) -> Vec<Command> {
         let order = if random { "RANDOM()" } else { "id" };
         let query = if session_id.is_none() {
-            format!("SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir FROM commands ORDER BY {} DESC LIMIT ? OFFSET ?", order)
+            format!("SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir FROM commands ORDER BY {} DESC LIMIT :limit OFFSET :offset", order)
         } else {
-            format!("SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir FROM commands WHERE session_id = ? ORDER BY {} DESC LIMIT ? OFFSET ?", order)
+            format!("SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir FROM commands WHERE session_id = :session_id ORDER BY {} DESC LIMIT :limit OFFSET :offset", order)
         };
 
         let mut statement = self.connection.prepare(&query).unwrap();
@@ -410,11 +413,18 @@ impl History {
 
         let command_iter: MappedRows<_> = if session_id.is_none() {
             statement
-                .query_map(&[&num, &offset], closure)
+                .query_map_named(&[(":limit", &num), (":offset", &offset)], closure)
                 .expect("Query Map to work")
         } else {
             statement
-                .query_map(&[&session_id.to_owned().unwrap(), &num, &offset], closure)
+                .query_map_named(
+                    &[
+                        (":session_id", &session_id.to_owned().unwrap()),
+                        (":limit", &num),
+                        (":offset", &offset),
+                    ],
+                    closure,
+                )
                 .expect("Query Map to work")
         };
 
@@ -463,7 +473,9 @@ impl History {
     }
 
     fn from_bash_history() -> History {
-        print!("McFly: Importing Bash history for the first time. One moment...");
+        print!(
+            "McFly: Importing Bash history for the first time. This may take a minute or two..."
+        );
         io::stdout().flush().expect("STDOUT flush should work");
 
         // Load this first to make sure it works before we create the DB.
@@ -508,7 +520,7 @@ impl History {
 
         {
             let mut statement = connection
-                .prepare("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, selected) VALUES (?, ?, ?, ?, ?, ?)")
+                .prepare("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, selected) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :selected)")
                 .expect("Unable to prepare insert");
             let epoch = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -518,13 +530,13 @@ impl History {
                 if !IGNORED_COMMANDS.contains(&command.as_str()) {
                     let simplified_command = SimplifiedCommand::new(command.as_str(), true);
                     statement
-                        .execute(&[
-                            command,
-                            &simplified_command.result.to_owned(),
-                            &"IMPORTED",
-                            &epoch,
-                            &0,
-                            &0,
+                        .execute_named(&[
+                            (":cmd", command),
+                            (":cmd_tpl", &simplified_command.result.to_owned()),
+                            (":session_id", &"IMPORTED"),
+                            (":when_run", &epoch),
+                            (":exit_code", &0),
+                            (":selected", &0),
                         ])
                         .expect("Insert to work");
                 }
