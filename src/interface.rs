@@ -1,17 +1,17 @@
-use history::History;
 use command_input::{CommandInput, Move};
+use history::History;
 
+use fixed_length_grapheme_string::FixedLengthGraphemeString;
+use history::Command;
+use history_cleaner;
+use settings::Settings;
+use std::io::{stdin, stdout, Write};
+use termion::color;
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
-use termion::{cursor, clear, terminal_size};
-use std::io::{Write, stdout, stdin};
 use termion::screen::AlternateScreen;
-use history::Command;
-use termion::color;
-use fixed_length_grapheme_string::FixedLengthGraphemeString;
-use settings::Settings;
-use history_cleaner;
+use termion::{clear, cursor, terminal_size};
 
 pub struct Interface<'a> {
     history: &'a History,
@@ -21,37 +21,37 @@ pub struct Interface<'a> {
     matches: Vec<Command>,
     debug: bool,
     run: bool,
-    menu_mode: MenuMode
+    menu_mode: MenuMode,
 }
 
 pub struct SelectionResult {
     pub run: bool,
-    pub selection: Option<String>
+    pub selection: Option<String>,
 }
 
 pub enum MoveSelection {
     Up,
-    Down
+    Down,
 }
 
 #[derive(PartialEq)]
 pub enum MenuMode {
     Normal,
-    ConfirmDelete
+    ConfirmDelete,
 }
 
 impl MenuMode {
     fn text(&self) -> &str {
         match *self {
             MenuMode::Normal => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F1 - Delete",
-            MenuMode::ConfirmDelete => "Delete selected command from the history? (Y/N)"
+            MenuMode::ConfirmDelete => "Delete selected command from the history? (Y/N)",
         }
     }
 
     fn bg(&self) -> String {
         match *self {
             MenuMode::Normal => color::Bg(color::LightBlue).to_string(),
-            MenuMode::ConfirmDelete => color::Bg(color::Red).to_string()
+            MenuMode::ConfirmDelete => color::Bg(color::Red).to_string(),
         }
     }
 }
@@ -61,7 +61,7 @@ const INFO_LINE_INDEX: u16 = 1;
 const RESULTS_TOP_INDEX: u16 = 5;
 const RESULTS_TO_RETURN: u16 = 10;
 
-impl <'a> Interface<'a> {
+impl<'a> Interface<'a> {
     pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
         Interface {
             history,
@@ -71,7 +71,7 @@ impl <'a> Interface<'a> {
             matches: Vec::new(),
             debug: settings.debug,
             run: false,
-            menu_mode: MenuMode::Normal
+            menu_mode: MenuMode::Normal,
         }
     }
 
@@ -82,61 +82,86 @@ impl <'a> Interface<'a> {
         let command = self.input.command.to_owned();
 
         if command.chars().into_iter().any(|c| !c.is_whitespace()) {
-            self.history.record_selected_from_ui(&command, &self.settings.session_id, &self.settings.dir);
-            SelectionResult { run: self.run, selection: Some(command) }
+            self.history.record_selected_from_ui(
+                &command,
+                &self.settings.session_id,
+                &self.settings.dir,
+            );
+            SelectionResult {
+                run: self.run,
+                selection: Some(command),
+            }
         } else {
-            SelectionResult { run: self.run, selection: None }
+            SelectionResult {
+                run: self.run,
+                selection: None,
+            }
         }
-
     }
 
     fn build_cache_table(&self) {
         self.history.build_cache_table(
             &self.settings.dir.to_owned(),
             &Some(self.settings.session_id.to_owned()),
-            None, None, None
+            None,
+            None,
+            None,
         );
     }
 
     fn menubar<W: Write>(&self, screen: &mut W) {
         let (width, _height): (u16, u16) = terminal_size().unwrap();
-        write!(screen, "{hide}{cursor}{clear}{fg}{bg}{text:width$}{reset_bg}",
-               hide = cursor::Hide,
-               fg = color::Fg(color::LightWhite).to_string(),
-               bg = self.menu_mode.bg(),
-               cursor = cursor::Goto(1, INFO_LINE_INDEX),
-               clear = clear::CurrentLine,
-               text = self.menu_mode.text(),
-               reset_bg = color::Bg(color::Reset).to_string(),
-               width = width as usize
+        write!(
+            screen,
+            "{hide}{cursor}{clear}{fg}{bg}{text:width$}{reset_bg}",
+            hide = cursor::Hide,
+            fg = color::Fg(color::LightWhite).to_string(),
+            bg = self.menu_mode.bg(),
+            cursor = cursor::Goto(1, INFO_LINE_INDEX),
+            clear = clear::CurrentLine,
+            text = self.menu_mode.text(),
+            reset_bg = color::Bg(color::Reset).to_string(),
+            width = width as usize
         ).unwrap();
         screen.flush().unwrap();
     }
 
     fn prompt<W: Write>(&self, screen: &mut W) {
-        write!(screen, "{}{}{}$ {}",
-               color::Fg(color::LightWhite).to_string(),
-               cursor::Goto(1, PROMPT_LINE_INDEX),
-               clear::CurrentLine,
-               self.input
+        write!(
+            screen,
+            "{}{}{}$ {}",
+            color::Fg(color::LightWhite).to_string(),
+            cursor::Goto(1, PROMPT_LINE_INDEX),
+            clear::CurrentLine,
+            self.input
         ).unwrap();
-        write!(screen, "{}{}",
-               cursor::Goto(self.input.cursor as u16 + 3, PROMPT_LINE_INDEX),
-               cursor::Show
+        write!(
+            screen,
+            "{}{}",
+            cursor::Goto(self.input.cursor as u16 + 3, PROMPT_LINE_INDEX),
+            cursor::Show
         ).unwrap();
         screen.flush().unwrap();
     }
 
     fn debug_cursor<W: Write>(&self, screen: &mut W) {
-        write!(screen, "{}{}",
-               cursor::Hide,
-               cursor::Goto(0, RESULTS_TOP_INDEX + RESULTS_TO_RETURN + 1)
+        write!(
+            screen,
+            "{}{}",
+            cursor::Hide,
+            cursor::Goto(0, RESULTS_TOP_INDEX + RESULTS_TO_RETURN + 1)
         ).unwrap();
         screen.flush().unwrap();
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {
-        write!(screen, "{}{}{}", cursor::Hide, cursor::Goto(1, RESULTS_TOP_INDEX), clear::All).unwrap();
+        write!(
+            screen,
+            "{}{}{}",
+            cursor::Hide,
+            cursor::Goto(1, RESULTS_TOP_INDEX),
+            clear::All
+        ).unwrap();
         let (width, _height): (u16, u16) = terminal_size().unwrap();
 
         if self.matches.len() > 0 && self.selection > self.matches.len() - 1 {
@@ -154,15 +179,18 @@ impl <'a> Interface<'a> {
 
             write!(screen, "{}{}", fg, bg).unwrap();
 
-            write!(screen, "{}{}",
-                   cursor::Goto(1, index as u16 + RESULTS_TOP_INDEX),
-                   Interface::truncate_for_display(command,
-                                                   &self.input.command,
-                                                   width,
-                                                   color::Fg(color::Green).to_string(),
-                                                   fg,
-                                                   self.debug
-                   )
+            write!(
+                screen,
+                "{}{}",
+                cursor::Goto(1, index as u16 + RESULTS_TOP_INDEX),
+                Interface::truncate_for_display(
+                    command,
+                    &self.input.command,
+                    width,
+                    color::Fg(color::Green).to_string(),
+                    fg,
+                    self.debug
+                )
             ).unwrap();
 
             write!(screen, "{}", color::Bg(color::Reset)).unwrap();
@@ -173,7 +201,13 @@ impl <'a> Interface<'a> {
 
     #[allow(unused)]
     fn debug<W: Write, S: Into<String>>(&self, screen: &mut W, s: S) {
-        write!(screen, "{}{}{}", cursor::Goto(1, 2), clear::CurrentLine, s.into()).unwrap();
+        write!(
+            screen,
+            "{}{}{}",
+            cursor::Goto(1, 2),
+            clear::CurrentLine,
+            s.into()
+        ).unwrap();
         screen.flush().unwrap();
     }
 
@@ -183,13 +217,13 @@ impl <'a> Interface<'a> {
                 if self.selection > 0 {
                     self.selection -= 1;
                 }
-            },
+            }
             MoveSelection::Down => {
                 self.selection += 1;
             }
         }
     }
-    
+
     fn accept_selection(&mut self) {
         if self.matches.len() > 0 {
             self.input.set(&self.matches[self.selection].cmd);
@@ -219,13 +253,14 @@ impl <'a> Interface<'a> {
 
     fn refresh_matches(&mut self) {
         self.selection = 0;
-        self.matches = self.history.find_matches(&self.input.command, Some(RESULTS_TO_RETURN));
+        self.matches = self.history
+            .find_matches(&self.input.command, Some(RESULTS_TO_RETURN));
     }
 
     fn select(&mut self) {
         let stdin = stdin();
         let mut screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
-//        let mut screen = stdout().into_raw_mode().unwrap();
+        //        let mut screen = stdout().into_raw_mode().unwrap();
         write!(screen, "{}", clear::All).unwrap();
 
         self.refresh_matches();
@@ -238,17 +273,21 @@ impl <'a> Interface<'a> {
 
             if self.menu_mode != MenuMode::Normal {
                 match c.unwrap() {
-                    Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Ctrl('r') => {
+                    Key::Ctrl('c')
+                    | Key::Ctrl('d')
+                    | Key::Ctrl('g')
+                    | Key::Ctrl('z')
+                    | Key::Ctrl('r') => {
                         self.run = false;
                         self.input.clear();
-                        break
-                    },
+                        break;
+                    }
                     Key::Char('y') | Key::Char('Y') => {
                         self.confirm(true);
-                    },
+                    }
                     Key::Char('n') | Key::Char('N') | Key::Esc => {
                         self.confirm(false);
-                    },
+                    }
                     _ => {}
                 }
             } else {
@@ -257,17 +296,22 @@ impl <'a> Interface<'a> {
                         self.run = true;
                         self.accept_selection();
                         break;
-                    },
+                    }
                     Key::Char('\t') => {
                         self.run = false;
                         self.accept_selection();
                         break;
-                    },
-                    Key::Ctrl('c') | Key::Ctrl('d') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Esc | Key::Ctrl('r') => {
+                    }
+                    Key::Ctrl('c')
+                    | Key::Ctrl('d')
+                    | Key::Ctrl('g')
+                    | Key::Ctrl('z')
+                    | Key::Esc
+                    | Key::Ctrl('r') => {
                         self.run = false;
                         self.input.clear();
-                        break
-                    },
+                        break;
+                    }
                     Key::Ctrl('b') => self.input.move_cursor(Move::Backward),
                     Key::Ctrl('f') => self.input.move_cursor(Move::Forward),
                     Key::Ctrl('a') => self.input.move_cursor(Move::BOL),
@@ -275,14 +319,14 @@ impl <'a> Interface<'a> {
                     Key::Ctrl('w') | Key::Alt('\x08') | Key::Alt('\x7f') => {
                         self.input.delete(Move::BackwardWord);
                         self.refresh_matches();
-                    },
+                    }
                     Key::Alt('d') => {
                         self.input.delete(Move::ForwardWord);
                         self.refresh_matches();
-                    },
+                    }
                     Key::Ctrl('v') => {
                         self.debug = !self.debug;
-                    },
+                    }
                     Key::Alt('b') => self.input.move_cursor(Move::BackwardWord),
                     Key::Alt('f') => self.input.move_cursor(Move::ForwardWord),
                     Key::Left => self.input.move_cursor(Move::Backward),
@@ -292,39 +336,39 @@ impl <'a> Interface<'a> {
                     Key::Ctrl('k') => {
                         self.input.delete(Move::EOL);
                         self.refresh_matches();
-                    },
+                    }
                     Key::Ctrl('u') => {
                         self.input.delete(Move::BOL);
                         self.refresh_matches();
-                    },
+                    }
                     Key::Backspace | Key::Ctrl('h') => {
                         self.input.delete(Move::Backward);
                         self.refresh_matches();
-                    },
+                    }
                     Key::Delete => {
                         self.input.delete(Move::Forward);
                         self.refresh_matches();
-                    },
+                    }
                     Key::Home => self.input.move_cursor(Move::BOL),
                     Key::End => self.input.move_cursor(Move::EOL),
                     Key::Char(c) => {
                         self.input.insert(c);
                         self.refresh_matches();
-                    },
+                    }
                     Key::F(1) => {
                         if self.matches.len() > 0 {
                             self.menu_mode = MenuMode::ConfirmDelete;
                         }
-                    },
+                    }
                     Key::Ctrl(_c) => {
-//                      self.debug(&mut screen, format!("Ctrl({})", c))
-                    },
+                        //                      self.debug(&mut screen, format!("Ctrl({})", c))
+                    }
                     Key::Alt(_c) => {
-//                      self.debug(&mut screen, format!("Alt({})", c))
-                    },
+                        //                      self.debug(&mut screen, format!("Alt({})", c))
+                    }
                     Key::F(_c) => {
-//                      self.debug(&mut screen, format!("F({})", c))
-                    },
+                        //                      self.debug(&mut screen, format!("F({})", c))
+                    }
                     Key::Insert | Key::Null | Key::__IsNotComplete => {}
                 }
             }
@@ -337,10 +381,21 @@ impl <'a> Interface<'a> {
         write!(screen, "{}{}", clear::All, cursor::Show).unwrap();
     }
 
-    fn truncate_for_display(command: &Command, search: &str, width: u16, highlight_color: String, base_color: String, debug: bool) -> String {
+    fn truncate_for_display(
+        command: &Command,
+        search: &str,
+        width: u16,
+        highlight_color: String,
+        base_color: String,
+        debug: bool,
+    ) -> String {
         let mut prev = 0;
         let debug_space = if debug { 90 } else { 0 };
-        let max_grapheme_length = if width > debug_space { width - debug_space } else { 2 };
+        let max_grapheme_length = if width > debug_space {
+            width - debug_space
+        } else {
+            2
+        };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
         if !search.is_empty() {
@@ -371,9 +426,15 @@ impl <'a> Interface<'a> {
             out.push_grapheme_str(format!("dir: {:.*} ", 3, command.dir_factor));
             out.push_grapheme_str(format!("s_dir: {:.*} ", 3, command.selected_dir_factor));
             out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.overlap_factor));
-            out.push_grapheme_str(format!("i_ovlp: {:.*} ", 3, command.immediate_overlap_factor));
+            out.push_grapheme_str(format!(
+                "i_ovlp: {:.*} ",
+                3, command.immediate_overlap_factor
+            ));
             out.push_grapheme_str(format!("occ: {:.*}", 2, command.occurrences_factor));
-            out.push_grapheme_str(format!("s_occ: {:.*} ", 2, command.selected_occurrences_factor));
+            out.push_grapheme_str(format!(
+                "s_occ: {:.*} ",
+                2, command.selected_occurrences_factor
+            ));
             out.push_str(&base_color);
         }
 

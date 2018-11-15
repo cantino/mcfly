@@ -1,6 +1,6 @@
 use libc;
 
-extern {
+extern "C" {
     pub fn ioctl(fd: i8, request: u32, arg: *const u8) -> i8;
 }
 

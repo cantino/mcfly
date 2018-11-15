@@ -6,7 +6,7 @@ const TRUNCATE_TO_N_TOKENS: u16 = 2;
 pub struct SimplifiedCommand {
     pub original: String,
     pub result: String,
-    pub truncate: bool
+    pub truncate: bool,
 }
 
 /// The goal of SimplifiedCommand is to produce a reduced approximation of the given command for template matching. It may
@@ -16,7 +16,11 @@ pub struct SimplifiedCommand {
 /// - Check to see if unknown strings represent valid local paths in the directory where the command was run.
 impl SimplifiedCommand {
     pub fn new<S: Into<String>>(command: S, truncate: bool) -> SimplifiedCommand {
-        let mut simplified_command = SimplifiedCommand { original: command.into().clone(), result: String::new(), truncate };
+        let mut simplified_command = SimplifiedCommand {
+            original: command.into().clone(),
+            result: String::new(),
+            truncate,
+        };
         simplified_command.simplify();
         simplified_command
     }
@@ -32,7 +36,7 @@ impl SimplifiedCommand {
             match grapheme {
                 "\\" => {
                     escaped = true;
-                },
+                }
                 "\"" => {
                     if escaped {
                         escaped = false;
@@ -44,7 +48,7 @@ impl SimplifiedCommand {
                             in_double_quote = true;
                         }
                     }
-                },
+                }
                 "\'" => {
                     if in_single_quote {
                         in_single_quote = false;
@@ -53,7 +57,7 @@ impl SimplifiedCommand {
                         in_single_quote = true;
                     }
                     escaped = false;
-                },
+                }
                 " " | ":" | "," => {
                     if !in_double_quote && !in_single_quote {
                         if self.truncate && grapheme.eq(" ") {
@@ -71,7 +75,7 @@ impl SimplifiedCommand {
                         self.result.push_str(grapheme);
                         buffer.clear();
                     }
-                },
+                }
                 _ => {
                     if !in_double_quote && !in_single_quote {
                         buffer.push_str(grapheme);
@@ -121,7 +125,8 @@ mod tests {
 
     #[test]
     fn it_handles_one_level_of_quote_escaping() {
-        let simplified_command = SimplifiedCommand::new("git ci -m \"my \\\"commit\\\" mes\\\\sage\"", false);
+        let simplified_command =
+            SimplifiedCommand::new("git ci -m \"my \\\"commit\\\" mes\\\\sage\"", false);
         assert_eq!(simplified_command.result, "git ci -m QUOTED");
     }
 
@@ -151,8 +156,12 @@ mod tests {
         let simplified_command = SimplifiedCommand::new("command path/1/2/3:/foo/bar", false);
         assert_eq!(simplified_command.result, "command PATH:PATH");
 
-        let simplified_command = SimplifiedCommand::new("blah --input foo/bar/baz --output blarg", false);
-        assert_eq!(simplified_command.result, "blah --input PATH --output blarg");
+        let simplified_command =
+            SimplifiedCommand::new("blah --input foo/bar/baz --output blarg", false);
+        assert_eq!(
+            simplified_command.result,
+            "blah --input PATH --output blarg"
+        );
 
         let simplified_command = SimplifiedCommand::new("cd ambiguous", false);
         assert_eq!(simplified_command.result, "cd ambiguous");
@@ -170,25 +179,26 @@ mod tests {
         assert_eq!(simplified_command.result, "/bin/cd PATH");
     }
 
-
     #[test]
     fn it_truncates_after_simplification() {
         let simplified_command = SimplifiedCommand::new("../ls /", true);
         assert_eq!(simplified_command.result, "../ls PATH");
 
-        let simplified_command = SimplifiedCommand::new("blah --input foo/bar/baz --output blarg", true);
+        let simplified_command =
+            SimplifiedCommand::new("blah --input foo/bar/baz --output blarg", true);
         assert_eq!(simplified_command.result, "blah --input");
 
-        let simplified_command = SimplifiedCommand::new("git ci -m \"my \\\"commit\\\" mes\\\\sage\"", true);
+        let simplified_command =
+            SimplifiedCommand::new("git ci -m \"my \\\"commit\\\" mes\\\\sage\"", true);
         assert_eq!(simplified_command.result, "git ci");
     }
 
-//    #[test]
-//    fn it_sorts_and_expands_command_line_arguments() {
-//        let simplified_command = SimplifiedCommand::new("ls -t 2 -lah --foo bar --baz=bing");
-//        assert_eq!(simplified_command.result, "ls -a --baz=bing --foo bar -h -l -t 2");
-//
-//        let simplified_command = SimplifiedCommand::new("ls -l --foo bar -a -h --bazz=bing -t 2");
-//        assert_eq!(simplified_command.result, "ls -a --baz=bing --foo bar -h -l -t 2");
-//    }
+    //    #[test]
+    //    fn it_sorts_and_expands_command_line_arguments() {
+    //        let simplified_command = SimplifiedCommand::new("ls -t 2 -lah --foo bar --baz=bing");
+    //        assert_eq!(simplified_command.result, "ls -a --baz=bing --foo bar -h -l -t 2");
+    //
+    //        let simplified_command = SimplifiedCommand::new("ls -l --foo bar -a -h --bazz=bing -t 2");
+    //        assert_eq!(simplified_command.result, "ls -a --baz=bing --foo bar -h -l -t 2");
+    //    }
 }

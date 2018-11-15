@@ -1,17 +1,17 @@
-use clap::{Arg, App, SubCommand};
+use bash_history;
 use clap::AppSettings;
+use clap::{App, Arg, SubCommand};
+use std::env;
+use std::path::PathBuf;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use std::env;
-use bash_history;
-use std::path::PathBuf;
 
 #[derive(Debug)]
 pub enum Mode {
     Add,
     Search,
     Train,
-    Export
+    Export,
 }
 
 #[derive(Debug)]
@@ -26,7 +26,7 @@ pub struct Settings {
     pub exit_code: Option<i32>,
     pub old_dir: Option<String>,
     pub append_to_histfile: bool,
-    pub file: Option<String>
+    pub file: Option<String>,
 }
 
 impl Default for Settings {
@@ -42,7 +42,7 @@ impl Default for Settings {
             old_dir: None,
             file: None,
             append_to_histfile: false,
-            debug: false
+            debug: false,
         }
     }
 }
@@ -138,26 +138,36 @@ impl Settings {
         settings.session_id = matches
             .value_of("session_id")
             .map(|s| s.to_string())
-            .unwrap_or(env::var("MCFLY_SESSION_ID").expect("Please ensure that MCFLY_SESSION_ID contains a random session ID."));
+            .unwrap_or(
+                env::var("MCFLY_SESSION_ID")
+                    .expect("Please ensure that MCFLY_SESSION_ID contains a random session ID."),
+            );
         settings.mcfly_history = PathBuf::from(
             matches
-            .value_of("mcfly_history")
-            .map(|s| s.to_string())
-            .unwrap_or(env::var("MCFLY_HISTORY").expect("Please ensure that MCFLY_HISTORY is set."))
+                .value_of("mcfly_history")
+                .map(|s| s.to_string())
+                .unwrap_or(
+                    env::var("MCFLY_HISTORY").expect("Please ensure that MCFLY_HISTORY is set."),
+                ),
         );
 
         match matches.subcommand() {
-            ("add", Some(add_matches)) =>{
+            ("add", Some(add_matches)) => {
                 settings.mode = Mode::Add;
 
-                settings.when_run = Some(value_t!(add_matches, "when", i64).unwrap_or(
-                    SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs() as i64
-                ));
+                settings.when_run = Some(
+                    value_t!(add_matches, "when", i64).unwrap_or(SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .expect("Time went backwards")
+                        .as_secs()
+                        as i64),
+                );
 
                 settings.append_to_histfile = add_matches.is_present("append_to_histfile");
 
                 if let Some(_) = add_matches.value_of("exit") {
-                    settings.exit_code = Some(value_t!(add_matches, "exit", i32).unwrap_or_else(|e| e.exit()));
+                    settings.exit_code =
+                        Some(value_t!(add_matches, "exit", i32).unwrap_or_else(|e| e.exit()));
                 }
 
                 if let Some(dir) = add_matches.value_of("directory") {
@@ -175,16 +185,20 @@ impl Settings {
                 if let Some(commands) = add_matches.values_of("command") {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = bash_history::last_history_line(&settings.mcfly_history).unwrap_or(String::from(""));
+                    settings.command = bash_history::last_history_line(&settings.mcfly_history)
+                        .unwrap_or(String::from(""));
                 }
 
                 // CD shows PWD as the resulting directory, but we want it from the source directory.
-                if settings.command.starts_with("cd ") || settings.command.starts_with("pushd ") || settings.command.starts_with("j ") {
+                if settings.command.starts_with("cd ")
+                    || settings.command.starts_with("pushd ")
+                    || settings.command.starts_with("j ")
+                {
                     settings.dir = settings.old_dir.to_owned().unwrap_or(settings.dir);
                 }
-            },
+            }
 
-            ("search", Some(search_matches)) =>{
+            ("search", Some(search_matches)) => {
                 settings.mode = Mode::Search;
                 if let Some(dir) = search_matches.value_of("directory") {
                     settings.dir = dir.to_string();
@@ -195,23 +209,23 @@ impl Settings {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
                     settings.command = bash_history::last_history_line(&settings.mcfly_history)
-                      .unwrap_or(String::from(""))
-                      .trim_left_matches("#mcfly: ")
-                      .trim_left_matches("#mcfly:")
-                      .to_string();
+                        .unwrap_or(String::from(""))
+                        .trim_left_matches("#mcfly: ")
+                        .trim_left_matches("#mcfly:")
+                        .to_string();
                     bash_history::delete_last_history_entry_if_search(&settings.mcfly_history);
                 }
-            },
+            }
 
             ("train", Some(_train_matches)) => {
                 settings.mode = Mode::Train;
-            },
+            }
             ("export", Some(export_matches)) => {
                 settings.mode = Mode::Export;
                 settings.file = Some(export_matches.value_of("file").unwrap().to_string());
-            },
-            ("", None)   => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
-            _            => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
+            }
+            ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
+            _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
         }
 
         settings

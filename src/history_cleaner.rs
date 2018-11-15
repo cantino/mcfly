@@ -14,16 +14,16 @@ pub fn clean(settings: &Settings, history: &History, command: &str) {
     clean_temporary_files(&settings.mcfly_history, command);
 
     // Clean up HISTFILE.
-    let histfile = PathBuf::from(env::var("HISTFILE")
-        .expect("Please ensure that HISTFILE is set."));
+    let histfile =
+        PathBuf::from(env::var("HISTFILE").expect("Please ensure that HISTFILE is set."));
     bash_history::delete_lines(&histfile, command);
 }
 
 fn clean_temporary_files(mcfly_history: &PathBuf, command: &str) {
     let path = mcfly_history.as_path();
     if let Some(directory) = path.parent() {
-        let expanded_path = fs::canonicalize(directory)
-            .expect("The contents of $MCFLY_HISTORY appear invalid");
+        let expanded_path =
+            fs::canonicalize(directory).expect("The contents of $MCFLY_HISTORY appear invalid");
         let paths = fs::read_dir(&expanded_path).unwrap();
 
         for path in paths {

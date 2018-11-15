@@ -4,7 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 pub struct FixedLengthGraphemeString {
     pub string: String,
     pub grapheme_length: u16,
-    pub max_grapheme_length: u16
+    pub max_grapheme_length: u16,
 }
 
 impl FixedLengthGraphemeString {
@@ -12,12 +12,13 @@ impl FixedLengthGraphemeString {
         FixedLengthGraphemeString {
             string: String::new(),
             grapheme_length: 0,
-            max_grapheme_length
+            max_grapheme_length,
         }
     }
 
     pub fn new<S: Into<String>>(s: S, max_grapheme_length: u16) -> FixedLengthGraphemeString {
-        let mut fixed_length_grapheme_string = FixedLengthGraphemeString::empty(max_grapheme_length);
+        let mut fixed_length_grapheme_string =
+            FixedLengthGraphemeString::empty(max_grapheme_length);
         fixed_length_grapheme_string.push_grapheme_str(s);
         fixed_length_grapheme_string
     }

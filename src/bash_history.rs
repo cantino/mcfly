@@ -1,18 +1,19 @@
-use std::path::PathBuf;
-use std::env;
 use regex::Regex;
-use std::io::Write;
+use std::env;
 use std::fs;
 use std::fs::OpenOptions;
+use std::io::Write;
+use std::path::PathBuf;
 
 pub fn bash_history_file_path() -> PathBuf {
-    let path = PathBuf::from(env::var("HISTFILE").expect("Please ensure HISTFILE is set for your shell."));
+    let path =
+        PathBuf::from(env::var("HISTFILE").expect("Please ensure HISTFILE is set for your shell."));
     fs::canonicalize(&path).expect("The contents of $HISTFILE appear invalid")
 }
 
 pub fn full_history(path: &PathBuf) -> Vec<String> {
-    let bash_history_contents = fs::read_to_string(&path)
-        .expect(format!("{:?} file not found", &path).as_str());
+    let bash_history_contents =
+        fs::read_to_string(&path).expect(format!("{:?} file not found", &path).as_str());
 
     let timestamp_regex = Regex::new(r"\A#\d{10}").unwrap();
 
@@ -29,8 +30,8 @@ pub fn last_history_line(path: &PathBuf) -> Option<String> {
 }
 
 pub fn delete_last_history_entry_if_search(path: &PathBuf) {
-    let bash_history_contents = fs::read_to_string(&path)
-        .expect(format!("{:?} file not found", &path).as_str());
+    let bash_history_contents =
+        fs::read_to_string(&path).expect(format!("{:?} file not found", &path).as_str());
 
     let mut lines = bash_history_contents
         .split("\n")
@@ -55,13 +56,12 @@ pub fn delete_last_history_entry_if_search(path: &PathBuf) {
 
     lines.push(String::from("")); // New line at end of file expected by bash.
 
-    fs::write(&path, lines.join("\n"))
-        .expect(format!("Unable to update {:?}", &path).as_str());
+    fs::write(&path, lines.join("\n")).expect(format!("Unable to update {:?}", &path).as_str());
 }
 
 pub fn delete_lines(path: &PathBuf, command: &str) {
-    let history_contents = fs::read_to_string(&path)
-        .expect(format!("{:?} file not found", &path).as_str());
+    let history_contents =
+        fs::read_to_string(&path).expect(format!("{:?} file not found", &path).as_str());
 
     let lines = history_contents
         .split("\n")
@@ -69,8 +69,7 @@ pub fn delete_lines(path: &PathBuf, command: &str) {
         .filter(|cmd| !cmd.eq(command))
         .collect::<Vec<String>>();
 
-    fs::write(&path, lines.join("\n"))
-        .expect(format!("Unable to update {:?}", &path).as_str());
+    fs::write(&path, lines.join("\n")).expect(format!("Unable to update {:?}", &path).as_str());
 }
 
 pub fn append_history_entry(command: &String, path: &PathBuf) {

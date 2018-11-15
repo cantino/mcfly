@@ -1,11 +1,11 @@
 extern crate rand;
 
-use std::f64;
-use rand::Rng;
 use history::Command;
-use training_sample_generator::TrainingSampleGenerator;
-use settings::Settings;
 use history::History;
+use rand::Rng;
+use settings::Settings;
+use std::f64;
+use training_sample_generator::TrainingSampleGenerator;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Weights {
@@ -19,7 +19,7 @@ pub struct Weights {
     pub overlap: f64,
     pub immediate_overlap: f64,
     pub selected_occurrences: f64,
-    pub occurrences: f64
+    pub occurrences: f64,
 }
 
 impl Default for Weights {
@@ -35,14 +35,24 @@ impl Default for Weights {
             overlap: 0.030463793073770368,
             immediate_overlap: -0.5068322907651295,
             selected_occurrences: 0.12099345850355443,
-            occurrences: 0.4423121516974435
+            occurrences: 0.4423121516974435,
         }
     }
 }
 
 impl Weights {
     pub fn rank(&self, command: &Command) -> f64 {
-        self.offset + command.age_factor * self.age + command.length_factor * self.length + command.exit_factor * self.exit + command.recent_failure_factor * self.recent_failure + command.selected_dir_factor * self.selected_dir + command.dir_factor * self.dir + command.overlap_factor * self.overlap + command.immediate_overlap_factor * self.immediate_overlap + command.selected_occurrences_factor * self.selected_occurrences + command.occurrences_factor * self.occurrences
+        self.offset
+            + command.age_factor * self.age
+            + command.length_factor * self.length
+            + command.exit_factor * self.exit
+            + command.recent_failure_factor * self.recent_failure
+            + command.selected_dir_factor * self.selected_dir
+            + command.dir_factor * self.dir
+            + command.overlap_factor * self.overlap
+            + command.immediate_overlap_factor * self.immediate_overlap
+            + command.selected_occurrences_factor * self.selected_occurrences
+            + command.occurrences_factor * self.occurrences
     }
 
     pub fn error(&self, settings: &Settings, history: &History, records: i16) -> f64 {

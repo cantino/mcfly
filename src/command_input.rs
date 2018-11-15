@@ -1,13 +1,13 @@
-use unicode_segmentation::UnicodeSegmentation;
 use core::mem;
 use std::fmt;
+use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Debug)]
 pub enum InputCommand {
     Insert(char),
     Backspace,
     Delete,
-    Move(Move)
+    Move(Move),
 }
 
 #[derive(Debug)]
@@ -18,7 +18,7 @@ pub enum Move {
     ForwardWord,
     Backward,
     Forward,
-    Exact(usize)
+    Exact(usize),
 }
 
 #[derive(Debug)]
@@ -29,7 +29,7 @@ pub struct CommandInput {
     /// The current cursor position
     pub cursor: usize,
     /// A cache of the length of command in graphemes (not bytes or chars!)
-    pub len: usize
+    pub len: usize,
 }
 
 impl fmt::Display for CommandInput {
@@ -40,7 +40,11 @@ impl fmt::Display for CommandInput {
 
 impl CommandInput {
     pub fn from<S: Into<String>>(s: S) -> CommandInput {
-        let mut input = CommandInput { command: s.into(), cursor: 0, len: 0 };
+        let mut input = CommandInput {
+            command: s.into(),
+            cursor: 0,
+            len: 0,
+        };
         input.recompute_caches();
         input.cursor = input.len;
         input
@@ -60,13 +64,17 @@ impl CommandInput {
         let mut tmp: isize = self.cursor as isize;
 
         match direction {
-            Move::Backward => { tmp -= 1 },
-            Move::Exact(i) => { tmp = i as isize },
-            Move::Forward => { tmp += 1 },
-            Move::BOL => { tmp = 0 },
-            Move::EOL => { tmp = self.len as isize },
-            Move::ForwardWord => { tmp = self.next_word_boundary() as isize; },
-            Move::BackwardWord => { tmp = self.previous_word_boundary() as isize; }
+            Move::Backward => tmp -= 1,
+            Move::Exact(i) => tmp = i as isize,
+            Move::Forward => tmp += 1,
+            Move::BOL => tmp = 0,
+            Move::EOL => tmp = self.len as isize,
+            Move::ForwardWord => {
+                tmp = self.next_word_boundary() as isize;
+            }
+            Move::BackwardWord => {
+                tmp = self.previous_word_boundary() as isize;
+            }
         }
 
         if tmp < 0 {
@@ -76,7 +84,7 @@ impl CommandInput {
         }
         self.cursor = tmp as usize;
     }
-    
+
     pub fn delete(&mut self, cmd: Move) {
         let mut new_command = String::with_capacity(self.command.len());
         let command_copy = self.command.to_owned();
@@ -85,7 +93,7 @@ impl CommandInput {
         match cmd {
             Move::Backward => {
                 if self.cursor == 0 {
-                    return
+                    return;
                 }
                 self.move_cursor(Move::Backward);
 
@@ -97,10 +105,10 @@ impl CommandInput {
 
                 mem::replace(&mut self.command, new_command);
                 self.recompute_caches();
-            },
+            }
             Move::Forward => {
                 if self.cursor == self.len {
-                    return
+                    return;
                 }
 
                 for (count, (_, item)) in vec.enumerate() {
@@ -111,10 +119,10 @@ impl CommandInput {
 
                 mem::replace(&mut self.command, new_command);
                 self.recompute_caches();
-            },
+            }
             Move::EOL => {
                 if self.cursor == self.len {
-                    return
+                    return;
                 }
 
                 for (count, (_, item)) in vec.enumerate() {
@@ -126,10 +134,10 @@ impl CommandInput {
                 mem::replace(&mut self.command, new_command);
                 self.recompute_caches();
                 self.move_cursor(Move::EOL);
-            },
+            }
             Move::BOL => {
                 if self.cursor == 0 {
-                    return
+                    return;
                 }
 
                 for (count, (_, item)) in vec.enumerate() {
@@ -141,10 +149,10 @@ impl CommandInput {
                 mem::replace(&mut self.command, new_command);
                 self.recompute_caches();
                 self.move_cursor(Move::BOL);
-            },
+            }
             Move::ForwardWord => {
                 if self.cursor == self.len {
-                    return
+                    return;
                 }
 
                 let next_word_boundary = self.next_word_boundary();
@@ -157,10 +165,10 @@ impl CommandInput {
 
                 mem::replace(&mut self.command, new_command);
                 self.recompute_caches();
-            },
+            }
             Move::BackwardWord => {
                 if self.cursor == 0 {
-                    return
+                    return;
                 }
 
                 let previous_word_boundary = self.previous_word_boundary();
@@ -180,7 +188,7 @@ impl CommandInput {
                 let new_cursor_pos = self.cursor - removed_characters;
                 self.move_cursor(Move::Exact(new_cursor_pos));
             }
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
@@ -218,20 +226,20 @@ impl CommandInput {
             return 0;
         }
 
-        let mut word_boundaries = self.
-            command.
-            split_word_bound_indices().
-            map(|(i, _)| i).
-            collect::<Vec<usize>>();
+        let mut word_boundaries = self.command
+            .split_word_bound_indices()
+            .map(|(i, _)| i)
+            .collect::<Vec<usize>>();
 
         word_boundaries.push(self.command.len().to_owned());
 
         let mut word_index: usize = 0;
         let mut found_word: bool = false;
         let command_copy = self.command.to_owned();
-        let vec = command_copy.grapheme_indices(true).
-            enumerate().
-            collect::<Vec<(usize, (usize, &str))>>();
+        let vec = command_copy
+            .grapheme_indices(true)
+            .enumerate()
+            .collect::<Vec<(usize, (usize, &str))>>();
 
         for &(count, (offset, _)) in vec.iter().rev() {
             if count <= self.cursor {
@@ -265,11 +273,10 @@ impl CommandInput {
 
         let grapheme_indices = command_copy.grapheme_indices(true);
 
-        let mut word_boundaries = self.
-            command.
-            split_word_bound_indices().
-            map(|(i, _)| i).
-            collect::<Vec<usize>>();
+        let mut word_boundaries = self.command
+            .split_word_bound_indices()
+            .map(|(i, _)| i)
+            .collect::<Vec<usize>>();
 
         word_boundaries.push(self.command.len().to_owned());
 
