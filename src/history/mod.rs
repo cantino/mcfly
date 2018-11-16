@@ -1,5 +1,5 @@
 pub use self::history::Command;
-pub use self::history::Factors;
+pub use self::history::Features;
 pub use self::history::History;
 
 mod db_extensions;

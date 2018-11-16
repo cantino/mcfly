@@ -1,14 +1,11 @@
 extern crate rand;
 
-use history::Factors;
-use history::History;
+use history::Features;
 use rand::Rng;
-use settings::Settings;
 use std::f64;
-use training_sample_generator::TrainingSampleGenerator;
 
 #[derive(Debug, Copy, Clone)]
-pub struct Weights {
+pub struct Node {
     pub offset: f64,
     pub age: f64,
     pub length: f64,
@@ -22,9 +19,9 @@ pub struct Weights {
     pub occurrences: f64,
 }
 
-impl Default for Weights {
-    fn default() -> Weights {
-        Weights {
+impl Default for Node {
+    fn default() -> Node {
+        Node {
             offset: 0.39403019679847806,
             age: -0.16867884562772287,
             length: -1.0132719748233774,
@@ -40,33 +37,22 @@ impl Default for Weights {
     }
 }
 
-impl Weights {
-    pub fn rank(&self, factors: &Factors) -> f64 {
-        self.offset
-            + factors.age_factor * self.age
-            + factors.length_factor * self.length
-            + factors.exit_factor * self.exit
-            + factors.recent_failure_factor * self.recent_failure
-            + factors.selected_dir_factor * self.selected_dir
-            + factors.dir_factor * self.dir
-            + factors.overlap_factor * self.overlap
-            + factors.immediate_overlap_factor * self.immediate_overlap
-            + factors.selected_occurrences_factor * self.selected_occurrences
-            + factors.occurrences_factor * self.occurrences
-    }
+impl Node {
+    pub fn forward(&self, features: &Features) -> f64 {
+        let result = self.offset
+            + features.age_factor * self.age
+            + features.length_factor * self.length
+            + features.exit_factor * self.exit
+            + features.recent_failure_factor * self.recent_failure
+            + features.selected_dir_factor * self.selected_dir
+            + features.dir_factor * self.dir
+            + features.overlap_factor * self.overlap
+            + features.immediate_overlap_factor * self.immediate_overlap
+            + features.selected_occurrences_factor * self.selected_occurrences
+            + features.occurrences_factor * self.occurrences;
 
-    pub fn error(&self, settings: &Settings, history: &History, records: i16) -> f64 {
-        let generator = TrainingSampleGenerator::new(settings, history);
-        let mut error = 0.0;
-        let mut samples = 0.0;
-        generator.generate(records, |factors: &Factors, correct: bool| {
-            let goal = if correct { 1.0 } else { 0.0 };
-            let prediction = self.rank(&factors);
-            error += (prediction - goal).powi(2);
-            samples += 1.0;
-        });
-
-        error / samples
+        //        result.tanh()
+        result
     }
 
     pub fn randomize(&mut self) {

@@ -1,12 +1,12 @@
-extern crate rusqlite;
 extern crate regex;
+extern crate rusqlite;
 
-use rusqlite::{Connection};
-use weights::Weights;
-use history::history::Factors;
+use history::history::Features;
+use rusqlite::Connection;
+use network::Network;
 
 pub fn add_db_functions(db: &Connection) {
-    let weights = Weights::default();
+    let network = Network::default();
     db.create_scalar_function("nn_rank", 10, true, move |ctx| {
         let age_factor = ctx.get::<f64>(0)?;
         let length_factor = ctx.get::<f64>(1)?;
@@ -19,13 +19,19 @@ pub fn add_db_functions(db: &Connection) {
         let selected_occurrences_factor = ctx.get::<f64>(8)?;
         let occurrences_factor = ctx.get::<f64>(9)?;
 
-        let factors = Factors {
-            age_factor, length_factor, exit_factor,
-            recent_failure_factor, selected_dir_factor, dir_factor,
-            overlap_factor, immediate_overlap_factor,
-            selected_occurrences_factor, occurrences_factor
+        let features = Features {
+            age_factor,
+            length_factor,
+            exit_factor,
+            recent_failure_factor,
+            selected_dir_factor,
+            dir_factor,
+            overlap_factor,
+            immediate_overlap_factor,
+            selected_occurrences_factor,
+            occurrences_factor,
         };
 
-        Ok(weights.rank(&factors))
+        Ok(network.forward(&features))
     }).expect("Successful create_scalar_function");
 }

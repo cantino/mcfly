@@ -13,10 +13,10 @@ use simplified_command::SimplifiedCommand;
 use std::time::Instant;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use weights::Weights;
+use network::Network;
 
 #[derive(Debug, Clone, Default)]
-pub struct Factors {
+pub struct Features {
     pub age_factor: f64,
     pub length_factor: f64,
     pub exit_factor: f64,
@@ -40,7 +40,7 @@ pub struct Command {
     pub exit_code: Option<i32>,
     pub selected: bool,
     pub dir: Option<String>,
-    pub factors: Factors
+    pub features: Features,
 }
 
 impl fmt::Display for Command {
@@ -58,18 +58,10 @@ impl From<Command> for String {
 #[derive(Debug)]
 pub struct History {
     pub connection: Connection,
-    pub weights: Weights,
+    pub network: Network,
 }
 
-const IGNORED_COMMANDS: [&str; 7] = [
-    "pwd",
-    "ls",
-    "cd",
-    "cd ..",
-    "clear",
-    "history",
-    "mcfly search",
-];
+const IGNORED_COMMANDS: [&str; 7] = ["pwd", "ls", "cd", "cd ..", "clear", "history", "mcfly search"];
 
 impl History {
     pub fn load() -> History {
@@ -203,7 +195,7 @@ impl History {
                     selected: row.get_checked(6).expect("selected to be readable"),
                     dir: row.get_checked(7).expect("dir to be readable"),
                     rank: row.get_checked(8).expect("rank to be readable"),
-                    factors: Factors {
+                    features: Features {
                         age_factor: row.get_checked(9).expect("age_factor to be readable"),
                         length_factor: row.get_checked(10).expect("length_factor to be readable"),
                         exit_factor: row.get_checked(11).expect("exit_factor to be readable"),
@@ -219,7 +211,7 @@ impl History {
                             .expect("selected_occurrences_factor to be readable"),
                         occurrences_factor: row.get_checked(18)
                             .expect("occurrences_factor to be readable"),
-                    }
+                    },
                 },
             )
             .expect("Query Map to work");
@@ -532,7 +524,7 @@ impl History {
 
         History {
             connection,
-            weights: Weights::default(),
+            network: Network::default(),
         }
     }
 
@@ -541,7 +533,7 @@ impl History {
         db_extensions::add_db_functions(&connection);
         History {
             connection,
-            weights: Weights::default(),
+            network: Network::default(),
         }
     }
 

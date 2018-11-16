@@ -1,10 +1,10 @@
 extern crate rand;
 
 use history::Command;
+use history::Features;
 use history::History;
 use rand::Rng;
 use settings::Settings;
-use history::Factors;
 
 #[derive(Debug)]
 pub struct TrainingSampleGenerator<'a> {
@@ -19,7 +19,7 @@ impl<'a> TrainingSampleGenerator<'a> {
 
     pub fn generate<F>(&self, records: i16, mut handler: F)
     where
-        F: FnMut(&Factors, bool),
+        F: FnMut(&Features, bool),
     {
         let data_set = self.history.commands(&None, records, 0, true);
 
@@ -44,27 +44,27 @@ impl<'a> TrainingSampleGenerator<'a> {
                 command.when_run,
             );
 
-            // Get the factors for this command at the time it was logged.
+            // Get the features for this command at the time it was logged.
             if positive_examples <= negative_examples {
                 let results = self.history.find_matches(&String::new(), Some(2000));
                 if let Some(our_command_index) =
                     results.iter().position(|ref c| c.cmd.eq(&command.cmd))
                 {
                     let what_should_have_been_first = results.get(our_command_index).unwrap();
-                    handler(&what_should_have_been_first.factors, true);
+                    handler(&what_should_have_been_first.features, true);
                     positive_examples += 1;
                 }
             }
 
             if negative_examples <= positive_examples {
-                // Get the factors for another command that isn't the correct one.
+                // Get the features for another command that isn't the correct one.
                 let results = self.history.find_matches(&String::new(), Some(500));
                 if let Some(random_command) = rand::thread_rng().choose(&results
                     .iter()
                     .filter(|c| !c.cmd.eq(&command.cmd))
                     .collect::<Vec<&Command>>())
                 {
-                    handler(&random_command.factors, false);
+                    handler(&random_command.features, false);
                     negative_examples += 1;
                 }
             }
