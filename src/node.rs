@@ -54,8 +54,24 @@ impl Node {
         }
     }
 
-    pub fn forward(&self, features: &Features) -> f64 {
-        let result = self.offset
+    pub fn empty() -> Node {
+        Node {
+            offset: 0.0,
+            age: 0.0,
+            length: 0.0,
+            exit: 0.0,
+            recent_failure: 0.0,
+            selected_dir: 0.0,
+            dir: 0.0,
+            overlap: 0.0,
+            immediate_overlap: 0.0,
+            selected_occurrences: 0.0,
+            occurrences: 0.0,
+        }
+    }
+
+    pub fn dot(&self, features: &Features) -> f64 {
+        self.offset
             + features.age_factor * self.age
             + features.length_factor * self.length
             + features.exit_factor * self.exit
@@ -65,9 +81,10 @@ impl Node {
             + features.overlap_factor * self.overlap
             + features.immediate_overlap_factor * self.immediate_overlap
             + features.selected_occurrences_factor * self.selected_occurrences
-            + features.occurrences_factor * self.occurrences;
+            + features.occurrences_factor * self.occurrences
+    }
 
-        //        result.tanh()
-        result
+    pub fn output(&self, features: &Features) -> f64 {
+        self.dot(features).tanh()
     }
 }

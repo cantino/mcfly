@@ -18,7 +18,7 @@ impl<'a> Trainer<'a> {
     }
 
     pub fn train(&mut self) {
-        let lr = 0.00005;
+        let lr = 0.0001;
         let momentum = 0.75;
         let batch_size = 250;
         let plateau_threshold = 10;
@@ -28,7 +28,7 @@ impl<'a> Trainer<'a> {
         println!("Evaluating error rate on current {:#?}", self.history.network);
 
         let mut best_overall_network = self.history.network.clone();
-        let mut best_overall_error = self.history.network.error(&generator, batch_size);
+        let mut best_overall_error = self.history.network.average_error(&generator, batch_size);
 
         loop {
             println!("Starting a random restart with current error rate: {}", best_overall_error);
@@ -37,65 +37,99 @@ impl<'a> Trainer<'a> {
             let mut best_restart_error = 10000.0;
             let mut cycles_since_best_restart_error = 0;
             let mut network = Network::random();
-            let mut error = 0.0;
-            let mut samples = 0.0;
+            let mut batch_error = 0.0;
+            let mut batch_samples = 0.0;
 
-            let mut offset_increment = 0.0;
-            let mut age_increment = 0.0;
-            let mut length_increment = 0.0;
-            let mut exit_increment = 0.0;
-            let mut recent_failure_increment = 0.0;
-            let mut selected_dir_increment = 0.0;
-            let mut dir_increment = 0.0;
-            let mut overlap_increment = 0.0;
-            let mut immediate_overlap_increment = 0.0;
-            let mut selected_occurrences_increment = 0.0;
-            let mut occurrences_increment = 0.0;
+            let mut node_increments = [Node::empty()];
+            let mut output_increments = [0.0, 0.0];
 
             loop {
+                //             b_1
+                //                \
+                //        f_1 --- s_1 -- o_1
+                //            \ /           \
+                //             x       b_3 -- s_3 -> o_3 -> e
+                //            / \           /
+                //        f_2 --- s_2 -- o_2
+                //                /
+                //             b_2
+                //
+                // Error (e) = 0.5(t - o_3)^2
+                // Final output (o_3) = tanh(s_3)
+                // Final sum (s_3) = b_3 + w3_1*o_1 + w3_2*o_2
+                // Hidden node 1 output (o_1) = tanh(s_1)
+                // Hidden node 1 sum (s_1) = b_1 + w1_1*f_1 + w1_2*f_2
+                // Hidden node 2 output (o_2) = tanh(s_2)
+                // Hidden node 2 sum (s_2) = b_2 + w2_1*f_1 + w2_2*f_2
+                // Full error derivation: 0.5(t - tanh(b_3 + w3_1*tanh(b_1 + w1_1*f_1 + w1_2*f_2) + w3_2*tanh(b_2 + w2_1*f_1 + w2_2*f_2)))^2
+                // Derivative of error with respect to final output (d_e/d_o_3 0.5(t - o_3)^2): -(t - o_3)
+                // Derivative of output with respect to final sum (d_o_3/d_s_3 tanh(s_3)): 1 - tanh(s_3)^2
+                // Derivative of s_3 with respect to weight w3_1 (d_s_3/d_w3_1 bias + w3_1*o_1 + w3_2*o_2): o_1
+                // Derivative of error with respect to weight w3_1 (d_e/d_o_3 * d_o_3/d_s_3 * d_s_3/d_w3_1): -(t - o_3) * (1 - tanh(s_3)^2) * o_1
+                // Derivative of s_3 with respect to o_1 (d_s_3/d_o_1 b_3 + w3_1*o_1 + w3_2*o_2): w3_1
+
                 generator.generate(Some(batch_size), |features: &Features, correct: bool| {
-                    let goal = if correct { 1.0 } else { 0.0 };
-                    let prediction = network.forward(features);
-                    let prediction_minus_goal = prediction - goal;
-                    error += prediction_minus_goal.powi(2);
-                    samples += 1.0;
+                    let target = if correct { 1.0 } else { -1.0 };
+                    network.compute(features);
 
-                    offset_increment = momentum * offset_increment + lr * 2.0 * prediction_minus_goal;
-                    age_increment = momentum * age_increment + lr * 2.0 * features.age_factor * prediction_minus_goal;
-                    length_increment = momentum * length_increment + lr * 2.0 * features.length_factor * prediction_minus_goal;
-                    exit_increment = momentum * exit_increment + lr * 2.0 * features.exit_factor * prediction_minus_goal;
-                    recent_failure_increment = momentum * recent_failure_increment + lr * 2.0 * features.recent_failure_factor * prediction_minus_goal;
-                    selected_dir_increment = momentum * selected_dir_increment + lr * 2.0 * features.selected_dir_factor * prediction_minus_goal;
-                    dir_increment = momentum * dir_increment + lr * 2.0 * features.dir_factor * prediction_minus_goal;
-                    overlap_increment = momentum * overlap_increment + lr * 2.0 * features.overlap_factor * prediction_minus_goal;
-                    immediate_overlap_increment = momentum * immediate_overlap_increment + lr * 2.0 * features.immediate_overlap_factor * prediction_minus_goal;
-                    selected_occurrences_increment = momentum * selected_occurrences_increment + lr * 2.0 * features.selected_occurrences_factor * prediction_minus_goal;
-                    occurrences_increment = momentum * occurrences_increment + lr * 2.0 * features.occurrences_factor * prediction_minus_goal;
+                    let error = 0.5 * (target - network.final_output).powi(2);
+                    batch_error += error;
+                    batch_samples += 1.0;
 
-                    let single_node = network.hidden_nodes[0];
+                    let d_e_d_o_3 = -(target - network.final_output);
+                    let d_o_3_d_s_3 = 1.0 - network.final_sum.tanh().powi(2);
+
+                    // Output bias
+                    output_increments[0] = momentum * output_increments[0] + lr * d_e_d_o_3 * d_o_3_d_s_3 * 1.0;
+                    // Final sum node 1 output weight
+                    output_increments[1] = momentum * output_increments[1] + lr * d_e_d_o_3 * d_o_3_d_s_3 * network.hidden_node_outputs[0];
+                    // Final sum node 2 output weight
+                    // output_increments[2] = momentum * output_increments[2] + lr * d_e_d_o_3 * d_o_3_d_s_3 * network.hidden_node_outputs[1];
+
+                    let d_s_3_d_o_1 = network.final_weights[0];
+                    let d_o_1_d_s_1 = 1.0 - network.hidden_node_sums[0].tanh().powi(2);
+                    let d_e_d_s_1 = d_e_d_o_3 * d_o_3_d_s_3 * d_s_3_d_o_1 * d_o_1_d_s_1;
+
+                    node_increments[0].offset = momentum * node_increments[0].offset + lr * d_e_d_s_1 * 1.0;
+                    node_increments[0].age = momentum * node_increments[0].age + lr * d_e_d_s_1 * network.hidden_nodes[0].age;
+                    node_increments[0].length = momentum * node_increments[0].length + lr * d_e_d_s_1 * network.hidden_nodes[0].length;
+                    node_increments[0].exit = momentum * node_increments[0].exit + lr * d_e_d_s_1 * network.hidden_nodes[0].exit;
+                    node_increments[0].recent_failure = momentum * node_increments[0].recent_failure + lr * d_e_d_s_1 * network.hidden_nodes[0].recent_failure;
+                    node_increments[0].selected_dir = momentum * node_increments[0].selected_dir + lr * d_e_d_s_1 * network.hidden_nodes[0].selected_dir;
+                    node_increments[0].dir = momentum * node_increments[0].dir + lr * d_e_d_s_1 * network.hidden_nodes[0].dir;
+                    node_increments[0].overlap = momentum * node_increments[0].overlap + lr * d_e_d_s_1 * network.hidden_nodes[0].overlap;
+                    node_increments[0].immediate_overlap = momentum * node_increments[0].immediate_overlap + lr * d_e_d_s_1 * network.hidden_nodes[0].immediate_overlap;
+                    node_increments[0].selected_occurrences = momentum * node_increments[0].selected_occurrences + lr * d_e_d_s_1 * network.hidden_nodes[0].selected_occurrences;
+                    node_increments[0].occurrences = momentum * node_increments[0].occurrences + lr * d_e_d_s_1 * network.hidden_nodes[0].occurrences;
+
+                    let node1 = network.hidden_nodes[0];
                     network = Network {
                         hidden_nodes: [
                             Node {
-                                offset: single_node.offset - offset_increment,
-                                age: single_node.age - age_increment,
-                                length: single_node.length - length_increment,
-                                exit: single_node.exit - exit_increment,
-                                recent_failure: single_node.recent_failure - recent_failure_increment,
-                                selected_dir: single_node.selected_dir - selected_dir_increment,
-                                dir: single_node.dir - dir_increment,
-                                overlap: single_node.overlap - overlap_increment,
-                                immediate_overlap: single_node.immediate_overlap - immediate_overlap_increment,
-                                selected_occurrences: single_node.selected_occurrences - selected_occurrences_increment,
-                                occurrences: single_node.occurrences - occurrences_increment,
+                                offset: node1.offset - node_increments[0].offset,
+                                age: node1.age - node_increments[0].age,
+                                length: node1.length - node_increments[0].length,
+                                exit: node1.exit - node_increments[0].exit,
+                                recent_failure: node1.recent_failure - node_increments[0].recent_failure,
+                                selected_dir: node1.selected_dir - node_increments[0].selected_dir,
+                                dir: node1.dir - node_increments[0].dir,
+                                overlap: node1.overlap - node_increments[0].overlap,
+                                immediate_overlap: node1.immediate_overlap - node_increments[0].immediate_overlap,
+                                selected_occurrences: node1.selected_occurrences - node_increments[0].selected_occurrences,
+                                occurrences: node1.occurrences - node_increments[0].occurrences,
                             }
                         ],
-                        output_bias: 0.0,
-                        output_weights: [1.0],
+                        hidden_node_sums: [0.0],
+                        hidden_node_outputs: [0.0],
+                        final_bias: network.final_bias - output_increments[0],
+                        final_weights: [network.final_weights[0] - output_increments[1]],
+                        final_sum: 0.0,
+                        final_output: 0.0,
                     };
                 });
 
-                if error / samples < best_restart_error {
-                    best_restart_error = error / samples;
+                if batch_error / batch_samples < best_restart_error {
+                    best_restart_error = batch_error / batch_samples;
                     best_restart_network = network.clone();
                     cycles_since_best_restart_error = 0;
                 } else {
@@ -115,7 +149,7 @@ impl<'a> Trainer<'a> {
                     }
                 }
 
-//                println!("Error of {} (vs {} {} ago)", error / samples, best_restart_error, cycles_since_best_restart_error);
+//                println!("Error of {} (vs {} {} ago)", batch_error / batch_samples, best_restart_error, cycles_since_best_restart_error);
             }
         }
     }

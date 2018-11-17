@@ -32,6 +32,6 @@ pub fn add_db_functions(db: &Connection) {
             occurrences_factor,
         };
 
-        Ok(network.forward(&features))
+        Ok(network.output(&features))
     }).expect("Successful create_scalar_function");
 }
