@@ -75,7 +75,7 @@ impl<'a> Exporter<'a> {
         self.output_header();
 
         let generator = TrainingSampleGenerator::new(self.settings, self.history);
-        generator.generate(-1, |features: &Features, correct: bool| {
+        generator.generate(None, |features: &Features, correct: bool| {
             self.output_row(features, correct);
         });
     }

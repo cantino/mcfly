@@ -1,5 +1,4 @@
 use bash_history;
-use dirs::home_dir;
 use rusqlite::{Connection, MappedRows, Row, NO_PARAMS};
 use std::fmt;
 use std::fs;
@@ -14,6 +13,7 @@ use std::time::Instant;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use network::Network;
+use settings::Settings;
 
 #[derive(Debug, Clone, Default)]
 pub struct Features {
@@ -65,7 +65,7 @@ const IGNORED_COMMANDS: [&str; 7] = ["pwd", "ls", "cd", "cd ..", "clear", "histo
 
 impl History {
     pub fn load() -> History {
-        let db_path = History::mcfly_db_path();
+        let db_path = Settings::mcfly_db_path();
         let history = if db_path.exists() {
             History::from_db_path(db_path)
         } else {
@@ -169,7 +169,7 @@ impl History {
                                       ]).expect("Insert into selected_commands to work");
     }
 
-    pub fn find_matches(&self, cmd: &String, num: Option<u16>) -> Vec<Command> {
+    pub fn find_matches(&self, cmd: &String, num: i16) -> Vec<Command> {
         let mut like_query = "%".to_string();
         like_query.push_str(cmd);
         like_query.push_str("%");
@@ -184,7 +184,7 @@ impl History {
         let mut statement = self.connection.prepare(query).expect("Prepare to work");
         let command_iter = statement
             .query_map_named(
-                &[(":like", &like_query), (":limit", &num.unwrap_or(10))],
+                &[(":like", &like_query), (":limit", &num)],
                 |row| Command {
                     id: row.get_checked(0).expect("id to be readable"),
                     cmd: row.get_checked(1).expect("cmd to be readable"),
@@ -357,13 +357,7 @@ impl History {
         //        println!("Seconds: {}", (beginning_of_execution.elapsed().as_secs() as f64) + (beginning_of_execution.elapsed().subsec_nanos() as f64 / 1000_000_000.0));
     }
 
-    pub fn commands(
-        &self,
-        session_id: &Option<String>,
-        num: i16,
-        offset: u16,
-        random: bool,
-    ) -> Vec<Command> {
+    pub fn commands(&self, session_id: &Option<String>, num: i16, offset: u16, random: bool) -> Vec<Command> {
         let order = if random { "RANDOM()" } else { "id" };
         let query = if session_id.is_none() {
             format!("SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir FROM commands ORDER BY {} DESC LIMIT :limit OFFSET :offset", order)
@@ -456,14 +450,14 @@ impl History {
         let bash_history = bash_history::full_history(&bash_history::bash_history_file_path());
 
         // Make ~/.mcfly
-        fs::create_dir_all(History::storage_dir_path())
-            .expect(format!("Unable to create {:?}", History::storage_dir_path()).as_str());
+        fs::create_dir_all(Settings::storage_dir_path())
+            .expect(format!("Unable to create {:?}", Settings::storage_dir_path()).as_str());
 
         // Make ~/.mcfly/history.db
-        let connection = Connection::open(History::mcfly_db_path()).expect(
+        let connection = Connection::open(Settings::mcfly_db_path()).expect(
             format!(
                 "Unable to create history DB at {:?}",
-                History::mcfly_db_path()
+                Settings::mcfly_db_path()
             ).as_str(),
         );
         db_extensions::add_db_functions(&connection);
@@ -535,15 +529,5 @@ impl History {
             connection,
             network: Network::default(),
         }
-    }
-
-    fn storage_dir_path() -> PathBuf {
-        home_dir()
-            .expect("Unable to access home directory")
-            .join(PathBuf::from(".mcfly"))
-    }
-
-    fn mcfly_db_path() -> PathBuf {
-        History::storage_dir_path().join(PathBuf::from("history.db"))
     }
 }

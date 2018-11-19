@@ -38,6 +38,22 @@ impl Default for Node {
 }
 
 impl Node {
+    pub fn random() -> Node {
+        Node {
+            offset: rand::thread_rng().gen_range(-1.0, 1.0),
+            age: rand::thread_rng().gen_range(-1.0, 1.0),
+            length: rand::thread_rng().gen_range(-1.0, 1.0),
+            exit: rand::thread_rng().gen_range(-1.0, 1.0),
+            recent_failure: rand::thread_rng().gen_range(-1.0, 1.0),
+            selected_dir: rand::thread_rng().gen_range(-1.0, 1.0),
+            dir: rand::thread_rng().gen_range(-1.0, 1.0),
+            overlap: rand::thread_rng().gen_range(-1.0, 1.0),
+            immediate_overlap: rand::thread_rng().gen_range(-1.0, 1.0),
+            selected_occurrences: rand::thread_rng().gen_range(-1.0, 1.0),
+            occurrences: rand::thread_rng().gen_range(-1.0, 1.0),
+        }
+    }
+
     pub fn forward(&self, features: &Features) -> f64 {
         let result = self.offset
             + features.age_factor * self.age
@@ -53,21 +69,5 @@ impl Node {
 
         //        result.tanh()
         result
-    }
-
-    pub fn randomize(&mut self) {
-        let min = -1.0;
-        let max = 1.0;
-        self.offset = rand::thread_rng().gen_range(min, max);
-        self.age = rand::thread_rng().gen_range(min, max);
-        self.length = rand::thread_rng().gen_range(min, max);
-        self.exit = rand::thread_rng().gen_range(min, max);
-        self.recent_failure = rand::thread_rng().gen_range(min, max);
-        self.selected_dir = rand::thread_rng().gen_range(min, max);
-        self.dir = rand::thread_rng().gen_range(min, max);
-        self.overlap = rand::thread_rng().gen_range(min, max);
-        self.immediate_overlap = rand::thread_rng().gen_range(min, max);
-        self.selected_occurrences = rand::thread_rng().gen_range(min, max);
-        self.occurrences = rand::thread_rng().gen_range(min, max);
     }
 }

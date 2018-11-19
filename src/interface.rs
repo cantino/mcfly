@@ -254,7 +254,7 @@ impl<'a> Interface<'a> {
     fn refresh_matches(&mut self) {
         self.selection = 0;
         self.matches = self.history
-            .find_matches(&self.input.command, Some(RESULTS_TO_RETURN));
+            .find_matches(&self.input.command, RESULTS_TO_RETURN as i16);
     }
 
     fn select(&mut self) {

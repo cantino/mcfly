@@ -5,6 +5,7 @@ use std::env;
 use std::path::PathBuf;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
+use dirs::home_dir;
 
 #[derive(Debug)]
 pub enum Mode {
@@ -27,6 +28,7 @@ pub struct Settings {
     pub old_dir: Option<String>,
     pub append_to_histfile: bool,
     pub file: Option<String>,
+    pub refresh_training_cache: bool,
 }
 
 impl Default for Settings {
@@ -41,6 +43,7 @@ impl Default for Settings {
             exit_code: None,
             old_dir: None,
             file: None,
+            refresh_training_cache: false,
             append_to_histfile: false,
             debug: false,
         }
@@ -120,7 +123,12 @@ impl Settings {
                     .required(false)
                     .index(1)))
             .subcommand(SubCommand::with_name("train")
-                .about("Train the suggestion engine (developer tool)"))
+                .about("Train the suggestion engine (developer tool)")
+                .arg(Arg::with_name("refresh_cache")
+                    .short("r")
+                    .long("refresh_cache")
+                    .help("Directory where command was run")
+                    .required(false)))
             .subcommand(SubCommand::with_name("export")
                 .about("Export training data (developer tool)")
                 .arg(Arg::with_name("file")
@@ -219,6 +227,7 @@ impl Settings {
 
             ("train", Some(_train_matches)) => {
                 settings.mode = Mode::Train;
+                settings.refresh_training_cache = matches.is_present("refresh_cache");
             }
             ("export", Some(export_matches)) => {
                 settings.mode = Mode::Export;
@@ -229,5 +238,19 @@ impl Settings {
         }
 
         settings
+    }
+
+    pub fn mcfly_training_cache_path() -> PathBuf {
+        Settings::storage_dir_path().join(PathBuf::from("training-cache.v1.csv"))
+    }
+
+    pub fn storage_dir_path() -> PathBuf {
+        home_dir()
+            .expect("Unable to access home directory")
+            .join(PathBuf::from(".mcfly"))
+    }
+
+    pub fn mcfly_db_path() -> PathBuf {
+        Settings::storage_dir_path().join(PathBuf::from("history.db"))
     }
 }

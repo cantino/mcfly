@@ -103,6 +103,7 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 * Add keyboard shortcut to delete something from the history / make it not get suggested.
 * Better prioritization:
   * Finish training the linear perceptron after gathering more selection data.
+  * Cross validation / test set.
   * Learn embeddings per template and use to predict the next embedding, then do approximate nearest neighbor lookup?
     * Could train by predicting whether or not one command should follow another and doing gradient descent.
 * Learn common command options and autocomplete them in the suggestion UI?
