@@ -1,7 +1,6 @@
 extern crate mcfly;
 
 use mcfly::bash_history;
-use mcfly::exporter::Exporter;
 use mcfly::fake_typer;
 use mcfly::history::History;
 use mcfly::interface::Interface;
@@ -45,10 +44,6 @@ fn handle_train(settings: &Settings, history: &mut History) {
     Trainer::new(settings, history).train();
 }
 
-fn handle_export(settings: &Settings, history: &mut History) {
-    Exporter::new(settings, history).export();
-}
-
 fn main() {
     let settings = Settings::parse_args();
 
@@ -63,9 +58,6 @@ fn main() {
         }
         Mode::Train => {
             handle_train(&settings, &mut history);
-        }
-        Mode::Export => {
-            handle_export(&settings, &mut history);
         }
     }
 }

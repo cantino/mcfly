@@ -12,7 +12,6 @@ pub enum Mode {
     Add,
     Search,
     Train,
-    Export,
 }
 
 #[derive(Debug)]
@@ -27,7 +26,6 @@ pub struct Settings {
     pub exit_code: Option<i32>,
     pub old_dir: Option<String>,
     pub append_to_histfile: bool,
-    pub file: Option<String>,
     pub refresh_training_cache: bool,
 }
 
@@ -42,7 +40,6 @@ impl Default for Settings {
             when_run: None,
             exit_code: None,
             old_dir: None,
-            file: None,
             refresh_training_cache: false,
             append_to_histfile: false,
             debug: false,
@@ -129,15 +126,6 @@ impl Settings {
                     .long("refresh_cache")
                     .help("Directory where command was run")
                     .required(false)))
-            .subcommand(SubCommand::with_name("export")
-                .about("Export training data (developer tool)")
-                .arg(Arg::with_name("file")
-                    .short("f")
-                    .long("file")
-                    .value_name("PATH")
-                    .help("Output file path")
-                    .required(true)
-                    .takes_value(true)))
             .get_matches();
 
         let mut settings = Settings::default();
@@ -225,14 +213,11 @@ impl Settings {
                 }
             }
 
-            ("train", Some(_train_matches)) => {
+            ("train", Some(train_matches)) => {
                 settings.mode = Mode::Train;
-                settings.refresh_training_cache = matches.is_present("refresh_cache");
+                settings.refresh_training_cache = train_matches.is_present("refresh_cache");
             }
-            ("export", Some(export_matches)) => {
-                settings.mode = Mode::Export;
-                settings.file = Some(export_matches.value_of("file").unwrap().to_string());
-            }
+
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
             _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
         }

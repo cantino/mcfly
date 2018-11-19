@@ -2,13 +2,11 @@
 
 # McFly - fly through your shell history
 
-> NOTE: This open source project is pre-alpha. It works-- I'm using it every day-- but I haven't trained the prioritization linear perceptron yet because I'm still gathering training data, so the ordering is suboptimal.
-
 <img src="/docs/screenshot.png" alt="screenshot" width="400">
 
 ## Features
 
-* Rebinds `CTRL-R` to bring up a full-screen reverse history search with very smart prioritization.
+* Rebinds `CTRL-R` to bring up a full-screen reverse history search with a neural network for prioritization.
 * Augments your shell history to track return status, timestamp, and execution directory.
 * Unicode support throughout.
 * Also writes to your existing shell history file so you can stop using McFly whenever you want.
@@ -18,8 +16,8 @@
 
 ## Prioritization
 
-The key feature of McFly is smart command prioritization. The goal is for the command you want
-to run to always be one of the suggestions.
+The key feature of McFly is smart command prioritization powered by a small neural network that runs
+in real time. The goal is for the command you want to run to always be one of the top suggestions.
 
 When suggesting a command, McFly takes into consideration:
 
@@ -100,15 +98,10 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 ## Future / Upcoming Features
 
 * Add screencast to README.
-* `mcfly mv` to move directories and update the history.
-* Add keyboard shortcut to delete something from the history / make it not get suggested.
-* Better prioritization:
-  * Optimize training by building features for every command in one pass, then caching that result.
-  * Add back propagation for multi-node networks.
-  * Cross validation / test set.
-  * Learn embeddings per template and use to predict the next embedding, then do approximate nearest neighbor lookup?
-    * Could train by predicting whether or not one command should follow another and doing gradient descent.
+* Add `mcfly mv` or notice `mv` commands to update the history when directories change name / location.
 * Learn common command options and autocomplete them in the suggestion UI?
 * Sort command line args when coming up with the template matching string.
-* Allow suggesting of the last command seen if it's been a while.
-* Detect folder renames?
+* Possible prioritization improvements:
+  * Cross validation / explicit training set.
+  * Learn embeddings per template and use to predict the next embedding, then do approximate nearest neighbor lookup?
+    * Could train by predicting whether or not one command should follow another and doing gradient descent.

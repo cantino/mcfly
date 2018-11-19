@@ -12,7 +12,6 @@ extern crate unicode_segmentation;
 
 pub mod bash_history;
 pub mod command_input;
-pub mod exporter;
 pub mod fake_typer;
 pub mod fixed_length_grapheme_string;
 pub mod history;
