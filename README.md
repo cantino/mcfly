@@ -105,3 +105,15 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
   * Cross validation / explicit training set.
   * Learn embeddings per template and use to predict the next embedding, then do approximate nearest neighbor lookup?
     * Could train by predicting whether or not one command should follow another and doing gradient descent.
+
+## Development
+
+### Releasing
+
+1. Edit Cargo.toml and bump the version.
+1. `git tag vx.x.x`
+1. `git ci -m 'Bumping to vx.x.x'`
+1. `git push origin head --tags`
+1. Let the build finish.
+1. Edit the new Release on Github.
+1. Edit `pkg/brew/mcfly.rb` and update the version and SHAs. (`shasum -a 256 ...`)
