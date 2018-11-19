@@ -8,42 +8,58 @@ use rand::Rng;
 #[derive(Debug, Copy, Clone)]
 pub struct Network {
     pub final_bias: f64,
-    pub final_weights: [f64; 1],
+    pub final_weights: [f64; 2],
     pub final_sum: f64,
     pub final_output: f64,
-    pub hidden_nodes: [Node; 1],
-    pub hidden_node_sums: [f64; 1],
-    pub hidden_node_outputs: [f64; 1],
+    pub hidden_nodes: [Node; 2],
+    pub hidden_node_sums: [f64; 2],
+    pub hidden_node_outputs: [f64; 2],
 }
 
 impl Default for Network {
     fn default() -> Network {
         Network {
-            final_bias: -0.24635202721130312,
+            final_bias: -0.5809821008535968,
             final_weights: [
-                1.7594807105987207
+                2.2272498855369425,
+                1.4793473882504211
             ],
             final_sum: 0.0,
             final_output: 0.0,
             hidden_nodes: [
                 Node {
-                    offset: 0.14860413625826777,
-                    age: -0.7986909450585928,
-                    length: -0.2549746094410215,
-                    exit: 0.16226005476246494,
-                    recent_failure: 0.6729021877538784,
-                    selected_dir: 0.8248136661473066,
-                    dir: 0.4976741959678194,
-                    overlap: 0.5207984980557485,
-                    immediate_overlap: -0.7025151688745555,
-                    selected_occurrences: -0.10318908435959996,
-                    occurrences: 1.381179142147253
+                    offset: -0.05792540247020638,
+                    age: -0.404038222084296,
+                    length: -0.784515923905419,
+                    exit: 0.21690398489096557,
+                    recent_failure: 0.8268005805715911,
+                    selected_dir: 0.9304078322382491,
+                    dir: -0.19777776872031264,
+                    overlap: -0.037932785929368475,
+                    immediate_overlap: -0.3173993964361948,
+                    selected_occurrences: -0.17053559633230875,
+                    occurrences: 2.168352483924481
+                },
+                Node {
+                    offset: 0.4115659521415093,
+                    age: -0.12684960037350226,
+                    length: 0.7869780886334196,
+                    exit: -0.3080243125660992,
+                    recent_failure: 0.5190456125954599,
+                    selected_dir: 0.23097424007110195,
+                    dir: 2.0619093054411963,
+                    overlap: 0.8830808640252389,
+                    immediate_overlap: -0.9448544859217984,
+                    selected_occurrences: -0.05760593990281172,
+                    occurrences: 1.0789305008664094
                 }
             ],
             hidden_node_sums: [
+                0.0,
                 0.0
             ],
             hidden_node_outputs: [
+                0.0,
                 0.0
             ]
         }
@@ -54,10 +70,10 @@ impl Network {
     pub fn random() -> Network {
         Network {
             final_bias: rand::thread_rng().gen_range(-1.0, 1.0),
-            final_weights: [rand::thread_rng().gen_range(-1.0, 1.0)],
-            hidden_nodes: [Node::random()],
-            hidden_node_sums: [0.0],
-            hidden_node_outputs: [0.0],
+            final_weights: [rand::thread_rng().gen_range(-1.0, 1.0), rand::thread_rng().gen_range(-1.0, 1.0)],
+            hidden_nodes: [Node::random(), Node::random()],
+            hidden_node_sums: [0.0, 0.0],
+            hidden_node_outputs: [0.0, 0.0],
             final_sum: 0.0,
             final_output: 0.0,
         }
