@@ -19,9 +19,9 @@ impl<'a> Trainer<'a> {
 
     pub fn train(&mut self) {
         let lr = 0.000005;
-        let momentum = 0.5;
-        let batch_size = 750;
-        let plateau_threshold = 2500;
+        let momentum = 0.0;
+        let batch_size = 1000;
+        let plateau_threshold = 3000;
         let generator = TrainingSampleGenerator::new(self.settings, self.history);
 
         println!("Evaluating error rate on current {:#?}", self.history.network);
@@ -41,6 +41,9 @@ impl<'a> Trainer<'a> {
                 let mut batch_error = 0.0;
                 let mut batch_samples = 0.0;
 
+                // Two node network example:
+                // (Note: we currently are using a three node version, s_0 to s_2 and o_0 to o_2.)
+                //
                 //             b_1
                 //                \
                 //        f_1 --- s_1 -- o_1

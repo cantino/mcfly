@@ -19,53 +19,53 @@ pub struct Network {
 impl Default for Network {
     fn default() -> Network {
         Network {
-            final_bias: -0.2800466377853508,
+            final_bias: -0.3829333755179377,
             final_weights: [
-                -1.8497386287878366,
-                -2.137142910866708,
-                -2.918950396271575
+                0.44656858145177714,
+                -1.9550439349609872,
+                -2.963322601316632
             ],
             final_sum: 0.0,
             final_output: 0.0,
             hidden_nodes: [
                 Node {
-                    offset: 0.5652055853199885,
-                    age: -0.3706738595011909,
-                    length: 0.9540740712311119,
-                    exit: -0.1872885195186705,
-                    recent_failure: -0.29838575658582084,
-                    selected_dir: -0.23819629317146643,
-                    dir: 0.3442373652577654,
-                    overlap: 0.12825090109168805,
-                    immediate_overlap: 0.5761975536319032,
-                    selected_occurrences: -1.2077907855374392,
-                    occurrences: -1.381053270657452
+                    offset: -0.878184962836099,
+                    age: -0.9045522440219468,
+                    length: 0.5406937685800283,
+                    exit: -0.3472765681766297,
+                    recent_failure: -0.05291342121445077,
+                    selected_dir: -0.35027519196134,
+                    dir: -0.2466069217936986,
+                    overlap: 0.4791784213482642,
+                    immediate_overlap: 0.5565797758340211,
+                    selected_occurrences: -0.3600203296209723,
+                    occurrences: 0.15694312742881805
                 },
                 Node {
-                    offset: 0.23585746046522635,
-                    age: -0.12266956747875156,
-                    length: 0.5509065668910484,
-                    exit: -0.028834620080782757,
-                    recent_failure: 0.39385265623001414,
-                    selected_dir: 0.09480796868224452,
-                    dir: -2.7341056602149942,
-                    overlap: -0.16108554638003306,
-                    immediate_overlap: -0.2952654013383927,
-                    selected_occurrences: -0.682954359271296,
-                    occurrences: -1.2057805976144782
+                    offset: -0.04362945902379799,
+                    age: -0.25381913331319716,
+                    length: 0.4238780143901607,
+                    exit: 0.21906785628210726,
+                    recent_failure: -0.9510136025685453,
+                    selected_dir: -0.04654084670567356,
+                    dir: -2.2858050301068693,
+                    overlap: -0.562274365705918,
+                    immediate_overlap: -0.47252489212451904,
+                    selected_occurrences: 0.2446391951417497,
+                    occurrences: -1.4846489581676605
                 },
                 Node {
-                    offset: -0.443855990092483,
-                    age: 0.5549673180113682,
-                    length: 1.3927575840389037,
-                    exit: 0.049541099285673594,
-                    recent_failure: -1.159173467850507,
-                    selected_dir: -0.4834226821225341,
-                    dir: 0.3666721668757306,
-                    overlap: -0.09551749106127021,
-                    immediate_overlap: -0.019347236539586025,
-                    selected_occurrences: 0.48123914331260764,
-                    occurrences: -2.2271429831125347
+                    offset: -0.11992725490486622,
+                    age: 0.3759013420273308,
+                    length: 1.674601413922965,
+                    exit: -0.15529596916772864,
+                    recent_failure: -0.7819181782432957,
+                    selected_dir: -1.1890532332896768,
+                    dir: 0.34723729558743677,
+                    overlap: 0.09372412920642742,
+                    immediate_overlap: 0.393989158881144,
+                    selected_occurrences: -0.2383372126951215,
+                    occurrences: -2.196219880265691
                 }
             ],
             hidden_node_sums: [

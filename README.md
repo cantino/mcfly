@@ -100,6 +100,7 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 ## Future / Upcoming Features
 
 * Add screencast to README.
+* `mcfly mv` to move directories and update the history.
 * Add keyboard shortcut to delete something from the history / make it not get suggested.
 * Better prioritization:
   * Optimize training by building features for every command in one pass, then caching that result.
