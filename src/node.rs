@@ -19,24 +19,6 @@ pub struct Node {
     pub occurrences: f64,
 }
 
-impl Default for Node {
-    fn default() -> Node {
-        Node {
-            offset: 0.39403019679847806,
-            age: -0.16867884562772287,
-            length: -1.0132719748233774,
-            exit: 0.049452285909269283,
-            recent_failure: 0.5096291806456213,
-            selected_dir: 0.9063681241547119,
-            dir: 0.20987523780246092,
-            overlap: 0.030463793073770368,
-            immediate_overlap: -0.5068322907651295,
-            selected_occurrences: 0.12099345850355443,
-            occurrences: 0.4423121516974435,
-        }
-    }
-}
-
 impl Node {
     pub fn random() -> Node {
         Node {

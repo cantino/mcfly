@@ -19,13 +19,33 @@ pub struct Network {
 impl Default for Network {
     fn default() -> Network {
         Network {
-            hidden_nodes: [Node::default()],
-            hidden_node_sums: [0.0],
-            hidden_node_outputs: [0.0],
-            final_bias: 0.0,
-            final_weights: [1.0],
+            final_bias: -0.24635202721130312,
+            final_weights: [
+                1.7594807105987207
+            ],
             final_sum: 0.0,
             final_output: 0.0,
+            hidden_nodes: [
+                Node {
+                    offset: 0.14860413625826777,
+                    age: -0.7986909450585928,
+                    length: -0.2549746094410215,
+                    exit: 0.16226005476246494,
+                    recent_failure: 0.6729021877538784,
+                    selected_dir: 0.8248136661473066,
+                    dir: 0.4976741959678194,
+                    overlap: 0.5207984980557485,
+                    immediate_overlap: -0.7025151688745555,
+                    selected_occurrences: -0.10318908435959996,
+                    occurrences: 1.381179142147253
+                }
+            ],
+            hidden_node_sums: [
+                0.0
+            ],
+            hidden_node_outputs: [
+                0.0
+            ]
         }
     }
 }
