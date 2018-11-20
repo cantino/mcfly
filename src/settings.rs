@@ -12,6 +12,7 @@ pub enum Mode {
     Add,
     Search,
     Train,
+    Move
 }
 
 #[derive(Debug)]
@@ -119,6 +120,20 @@ impl Settings {
                     .multiple(true)
                     .required(false)
                     .index(1)))
+            .subcommand(SubCommand::with_name("move")
+                .about("Record a directory having been moved; moves command records from the old path to the new one")
+                .arg(Arg::with_name("old_dir_path")
+                    .help("The old directory path")
+                    .value_name("OLD_DIR_PATH")
+                    .multiple(false)
+                    .required(true)
+                    .index(1))
+                .arg(Arg::with_name("new_dir_path")
+                    .help("The new directory path")
+                    .value_name("NEW_DIR_PATH")
+                    .multiple(false)
+                    .required(true)
+                    .index(2)))
             .subcommand(SubCommand::with_name("train")
                 .about("Train the suggestion engine (developer tool)")
                 .arg(Arg::with_name("refresh_cache")
@@ -216,6 +231,12 @@ impl Settings {
             ("train", Some(train_matches)) => {
                 settings.mode = Mode::Train;
                 settings.refresh_training_cache = train_matches.is_present("refresh_cache");
+            }
+
+            ("move", Some(move_matches)) => {
+                settings.mode = Mode::Move;
+                settings.old_dir = Some(String::from(move_matches.value_of("old_dir_path").expect("Value for old_dir_path")));
+                settings.dir = String::from(move_matches.value_of("new_dir_path").expect("Value for new_dir_path"));
             }
 
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)

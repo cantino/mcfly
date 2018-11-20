@@ -98,7 +98,7 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 ## Future / Upcoming Features
 
 * Add screencast to README.
-* Add `mcfly mv` or notice `mv` commands to update the history when directories change name / location.
+* Notice `mv` commands to update the history when directories change name / location automatically. (For now, use `mcfly move old_path new_path`.)
 * Learn common command options and autocomplete them in the suggestion UI?
 * Sort command line args when coming up with the template matching string.
 * Possible prioritization improvements:

@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use history::db_extensions;
 use history::schema;
 use simplified_command::SimplifiedCommand;
+use path_update_helpers;
 use std::time::Instant;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
@@ -441,6 +442,41 @@ impl History {
                 &[(":command", &command)],
             )
             .expect("DELETE from commands to work");
+    }
+
+    pub fn update_paths(&self, old_path: &str, new_path: &str) {
+        let normalized_old_path = path_update_helpers::normalize_path(old_path);
+        let normalized_new_path = path_update_helpers::normalize_path(new_path);
+
+        if normalized_old_path.len() > 1 && normalized_new_path.len() > 1 {
+            let query = "
+                SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir
+                FROM commands
+                WHERE dir LIKE (:like)
+                ORDER BY id DESC
+            ";
+
+            let like_query = old_path.to_string() + "%";
+            let commands = self.run_query(&query, &[(":like", &like_query)]);
+            let mut update_count = 0;
+
+            for command in commands {
+                if command.dir.is_some() {
+                    let new_path = path_update_helpers::update_path(&command.dir.unwrap(), &normalized_old_path, &normalized_new_path);
+                    self.connection
+                        .execute_named(
+                            "UPDATE commands SET dir = :dir WHERE id = :id",
+                            &[(":dir", &new_path), (":id", &command.id)],
+                        )
+                        .expect("UPDATE commands to work");
+                }
+                update_count += 1;
+            }
+
+            println!("Path rename from {} to {} complete for {} commands", normalized_old_path, normalized_new_path, update_count);
+        } else {
+            println!("Invalid path rename from {} to {}", normalized_old_path, normalized_new_path);
+        }
     }
 
     fn from_bash_history() -> History {

@@ -44,6 +44,10 @@ fn handle_train(settings: &Settings, history: &mut History) {
     Trainer::new(settings, history).train();
 }
 
+fn handle_move(settings: &Settings, history: &mut History) {
+    history.update_paths(&settings.old_dir.clone().unwrap(), &settings.dir);
+}
+
 fn main() {
     let settings = Settings::parse_args();
 
@@ -58,6 +62,9 @@ fn main() {
         }
         Mode::Train => {
             handle_train(&settings, &mut history);
+        }
+        Mode::Move => {
+            handle_move(&settings, &mut history);
         }
     }
 }
