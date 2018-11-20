@@ -6,7 +6,9 @@ extern crate dirs;
 extern crate libc;
 extern crate rand;
 extern crate regex;
+extern crate relative_path;
 extern crate rusqlite;
+extern crate shellexpand;
 extern crate termion;
 extern crate unicode_segmentation;
 
@@ -16,6 +18,7 @@ pub mod fake_typer;
 pub mod fixed_length_grapheme_string;
 pub mod history;
 pub mod history_cleaner;
+pub mod history_path_updater;
 pub mod interface;
 pub mod settings;
 pub mod simplified_command;
