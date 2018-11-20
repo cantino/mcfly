@@ -14,6 +14,7 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use network::Network;
 use settings::Settings;
+use rusqlite::types::ToSql;
 
 #[derive(Debug, Clone, Default)]
 pub struct Features {
@@ -365,7 +366,22 @@ impl History {
             format!("SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir FROM commands WHERE session_id = :session_id ORDER BY {} DESC LIMIT :limit OFFSET :offset", order)
         };
 
-        let mut statement = self.connection.prepare(&query).unwrap();
+        if session_id.is_none() {
+            self.run_query(&query, &[
+                (":limit", &num),
+                (":offset", &offset),
+            ])
+        } else {
+            self.run_query(&query, &[
+                (":session_id", &session_id.to_owned().unwrap()),
+                (":limit", &num),
+                (":offset", &offset),
+            ])
+        }
+    }
+
+    fn run_query(&self, query: &str, params: &[(&str, &ToSql)]) -> Vec<Command> {
+        let mut statement = self.connection.prepare(query).unwrap();
 
         let closure: fn(&Row) -> Command = |row| Command {
             id: row.get(0),
@@ -379,22 +395,9 @@ impl History {
             ..Command::default()
         };
 
-        let command_iter: MappedRows<_> = if session_id.is_none() {
-            statement
-                .query_map_named(&[(":limit", &num), (":offset", &offset)], closure)
-                .expect("Query Map to work")
-        } else {
-            statement
-                .query_map_named(
-                    &[
-                        (":session_id", &session_id.to_owned().unwrap()),
-                        (":limit", &num),
-                        (":offset", &offset),
-                    ],
-                    closure,
-                )
-                .expect("Query Map to work")
-        };
+        let command_iter: MappedRows<_> = statement.
+            query_map_named(params, closure).
+            expect("Query Map to work");
 
         let mut vec = Vec::new();
         for result in command_iter {
