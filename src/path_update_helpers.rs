@@ -121,7 +121,7 @@ mod tests {
         assert_eq!(normalize_path("/foo/bar/../.."), String::from("/"));
         assert_eq!(
             normalize_path("~/foo/bar/../baz"),
-            String::from(env::var("HOME").unwrap()) + "/foo/baz"
+            PathBuf::from(env::var("HOME").unwrap()).join("foo/baz").to_string_lossy()
         );
         assert_eq!(
             normalize_path("~/foo/bar/../.."),
