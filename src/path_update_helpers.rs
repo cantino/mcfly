@@ -17,7 +17,7 @@ pub fn normalize_path(incoming_path: &str) -> String {
         RelativePath::new(to_current_dir.to_str().unwrap()).normalize().to_path("/")
     };
 
-    path_buf.to_str().expect("Path to be valid UTF8").to_string()
+    path_buf.to_str().expect("Path to be valid UTF8").to_string().replace("//", "/")
 }
 
 pub fn parse_mv_command(command: &str) -> Vec<String> {
