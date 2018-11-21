@@ -20,10 +20,6 @@ pub fn normalize_path(incoming_path: &str) -> String {
     path_buf.to_str().expect("Path to be valid UTF8").to_string()
 }
 
-pub fn update_path(path: &str, old_path: &str, new_path: &str) -> String {
-    path.replacen(old_path, new_path, 1)
-}
-
 pub fn parse_mv_command(command: &str) -> Vec<String> {
     let mut in_double_quote = false;
     let mut in_single_quote = false;
@@ -101,7 +97,7 @@ pub fn parse_mv_command(command: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use std::env;
-    use super::{normalize_path, update_path, parse_mv_command};
+    use super::{normalize_path, parse_mv_command};
 
     #[test]
     fn normalize_path_works_absolute_paths() {
@@ -129,42 +125,6 @@ mod tests {
         assert_eq!(
             normalize_path("~/foo/bar/../.."),
             String::from(env::var("HOME").unwrap())
-        );
-    }
-
-    #[test]
-    fn update_path_works() {
-        assert_eq!(
-            update_path("/foo/bar", "/foo/bar", "/bar"),
-            String::from("/bar")
-        );
-        assert_eq!(
-            update_path("/foo/bar", "/foo/bar", "/blah"),
-            String::from("/blah")
-        );
-        assert_eq!(
-            update_path("/foo/bar", "/foo/bar", "/"),
-            String::from("/")
-        );
-        assert_eq!(
-            update_path("/foo/bar/baz/bing", "/foo/bar", "/bar"),
-            String::from("/bar/baz/bing")
-        );
-        assert_eq!(
-            update_path("/foo/bar/baz/bing", "/foo/bar", "/foo/blah"),
-            String::from("/foo/blah/baz/bing")
-        );
-        assert_eq!(
-            update_path("/Users/joe/projects/play/rust/mcfly", "/Users/joe/projects/play", "/Users/joe/projects/oss"),
-            String::from("/Users/joe/projects/oss/rust/mcfly")
-        );
-        assert_eq!(
-            update_path("/Users/joe/projects/play/rust/mcfly", "/Users/joe/projects/play", "/Users/joe/play"),
-            String::from("/Users/joe/play/rust/mcfly")
-        );
-        assert_eq!(
-            update_path("/Users/joe/projects/play/rust/mcfly", "/Users/joe/projects/play/rust", "/Users/joe/rust"),
-            String::from("/Users/joe/rust/mcfly")
         );
     }
 

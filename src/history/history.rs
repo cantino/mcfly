@@ -181,13 +181,26 @@ impl History {
                     let normalized_from = path_update_helpers::normalize_path(&parts[0]);
                     let normalized_to = path_update_helpers::normalize_path(&parts[1]);
 
-                    // If $to/$(base_name($from)) exists, assume we've moved $from into $to.
+                    // If $to/$(base_name($from)) exists, and is a directory, assume we've moved $from into $to.
                     // If not, assume we've renamed $from to $to.
 
-                    if let Some(dir_name) = PathBuf::from(&normalized_from).file_name() {
-                        let maybe_moved_directory = PathBuf::from(&normalized_to).join(dir_name);
-                        if maybe_moved_directory.exists() && maybe_moved_directory.is_dir() {
-                            self.update_paths(&normalized_from, maybe_moved_directory.to_str().unwrap());
+                    if let Some(basename) = PathBuf::from(&normalized_from).file_name() {
+                        if let Some(utf8_basename) = basename.to_str() {
+                            if utf8_basename.contains(".") {
+                                // It was probably a file.
+                                return;
+                            }
+                            let maybe_moved_directory = PathBuf::from(&normalized_to).join(utf8_basename);
+                            if maybe_moved_directory.exists() {
+                                if maybe_moved_directory.is_dir() {
+                                    self.update_paths(&normalized_from, maybe_moved_directory.to_str().unwrap());
+                                } else {
+                                    // The source must have been a file, so ignore it.
+                                }
+                                return;
+                            }
+                        } else {
+                            // Don't try to handle non-utf8 filenames, at least for now.
                             return;
                         }
                     }
@@ -479,31 +492,29 @@ impl History {
         let normalized_new_path = path_update_helpers::normalize_path(new_path);
 
         if normalized_old_path.len() > 1 && normalized_new_path.len() > 1 {
-            let query = "
-                SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir
-                FROM commands
-                WHERE dir LIKE (:like)
-                ORDER BY id DESC
-            ";
-
             let like_query = old_path.to_string() + "%";
-            let commands = self.run_query(&query, &[(":like", &like_query)]);
-            let mut update_count = 0;
 
-            for command in commands {
-                if command.dir.is_some() {
-                    let new_path = path_update_helpers::update_path(&command.dir.unwrap(), &normalized_old_path, &normalized_new_path);
-                    self.connection
-                        .execute_named(
-                            "UPDATE commands SET dir = :dir WHERE id = :id",
-                            &[(":dir", &new_path), (":id", &command.id)],
-                        )
-                        .expect("UPDATE commands to work");
-                }
-                update_count += 1;
-            }
+            let mut dir_update_statement = self.connection.prepare(
+                "UPDATE commands SET dir = :new_dir || SUBSTR(dir, :length) WHERE dir LIKE (:like)"
+            ).unwrap();
 
-            println!("McFly: Command database paths renamed from {} to {} (effected {} commands)", normalized_old_path, normalized_new_path, update_count);
+            let mut old_dir_update_statement = self.connection.prepare(
+                "UPDATE commands SET old_dir = :new_dir || SUBSTR(old_dir, :length) WHERE old_dir LIKE (:like)"
+            ).unwrap();
+
+            let affected = dir_update_statement.execute_named(&[
+                (":like", &like_query),
+                (":new_dir", &normalized_new_path),
+                (":length", &(normalized_old_path.chars().count() as u32 + 1)),
+            ]).expect("dir UPDATE to work");
+
+            old_dir_update_statement.execute_named(&[
+                (":like", &like_query),
+                (":new_dir", &normalized_new_path),
+                (":length", &(normalized_old_path.chars().count() as u32 + 1)),
+            ]).expect("old_dir UPDATE to work");
+
+            println!("McFly: Command database paths renamed from {} to {} (affected {} commands)", normalized_old_path, normalized_new_path, affected);
         } else {
             println!("McFly: Not updating paths due to invalid options.");
         }
