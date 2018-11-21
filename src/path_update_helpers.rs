@@ -17,7 +17,7 @@ pub fn normalize_path(incoming_path: &str) -> String {
         RelativePath::new(to_current_dir.to_str().unwrap()).normalize().to_path("/")
     };
 
-    path_buf.to_str().expect("Path to be valid UTF8").to_string().replace("//", "/")
+    path_buf.to_str().expect("Path to be valid UTF8").to_string()
 }
 
 pub fn parse_mv_command(command: &str) -> Vec<String> {
@@ -98,6 +98,7 @@ pub fn parse_mv_command(command: &str) -> Vec<String> {
 mod tests {
     use std::env;
     use super::{normalize_path, parse_mv_command};
+    use std::path::PathBuf;
 
     #[test]
     fn normalize_path_works_absolute_paths() {
@@ -109,7 +110,7 @@ mod tests {
     #[test]
     fn normalize_path_works_with_tilda() {
         assert_eq!(normalize_path("~/"), String::from(env::var("HOME").unwrap()));
-        assert_eq!(normalize_path("~/foo"), String::from(env::var("HOME").unwrap()) + "/foo");
+        assert_eq!(normalize_path("~/foo"), PathBuf::from(env::var("HOME").unwrap()).join("foo").to_string_lossy());
     }
 
     #[test]

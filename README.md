@@ -29,7 +29,7 @@ When suggesting a command, McFly takes into consideration:
 
 ## Installation
 
-### Install with Homebrew
+### Install with Homebrew (on OS X or Linux)
 
 1. Install the tap:
     ```bash
@@ -75,12 +75,9 @@ When suggesting a command, McFly takes into consideration:
 ### Install manually from source
 
 1. [Install Rust 1.29 or later](https://www.rust-lang.org/en-US/install.html)
-1. Compile with optimizations
-    ```bash
-    cargo build --release
-    ```
-1. Copy `./target/release/mcfly` into a location in your `$PATH`. (For example, you could create a directory at `~/bin`
-and add `export PATH="$PATH:$HOME/bin"` to your `.bash_profile`.)
+1. Run `git clone https://github.com/cantino/mcfly` and `cd mcfly`
+1. Run `cargo install --path .`
+1. Ensure `~/.cargo/bin` is in your `$PATH`.
 1. Add the following to your `~/.bash_profile` or `~/.bashrc` file:
     ```bash
     if [ -f /path/to/mcfly-bash.sh ]; then
