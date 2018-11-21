@@ -116,6 +116,7 @@ impl History {
         exit_code: &Option<i32>,
         old_dir: &Option<String>,
     ) {
+        self.possibly_update_paths(command, exit_code);
         let selected = self.determine_if_selected_from_ui(command, session_id, dir);
         let simplified_command = SimplifiedCommand::new(command.as_str(), true);
         self.connection.execute_named("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, old_dir) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :selected, :dir, :old_dir)",
@@ -169,6 +170,35 @@ impl History {
                                           (":session_id", &session_id.to_owned()),
                                           (":dir", &dir.to_owned())
                                       ]).expect("Insert into selected_commands to work");
+    }
+
+    // Update historical paths in our database if a directory has been renamed or moved.
+    pub fn possibly_update_paths(&self, command: &String, exit_code: &Option<i32>) {
+        if exit_code.is_none() || exit_code.unwrap() == 0 {
+            if command.to_lowercase().starts_with("mv ") && !command.contains("*") && !command.contains("?") {
+                let parts = path_update_helpers::parse_mv_command(command);
+                if parts.len() == 2 {
+                    let normalized_from = path_update_helpers::normalize_path(&parts[0]);
+                    let normalized_to = path_update_helpers::normalize_path(&parts[1]);
+
+                    // If $to/$(base_name($from)) exists, assume we've moved $from into $to.
+                    // If not, assume we've renamed $from to $to.
+
+                    if let Some(dir_name) = PathBuf::from(&normalized_from).file_name() {
+                        let maybe_moved_directory = PathBuf::from(&normalized_to).join(dir_name);
+                        if maybe_moved_directory.exists() && maybe_moved_directory.is_dir() {
+                            self.update_paths(&normalized_from, maybe_moved_directory.to_str().unwrap());
+                            return;
+                        }
+                    }
+
+                    let to_pathbuf = PathBuf::from(&normalized_to);
+                    if to_pathbuf.exists() && to_pathbuf.is_dir() {
+                        self.update_paths(&normalized_from, &normalized_to);
+                    }
+                }
+            }
+        }
     }
 
     pub fn find_matches(&self, cmd: &String, num: i16) -> Vec<Command> {
@@ -473,9 +503,9 @@ impl History {
                 update_count += 1;
             }
 
-            println!("Path rename from {} to {} complete for {} commands", normalized_old_path, normalized_new_path, update_count);
+            println!("McFly: Command database paths renamed from {} to {} (effected {} commands)", normalized_old_path, normalized_new_path, update_count);
         } else {
-            println!("Invalid path rename from {} to {}", normalized_old_path, normalized_new_path);
+            println!("McFly: Not updating paths due to invalid options.");
         }
     }
 
