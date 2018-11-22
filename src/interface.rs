@@ -43,7 +43,7 @@ pub enum MenuMode {
 impl MenuMode {
     fn text(&self) -> &str {
         match *self {
-            MenuMode::Normal => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F1 - Delete",
+            MenuMode::Normal => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
             MenuMode::ConfirmDelete => "Delete selected command from the history? (Y/N)",
         }
     }
@@ -355,7 +355,7 @@ impl<'a> Interface<'a> {
                         self.input.insert(c);
                         self.refresh_matches();
                     }
-                    Key::F(1) => {
+                    Key::F(2) => {
                         if self.matches.len() > 0 {
                             self.menu_mode = MenuMode::ConfirmDelete;
                         }
