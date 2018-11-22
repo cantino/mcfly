@@ -39,13 +39,13 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     brew install mcfly
     ```
-1. Add the following to your `~/.bash_profile` (OS X) or `~/.bashrc` (Linux) file:
+1. Add the following to your `~/.bashrc` file:
     ```bash
     if [ -f $(brew --prefix)/opt/mcfly/mcfly-bash.sh ]; then
       . $(brew --prefix)/opt/mcfly/mcfly-bash.sh
     fi
     ```
-1. Run `. ~/.bash_profile` (OS X) / `. ~/.bashrc` (Linux) or restart your terminal emulator.
+1. Run `. ~/.bashrc` or restart your terminal emulator.
 
 #### Uninstalling with Homebrew
 
@@ -57,20 +57,20 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     brew untap cantino/mcfly
     ```
-1. Remove the lines you added to `~/.bash_profile` or `~/.bashrc`.
+1. Remove the lines you added to `~/.bashrc`.
 
 ### Installing manually from GitHub
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
-1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bash_profile`.)
+1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc`.)
 1. Copy `mcfly-bash.sh` to a known location.
-1. Add the following to your `~/.bash_profile` (OS X) or `~/.bashrc` (Linux) file:
+1. Add the following to your `~/.bashrc` file:
     ```bash
     if [ -f /path/to/mcfly-bash.sh ]; then
       . /path/to/mcfly-bash.sh
     fi
     ```
-1. Run `. ~/.bash_profile` / `. ~/.bashrc` or restart your terminal emulator.
+1. Run `. ~/.bashrc` or restart your terminal emulator.
 
 ### Install manually from source
 
@@ -78,13 +78,13 @@ When suggesting a command, McFly takes into consideration:
 1. Run `git clone https://github.com/cantino/mcfly` and `cd mcfly`
 1. Run `cargo install --path .`
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
-1. Add the following to your `~/.bash_profile` (OS X) or `~/.bashrc` (Linux) file:
+1. Add the following to your `~/.bashrc` file:
     ```bash
     if [ -f /path/to/mcfly-bash.sh ]; then
       . /path/to/mcfly-bash.sh
     fi
     ```
-1. Run `. ~/.bash_profile` / `. ~/.bashrc` or restart your terminal emulator.
+1. Run `. ~/.bashrc` or restart your terminal emulator.
 
 ## iTerm2
 
