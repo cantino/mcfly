@@ -22,9 +22,9 @@ class Mcfly < Formula
   def install
     prefix.install "mcfly-bash.sh"
     bin.install "mcfly"
-    ohai "To finish installing mcfly, add the following to your ~/.bash_profile (OS X) or ~/.bashrc (Linux) file:
-if [ -f $(brew --prefix)/opt/mcfly/mcfly-bash.sh ]; then
-  . $(brew --prefix)/opt/mcfly/mcfly-bash.sh
-fi".strip
+    ohai "Add to your ~/.bash_profile (OS X) or ~/.bashrc (Linux) file:"
+    puts "if [ -f $(brew --prefix)/opt/mcfly/mcfly-bash.sh ]; then"
+    puts "  . $(brew --prefix)/opt/mcfly/mcfly-bash.sh"
+    puts "fi"
   end
 end
