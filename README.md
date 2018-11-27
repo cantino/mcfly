@@ -5,8 +5,10 @@
 <img src="/docs/screenshot.png" alt="screenshot" width="400">
 
 McFly replaces your default `ctrl-r` Bash history search with an intelligent search engine that takes into account
-your working directory and the context of recently executed commands. McFly's suggestions are intelligently prioritized
-with a neural network. TLDR: hitting `ctrl-r` will suggest commands that make sense for what you're currently working on.
+your working directory and the context of recently executed commands. McFly's suggestions are prioritized
+in real time with a small neural network.
+ 
+TL;DR: an upgraded `ctrl-r` for Bash whose history results make sense for what you're working on right now.
 
 ## Features
 
