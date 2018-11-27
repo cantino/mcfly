@@ -4,15 +4,19 @@
 
 <img src="/docs/screenshot.png" alt="screenshot" width="400">
 
+McFly replaces your default `ctrl-r` Bash history search with an intelligent search engine that takes into account
+your working directory and the context of recently executed commands. McFly's suggestions are intelligently prioritized
+with a neural network. TLDR: hitting `ctrl-r` will suggest commands that make sense for what you're currently working on.
+
 ## Features
 
-* Rebinds `CTRL-R` to bring up a full-screen reverse history search with a neural network for prioritization.
-* Augments your shell history to track return status, timestamp, and execution directory.
+* Rebinds `ctrl-r` to bring up a full-screen reverse history search prioritized with a small neural network.
+* Augments your shell history to track command exit status, timestamp, and execution directory in a SQLite database.
+* Maintains your normal Bash history file as well so that you can stop using McFly whenever you want.
 * Unicode support throughout.
-* Also writes to your existing shell history file so you can stop using McFly whenever you want.
-* Simple command to scrub a history item from the database and shell history.
-* Designed to be extensible in the future for other shells.
-* Written in Rust, so it's fast and reliable.
+* Includes a simple action to scrub any history item from the McFly database and your shell history files.
+* Designed to be extensible for other shells in the future.
+* Written in Rust, so it's fast and safe.
 
 ## Prioritization
 
@@ -21,10 +25,11 @@ in real time. The goal is for the command you want to run to always be one of th
 
 When suggesting a command, McFly takes into consideration:
 
-* The directory where you ran the command. You're more likely to run the same command in the same directory in the future.
-* What commands you typed before the command (e.g., the command's context).
+* The directory where you ran the command. You're likely to run that command in the same directory in the future.
+* What commands you typed before the command (e.g., the command's execution context).
 * How often you run the command.
 * When you last ran the command.
+* If you've selected the command in McFly before.
 * The command's historical exit status. You probably don't want to run old failed commands.
 
 ## Installation
@@ -92,22 +97,24 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 
 <img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
 
-## Future / Upcoming Features
+## Possible Future Features
 
-* Add screencast to README.
-* Notice `mv` commands to update the history when directories change name / location automatically. (For now, use `mcfly move old_path new_path`.)
+* Add a screencast to README.
 * Learn common command options and autocomplete them in the suggestion UI?
 * Sort command line args when coming up with the template matching string.
 * Possible prioritization improvements:
-  * Cross validation / explicit training set.
-  * Learn embeddings per template and use to predict the next embedding, then do approximate nearest neighbor lookup?
-    * Could train by predicting whether or not one command should follow another and doing gradient descent.
+  * Cross validation & explicit training set selection.
+  * Learn command embeddings
 
 ## Development
 
+### Running tests
+
+`cargo test`
+
 ### Releasing
 
-1. Edit Cargo.toml and bump the version.
+1. Edit `Cargo.toml` and bump the version.
 1. `git tag vx.x.x`
 1. `git ci -m 'Bumping to vx.x.x'`
 1. `git push origin head --tags`
