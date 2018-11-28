@@ -48,8 +48,8 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Add the following to your `~/.bashrc` file:
     ```bash
-    if [ -f $(brew --prefix)/opt/mcfly/mcfly-bash.sh ]; then
-      . $(brew --prefix)/opt/mcfly/mcfly-bash.sh
+    if [[ -f "$(brew --prefix)/opt/mcfly/mcfly.bash" ]]; then
+      source "$(brew --prefix)/opt/mcfly/mcfly.bash"
     fi
     ```
 1. Run `. ~/.bashrc` or restart your terminal emulator.
@@ -70,11 +70,11 @@ When suggesting a command, McFly takes into consideration:
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
 1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc`.)
-1. Copy `mcfly-bash.sh` to a known location.
+1. Copy `mcfly.bash` to a known location.
 1. Add the following to your `~/.bashrc` file:
     ```bash
-    if [ -f /path/to/mcfly-bash.sh ]; then
-      . /path/to/mcfly-bash.sh
+    if [[ -f /path/to/mcfly.bash ]]; then
+      source /path/to/mcfly.bash
     fi
     ```
 1. Run `. ~/.bashrc` or restart your terminal emulator.
@@ -87,8 +87,8 @@ When suggesting a command, McFly takes into consideration:
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
 1. Add the following to your `~/.bashrc` file:
     ```bash
-    if [ -f /path/to/mcfly-bash.sh ]; then
-      . /path/to/mcfly-bash.sh
+    if [[ -f /path/to/mcfly.bash ]]; then
+      source /path/to/mcfly.bash
     fi
     ```
 1. Run `. ~/.bashrc` or restart your terminal emulator.

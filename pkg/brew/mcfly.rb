@@ -20,12 +20,12 @@ class Mcfly < Formula
   end
 
   def install
-    prefix.install "mcfly-bash.sh"
+    prefix.install "mcfly.bash"
     bin.install "mcfly"
     ohai "NOTE> Now you need to edit ~/.bashrc and add the following:"
     puts
-    puts "if [ -f $(brew --prefix)/opt/mcfly/mcfly-bash.sh ]; then"
-    puts "  . $(brew --prefix)/opt/mcfly/mcfly-bash.sh"
+    puts "if [[ -f \"$(brew --prefix)/opt/mcfly/mcfly.bash\" ]]; then"
+    puts "  source \"$(brew --prefix)/opt/mcfly/mcfly.bash\""
     puts "fi"
   end
 end

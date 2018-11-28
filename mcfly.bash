@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # Avoid loading this file more than once
-if [[ "$__mcfly_loaded" == "loaded" ]]; then
+if [[ "$__MCFLY_LOADED" == "loaded" ]]; then
   return 0
 fi
-export __mcfly_loaded="loaded"
+__MCFLY_LOADED="loaded"
 export MCFLY_SESSION_ID=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 24 | head -n 1)
 export MCFLY_HISTORY=$(mktemp -t mcfly.XXXX)
 export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
 
-if [ -f "$HISTFILE" ];
+if [[ -f "$HISTFILE" ]];
 then
-  tail -n100 $HISTFILE > $MCFLY_HISTORY
+  tail -n100 ${HISTFILE} > ${MCFLY_HISTORY}
 else
-  printf "Welcome to McFly\n" > $MCFLY_HISTORY
+  printf "Welcome to McFly\n" > ${MCFLY_HISTORY}
 fi
 
 # Ignore commands with a leading space
@@ -33,7 +33,7 @@ shopt -s histappend
 #   4. clear the in-memory history and reload it from $MCFLY_HISTORY (to remove instances of '#mcfly: ' from the
 #      local session history)
 #   5. run whatever was already in $PROMPT_COMMAND
-export PROMPT_COMMAND="__last_exit=\$?;history -a \$MCFLY_HISTORY;mcfly add --exit \$__last_exit --append-to-histfile;history -cr \$MCFLY_HISTORY;${PROMPT_COMMAND}"
+PROMPT_COMMAND="__last_exit=\$?;history -a \$MCFLY_HISTORY;mcfly add --exit \$__last_exit --append-to-histfile;history -cr \$MCFLY_HISTORY;${PROMPT_COMMAND}"
 
 # If this is an interactive shell, take ownership of ctrl-r.
 # The logic here is:
