@@ -7,25 +7,25 @@
 #   brew untap cantino/mcfly
 
 class Mcfly < Formula
-  version 'v0.2.1'
+  version 'v0.2.2'
   desc "McFly"
   homepage "https://github.com/cantino/mcfly"
 
   if OS.mac?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-apple-darwin.tar.gz"
-    sha256 "ace681e5bf129f31a3242061fa43d53c9506aea19658e32dd8ee14e57247f214"
+    sha256 "66c17640f457e10e42ae8ba86526e0f95e173241cefdd1a18a478dfa44ac0ea2"
   elsif OS.linux?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-unknown-linux-gnu.tar.gz"
-    sha256 "b2049ac3337189fe2e0c1abae71e917bb617fdefe5818f2297a47f13bbe5d653"
+    sha256 "1a203c4fb3d3267e825b60bb5711c3e4ec102465ed8641ad1edff7d002ed99e1"
   end
 
   def install
     prefix.install "mcfly.bash"
     bin.install "mcfly"
-    ohai "NOTE> Now you need to edit ~/.bashrc and add the following:"
+    ohai "ONE MORE STEP! Edit ~/.bashrc and add the following:"
     puts
-    puts "if [[ -f \"$(brew --prefix)/opt/mcfly/mcfly.bash\" ]]; then"
-    puts "  source \"$(brew --prefix)/opt/mcfly/mcfly.bash\""
+    puts "if [ -f $(brew --prefix)/opt/mcfly/mcfly.bash ]; then"
+    puts "  . $(brew --prefix)/opt/mcfly/mcfly.bash"
     puts "fi"
   end
 end
