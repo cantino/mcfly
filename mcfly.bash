@@ -11,9 +11,9 @@ export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
 
 if [[ -f "$HISTFILE" ]];
 then
-  tail -n100 ${HISTFILE} > ${MCFLY_HISTORY}
+  tail -n100 ${HISTFILE} >| ${MCFLY_HISTORY}
 else
-  printf "Welcome to McFly\n" > ${MCFLY_HISTORY}
+  printf "Welcome to McFly\n" >| ${MCFLY_HISTORY}
 fi
 
 # Ignore commands with a leading space
