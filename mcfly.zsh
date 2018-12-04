@@ -35,6 +35,10 @@ setopt INC_APPEND_HISTORY
 #   5. run whatever was already in $PROMPT_COMMAND
 PROMPT_COMMAND="__last_exit=\$?;history -a \$MCFLY_HISTORY;mcfly add --exit \$__last_exit --append-to-histfile;history -cr \$MCFLY_HISTORY;${PROMPT_COMMAND}"
 
+precmd() {
+  eval "$PROMPT_COMMAND"
+}
+
 mcfly-search() zle -M "$(mcfly search)"
 
 zle -N mcfly-search
