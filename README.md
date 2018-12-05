@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/cantino/mcfly.svg?branch=master)](https://travis-ci.org/cantino/mcfly)
+[![](https://img.shields.io/crates/v/mcfly.svg)](https://crates.io/crates/mcfly)
 
 # McFly - fly through your shell history
 
