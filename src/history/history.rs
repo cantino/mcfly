@@ -492,24 +492,26 @@ impl History {
         let normalized_new_path = path_update_helpers::normalize_path(new_path);
 
         if normalized_old_path.len() > 1 && normalized_new_path.len() > 1 {
-            let like_query = old_path.to_string() + "%";
+            let like_query = normalized_old_path.to_string() + "/%";
 
             let mut dir_update_statement = self.connection.prepare(
-                "UPDATE commands SET dir = :new_dir || SUBSTR(dir, :length) WHERE dir LIKE (:like)"
+                "UPDATE commands SET dir = :new_dir || SUBSTR(dir, :length) WHERE dir = :exact OR dir LIKE (:like)"
             ).unwrap();
 
             let mut old_dir_update_statement = self.connection.prepare(
-                "UPDATE commands SET old_dir = :new_dir || SUBSTR(old_dir, :length) WHERE old_dir LIKE (:like)"
+                "UPDATE commands SET old_dir = :new_dir || SUBSTR(old_dir, :length) WHERE old_dir = :exact OR old_dir LIKE (:like)"
             ).unwrap();
 
             let affected = dir_update_statement.execute_named(&[
                 (":like", &like_query),
+                (":exact", &normalized_old_path),
                 (":new_dir", &normalized_new_path),
                 (":length", &(normalized_old_path.chars().count() as u32 + 1)),
             ]).expect("dir UPDATE to work");
 
             old_dir_update_statement.execute_named(&[
                 (":like", &like_query),
+                (":exact", &normalized_old_path),
                 (":new_dir", &normalized_new_path),
                 (":length", &(normalized_old_path.chars().count() as u32 + 1)),
             ]).expect("old_dir UPDATE to work");
