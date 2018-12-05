@@ -1,0 +1,8 @@
+0.2.4 - Dec 4, 2018
+  - Important update: fixes bug where historical directory paths would be incorrectly updated when a directory that was a
+    prefix of another was moved, resulting in historical directory references that never actually existed.
+  - Silences logs when moving / renaming directories.
+  - Fixes importing of shell history that contains invalid UTF8 characters.
+0.2.3 - Dec 3, 2018
+  - Note: 0.2.3 was never built as a release or pushed to Homebrew.
+  - Use clobbering redirects, thanks to @gwk.

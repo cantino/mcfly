@@ -1,6 +1,6 @@
 [package]
 name = "mcfly"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["Andrew Cantino <cantino@users.noreply.github.com>"]
 
 [profile.release]
