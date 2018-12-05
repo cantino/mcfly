@@ -193,7 +193,7 @@ impl History {
                             let maybe_moved_directory = PathBuf::from(&normalized_to).join(utf8_basename);
                             if maybe_moved_directory.exists() {
                                 if maybe_moved_directory.is_dir() {
-                                    self.update_paths(&normalized_from, maybe_moved_directory.to_str().unwrap());
+                                    self.update_paths(&normalized_from, maybe_moved_directory.to_str().unwrap(), false);
                                 } else {
                                     // The source must have been a file, so ignore it.
                                 }
@@ -207,7 +207,7 @@ impl History {
 
                     let to_pathbuf = PathBuf::from(&normalized_to);
                     if to_pathbuf.exists() && to_pathbuf.is_dir() {
-                        self.update_paths(&normalized_from, &normalized_to);
+                        self.update_paths(&normalized_from, &normalized_to, false);
                     }
                 }
             }
@@ -487,7 +487,7 @@ impl History {
             .expect("DELETE from commands to work");
     }
 
-    pub fn update_paths(&self, old_path: &str, new_path: &str) {
+    pub fn update_paths(&self, old_path: &str, new_path: &str, print_output: bool) {
         let normalized_old_path = path_update_helpers::normalize_path(old_path);
         let normalized_new_path = path_update_helpers::normalize_path(new_path);
 
@@ -514,9 +514,13 @@ impl History {
                 (":length", &(normalized_old_path.chars().count() as u32 + 1)),
             ]).expect("old_dir UPDATE to work");
 
-            println!("McFly: Command database paths renamed from {} to {} (affected {} commands)", normalized_old_path, normalized_new_path, affected);
+            if print_output {
+                println!("McFly: Command database paths renamed from {} to {} (affected {} commands)", normalized_old_path, normalized_new_path, affected);
+            }
         } else {
-            println!("McFly: Not updating paths due to invalid options.");
+            if print_output {
+                println!("McFly: Not updating paths due to invalid options.");
+            }
         }
     }
 

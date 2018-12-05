@@ -45,7 +45,7 @@ fn handle_train(settings: &Settings, history: &mut History) {
 }
 
 fn handle_move(settings: &Settings, history: &mut History) {
-    history.update_paths(&settings.old_dir.clone().unwrap(), &settings.dir);
+    history.update_paths(&settings.old_dir.clone().unwrap(), &settings.dir, true);
 }
 
 fn main() {
