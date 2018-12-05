@@ -331,8 +331,8 @@ impl<'a> Interface<'a> {
                     Key::Alt('f') => self.input.move_cursor(Move::ForwardWord),
                     Key::Left => self.input.move_cursor(Move::Backward),
                     Key::Right => self.input.move_cursor(Move::Forward),
-                    Key::Up | Key::PageUp => self.move_selection(MoveSelection::Up),
-                    Key::Down | Key::PageDown => self.move_selection(MoveSelection::Down),
+                    Key::Up | Key::PageUp | Key::Ctrl('p') => self.move_selection(MoveSelection::Up),
+                    Key::Down | Key::PageDown | Key::Ctrl('n') => self.move_selection(MoveSelection::Down),
                     Key::Ctrl('k') => {
                         self.input.delete(Move::EOL);
                         self.refresh_matches();
