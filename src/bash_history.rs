@@ -4,6 +4,15 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::PathBuf;
+use std::fs::File;
+use std::io::Read;
+
+fn read_ignoring_utf_errors(path: &PathBuf) -> String {
+    let mut f = File::open(path).expect(format!("{:?} file not found", &path).as_str());
+    let mut buffer = Vec::new();
+    f.read_to_end(&mut buffer).expect(format!("Unable to read from {:?}", &path).as_str());
+    String::from_utf8_lossy(&buffer).to_string()
+}
 
 pub fn bash_history_file_path() -> PathBuf {
     let path =
@@ -12,8 +21,7 @@ pub fn bash_history_file_path() -> PathBuf {
 }
 
 pub fn full_history(path: &PathBuf) -> Vec<String> {
-    let bash_history_contents =
-        fs::read_to_string(&path).expect(format!("{:?} file not found", &path).as_str());
+    let bash_history_contents = read_ignoring_utf_errors(&path);
 
     let timestamp_regex = Regex::new(r"\A#\d{10}").unwrap();
 
@@ -30,8 +38,7 @@ pub fn last_history_line(path: &PathBuf) -> Option<String> {
 }
 
 pub fn delete_last_history_entry_if_search(path: &PathBuf) {
-    let bash_history_contents =
-        fs::read_to_string(&path).expect(format!("{:?} file not found", &path).as_str());
+    let bash_history_contents = read_ignoring_utf_errors(&path);
 
     let mut lines = bash_history_contents
         .split("\n")
@@ -60,8 +67,7 @@ pub fn delete_last_history_entry_if_search(path: &PathBuf) {
 }
 
 pub fn delete_lines(path: &PathBuf, command: &str) {
-    let history_contents =
-        fs::read_to_string(&path).expect(format!("{:?} file not found", &path).as_str());
+    let history_contents = read_ignoring_utf_errors(&path);
 
     let lines = history_contents
         .split("\n")
