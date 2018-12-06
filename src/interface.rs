@@ -187,7 +187,11 @@ impl<'a> Interface<'a> {
                     command,
                     &self.input.command,
                     width,
-                    color::Fg(color::Green).to_string(),
+                    if self.settings.lightmode {
+                        color::Fg(color::Blue).to_string()
+                    } else {
+                        color::Fg(color::Green).to_string()
+                    },
                     fg,
                     self.debug
                 )
