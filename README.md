@@ -100,6 +100,16 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 
 <img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
 
+## Light Mode
+
+To swap the color scheme for use in a light terminal, set the environment variable `MCFLY_LIGHT`.
+
+For example, add the following to your `~/.bash_profile`:
+
+```bash
+export MCFLY_LIGHT=TRUE
+```
+
 ## Possible Future Features
 
 * Add a screencast to README.
