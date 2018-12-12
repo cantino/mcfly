@@ -173,7 +173,11 @@ impl<'a> Interface<'a> {
         }
 
         for (index, command) in self.matches.iter().enumerate() {
-            let mut fg = color::Fg(color::LightWhite).to_string();
+            let mut fg = if self.settings.lightmode {
+                color::Fg(color::Black).to_string()
+            } else {
+                color::Fg(color::LightWhite).to_string()
+            };
             let mut bg = color::Bg(color::Reset).to_string();
 
             if index == self.selection {
