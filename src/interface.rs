@@ -130,7 +130,11 @@ impl<'a> Interface<'a> {
         write!(
             screen,
             "{}{}{}$ {}",
-            color::Fg(color::LightWhite).to_string(),
+            if self.settings.lightmode {
+                color::Fg(color::Black).to_string()
+            } else {
+                color::Fg(color::LightWhite).to_string()
+            },
             cursor::Goto(1, PROMPT_LINE_INDEX),
             clear::CurrentLine,
             self.input
@@ -190,7 +194,7 @@ impl<'a> Interface<'a> {
                     if self.settings.lightmode {
                         color::Fg(color::Blue).to_string()
                     } else {
-                        color::Fg(color::Green).to_string()
+                        color::Fg(color::Cyan).to_string()
                     },
                     fg,
                     self.debug
