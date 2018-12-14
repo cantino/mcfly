@@ -28,6 +28,7 @@ pub struct Settings {
     pub old_dir: Option<String>,
     pub append_to_histfile: bool,
     pub refresh_training_cache: bool,
+    pub lightmode: bool,
 }
 
 impl Default for Settings {
@@ -44,6 +45,7 @@ impl Default for Settings {
             refresh_training_cache: false,
             append_to_histfile: false,
             debug: false,
+            lightmode: false,
         }
     }
 }
@@ -243,6 +245,10 @@ impl Settings {
             _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
         }
 
+        settings.lightmode = match env::var_os("MCFLY_LIGHT") {
+            Some(_val) => true,
+            None => false
+        };
         settings
     }
 

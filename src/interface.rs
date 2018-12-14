@@ -130,7 +130,11 @@ impl<'a> Interface<'a> {
         write!(
             screen,
             "{}{}{}$ {}",
-            color::Fg(color::LightWhite).to_string(),
+            if self.settings.lightmode {
+                color::Fg(color::Black).to_string()
+            } else {
+                color::Fg(color::LightWhite).to_string()
+            },
             cursor::Goto(1, PROMPT_LINE_INDEX),
             clear::CurrentLine,
             self.input
@@ -169,7 +173,11 @@ impl<'a> Interface<'a> {
         }
 
         for (index, command) in self.matches.iter().enumerate() {
-            let mut fg = color::Fg(color::LightWhite).to_string();
+            let mut fg = if self.settings.lightmode {
+                color::Fg(color::Black).to_string()
+            } else {
+                color::Fg(color::LightWhite).to_string()
+            };
             let mut bg = color::Bg(color::Reset).to_string();
 
             if index == self.selection {
@@ -187,7 +195,11 @@ impl<'a> Interface<'a> {
                     command,
                     &self.input.command,
                     width,
-                    color::Fg(color::Green).to_string(),
+                    if self.settings.lightmode {
+                        color::Fg(color::Blue).to_string()
+                    } else {
+                        color::Fg(color::Cyan).to_string()
+                    },
                     fg,
                     self.debug
                 )
