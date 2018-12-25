@@ -22,10 +22,15 @@ class Mcfly < Formula
   def install
     prefix.install "mcfly.bash"
     bin.install "mcfly"
-    ohai "ONE MORE STEP! Edit ~/.bashrc and add the following:"
-    puts
-    puts "if [ -f $(brew --prefix)/opt/mcfly/mcfly.bash ]; then"
-    puts "  . $(brew --prefix)/opt/mcfly/mcfly.bash"
-    puts "fi"
+  end
+
+  def caveats
+    <<~EOS
+      ONE MORE STEP! Edit ~/.bashrc and add the following:
+
+      if [ -f $(brew --prefix)/opt/mcfly/mcfly.bash ]; then
+        . $(brew --prefix)/opt/mcfly/mcfly.bash
+      fi
+    EOS
   end
 end
