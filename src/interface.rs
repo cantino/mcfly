@@ -178,11 +178,25 @@ impl<'a> Interface<'a> {
             } else {
                 color::Fg(color::LightWhite).to_string()
             };
+
+            let mut highlight = if self.settings.lightmode {
+                color::Fg(color::Blue).to_string()
+            } else {
+                color::Fg(color::Green).to_string()
+            };
+
             let mut bg = color::Bg(color::Reset).to_string();
 
             if index == self.selection {
-                fg = color::Fg(color::Black).to_string();
-                bg = color::Bg(color::LightWhite).to_string();
+                if self.settings.lightmode {
+                    fg = color::Fg(color::LightWhite).to_string();
+                    bg = color::Bg(color::LightBlack).to_string();
+                    highlight = color::Fg(color::White).to_string();
+                } else {
+                    fg = color::Fg(color::Black).to_string();
+                    bg = color::Bg(color::LightWhite).to_string();
+                    highlight = color::Fg(color::Green).to_string();
+                }
             }
 
             write!(screen, "{}{}", fg, bg).unwrap();
@@ -195,11 +209,7 @@ impl<'a> Interface<'a> {
                     command,
                     &self.input.command,
                     width,
-                    if self.settings.lightmode {
-                        color::Fg(color::Blue).to_string()
-                    } else {
-                        color::Fg(color::Cyan).to_string()
-                    },
+                    highlight,
                     fg,
                     self.debug
                 )
