@@ -1,3 +1,8 @@
+0.3.0 - Dec 25, 2018
+  - Support users who have `set -o vi` (thanks @Asdalo21)
+  - Remove Regex dependency for a smaller binary.
+  - Add support for Light Mode - enable with `export MCFLY_LIGHT=TRUE` (thanks @mshron)
+  - Fix broken Rust install link (thanks @bperel)
 0.2.5 - Dec 9, 2018
   - Prevent clobbering of command return statuses (thanks @gwk)
   - Add Ctrl-n and Ctrl-p mappings (thanks @greyblake)
