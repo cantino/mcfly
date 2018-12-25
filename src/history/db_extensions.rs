@@ -1,4 +1,3 @@
-extern crate regex;
 extern crate rusqlite;
 
 use history::history::Features;

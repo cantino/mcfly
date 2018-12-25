@@ -5,7 +5,6 @@ extern crate csv;
 extern crate dirs;
 extern crate libc;
 extern crate rand;
-extern crate regex;
 extern crate relative_path;
 extern crate rusqlite;
 extern crate shellexpand;

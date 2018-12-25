@@ -1,4 +1,3 @@
-use regex::Regex;
 use std::env;
 use std::fs;
 use std::fs::OpenOptions;
@@ -14,6 +13,23 @@ fn read_ignoring_utf_errors(path: &PathBuf) -> String {
     String::from_utf8_lossy(&buffer).to_string()
 }
 
+fn has_leading_timestamp(line: &str) -> bool {
+    let mut matched_chars = 0;
+
+    for (index, c) in line.chars().enumerate() {
+        if index == 0 && c == '#' {
+            matched_chars += 1;
+        } else if index > 0 && index < 11 && (c == '0' || c == '1' || c == '2' || c == '3' || c == '4' ||
+            c == '5' || c == '6' || c == '7' || c == '8' || c == '9')  {
+            matched_chars += 1;
+        } else if index > 11 {
+            break;
+        }
+    }
+
+    matched_chars == 11
+}
+
 pub fn bash_history_file_path() -> PathBuf {
     let path =
         PathBuf::from(env::var("HISTFILE").expect("Please ensure HISTFILE is set for your shell."));
@@ -23,11 +39,9 @@ pub fn bash_history_file_path() -> PathBuf {
 pub fn full_history(path: &PathBuf) -> Vec<String> {
     let bash_history_contents = read_ignoring_utf_errors(&path);
 
-    let timestamp_regex = Regex::new(r"\A#\d{10}").unwrap();
-
     bash_history_contents
         .split("\n")
-        .filter(|line| !timestamp_regex.is_match(line) && !line.is_empty())
+        .filter(|line| !has_leading_timestamp(line) && !line.is_empty())
         .map(String::from)
         .collect::<Vec<String>>()
 }
@@ -45,8 +59,6 @@ pub fn delete_last_history_entry_if_search(path: &PathBuf) {
         .map(String::from)
         .collect::<Vec<String>>();
 
-    let timestamp_regex = Regex::new(r"\A#\d{10}").unwrap();
-
     if lines.len() > 0 && lines[lines.len() - 1].is_empty() {
         lines.pop();
     }
@@ -57,7 +69,7 @@ pub fn delete_last_history_entry_if_search(path: &PathBuf) {
 
     lines.pop();
 
-    if lines.len() > 0 && timestamp_regex.is_match(&lines[lines.len() - 1]) {
+    if lines.len() > 0 && has_leading_timestamp(&lines[lines.len() - 1]) {
         lines.pop();
     }
 
@@ -87,5 +99,22 @@ pub fn append_history_entry(command: &String, path: &PathBuf) {
 
     if let Err(e) = writeln!(file, "{}", command) {
         eprintln!("Couldn't append to file {:?}: {}", &path, e);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::has_leading_timestamp;
+
+    #[test]
+    fn has_leading_timestamp_works() {
+        assert_eq!(false, has_leading_timestamp("abc"));
+        assert_eq!(false, has_leading_timestamp("#abc"));
+        assert_eq!(false, has_leading_timestamp("#123456"));
+        assert_eq!(true, has_leading_timestamp("#1234567890"));
+        assert_eq!(false, has_leading_timestamp("#123456789"));
+        assert_eq!(false, has_leading_timestamp("# 1234567890"));
+        assert_eq!(false, has_leading_timestamp("1234567890"));
+        assert_eq!(false, has_leading_timestamp("hello 1234567890"));
     }
 }
