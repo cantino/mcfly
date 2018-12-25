@@ -21,18 +21,20 @@ pub struct Node {
 
 impl Node {
     pub fn random() -> Node {
+        let mut rng = rand::thread_rng();
+
         Node {
-            offset: rand::thread_rng().gen_range(-1.0, 1.0),
-            age: rand::thread_rng().gen_range(-1.0, 1.0),
-            length: rand::thread_rng().gen_range(-1.0, 1.0),
-            exit: rand::thread_rng().gen_range(-1.0, 1.0),
-            recent_failure: rand::thread_rng().gen_range(-1.0, 1.0),
-            selected_dir: rand::thread_rng().gen_range(-1.0, 1.0),
-            dir: rand::thread_rng().gen_range(-1.0, 1.0),
-            overlap: rand::thread_rng().gen_range(-1.0, 1.0),
-            immediate_overlap: rand::thread_rng().gen_range(-1.0, 1.0),
-            selected_occurrences: rand::thread_rng().gen_range(-1.0, 1.0),
-            occurrences: rand::thread_rng().gen_range(-1.0, 1.0),
+            offset: rng.gen_range(-1.0, 1.0),
+            age: rng.gen_range(-1.0, 1.0),
+            length: rng.gen_range(-1.0, 1.0),
+            exit: rng.gen_range(-1.0, 1.0),
+            recent_failure: rng.gen_range(-1.0, 1.0),
+            selected_dir: rng.gen_range(-1.0, 1.0),
+            dir: rng.gen_range(-1.0, 1.0),
+            overlap: rng.gen_range(-1.0, 1.0),
+            immediate_overlap: rng.gen_range(-1.0, 1.0),
+            selected_occurrences: rng.gen_range(-1.0, 1.0),
+            occurrences: rng.gen_range(-1.0, 1.0),
         }
     }
 
