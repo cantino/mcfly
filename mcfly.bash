@@ -49,6 +49,9 @@ PROMPT_COMMAND="mcfly_prompt_command;$PROMPT_COMMAND"
 #      which should be the commented-out search from step #1. It will then remove that line from the history file and
 #      render the search UI pre-filled with it.
 if [[ $- =~ .*i.* ]]; then
-  bind "'\C-r': '\C-amcfly: \e# mcfly search\C-j'"
+  if set -o | grep "vi " | grep -q on; then
+    bind "'\C-r': '\e0i#mcfly: \e\C-j mcfly search\C-j'"
+  else
+    bind "'\C-r': '\C-amcfly: \e# mcfly search\C-j'"
+  fi
 fi
-
