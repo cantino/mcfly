@@ -1,6 +1,6 @@
-use bash_history;
-use history::History;
-use settings::Settings;
+use crate::bash_history;
+use crate::history::History;
+use crate::settings::Settings;
 use std::env;
 use std::fs;
 use std::path::PathBuf;

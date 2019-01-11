@@ -1,8 +1,7 @@
-extern crate rusqlite;
-
-use history::history::Features;
+use rusqlite;
 use rusqlite::Connection;
-use network::Network;
+use crate::history::history::Features;
+use crate::network::Network;
 
 pub fn add_db_functions(db: &Connection) {
     let network = Network::default();

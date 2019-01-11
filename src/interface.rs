@@ -1,10 +1,10 @@
-use command_input::{CommandInput, Move};
-use history::History;
+use crate::command_input::{CommandInput, Move};
+use crate::history::History;
 
-use fixed_length_grapheme_string::FixedLengthGraphemeString;
-use history::Command;
-use history_cleaner;
-use settings::Settings;
+use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
+use crate::history::Command;
+use crate::history_cleaner;
+use crate::settings::Settings;
 use std::io::{stdin, stdout, Write};
 use termion::color;
 use termion::event::Key;

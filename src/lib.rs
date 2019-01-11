@@ -1,16 +1,3 @@
-#[macro_use]
-extern crate clap;
-extern crate core;
-extern crate csv;
-extern crate dirs;
-extern crate libc;
-extern crate rand;
-extern crate relative_path;
-extern crate rusqlite;
-extern crate shellexpand;
-extern crate termion;
-extern crate unicode_segmentation;
-
 pub mod bash_history;
 pub mod command_input;
 pub mod fake_typer;

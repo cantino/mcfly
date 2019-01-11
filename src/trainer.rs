@@ -1,10 +1,9 @@
-use history::History;
-use settings::Settings;
-
-use history::Features;
-use node::Node;
-use network::Network;
-use training_sample_generator::TrainingSampleGenerator;
+use crate::history::History;
+use crate::settings::Settings;
+use crate::history::Features;
+use crate::node::Node;
+use crate::network::Network;
+use crate::training_sample_generator::TrainingSampleGenerator;
 
 #[derive(Debug)]
 pub struct Trainer<'a> {

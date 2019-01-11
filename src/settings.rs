@@ -1,4 +1,5 @@
-use bash_history;
+use crate::bash_history;
+use clap::{crate_version, crate_authors, value_t};
 use clap::AppSettings;
 use clap::{App, Arg, SubCommand};
 use std::env;

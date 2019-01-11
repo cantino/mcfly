@@ -1,20 +1,15 @@
-use bash_history;
+use crate::bash_history;
 use rusqlite::{Connection, MappedRows, Row, NO_PARAMS};
-use std::fmt;
-use std::fs;
-use std::io;
+use std::{fmt, fs, io};
 use std::io::Write;
 use std::path::PathBuf;
 //use std::time::Instant;
-use history::db_extensions;
-use history::schema;
-use simplified_command::SimplifiedCommand;
-use path_update_helpers;
-use std::time::Instant;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
-use network::Network;
-use settings::Settings;
+use crate::history::{db_extensions, schema};
+use crate::simplified_command::SimplifiedCommand;
+use crate::path_update_helpers;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use crate::network::Network;
+use crate::settings::Settings;
 use rusqlite::types::ToSql;
 
 #[derive(Debug, Clone, Default)]
@@ -424,7 +419,7 @@ impl History {
         }
     }
 
-    fn run_query(&self, query: &str, params: &[(&str, &ToSql)]) -> Vec<Command> {
+    fn run_query(&self, query: &str, params: &[(&str, &dyn ToSql)]) -> Vec<Command> {
         let mut statement = self.connection.prepare(query).unwrap();
 
         let closure: fn(&Row) -> Command = |row| Command {

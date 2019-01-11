@@ -1,8 +1,6 @@
-extern crate rand;
-
-use node::Node;
-use training_sample_generator::TrainingSampleGenerator;
-use history::Features;
+use crate::node::Node;
+use crate::training_sample_generator::TrainingSampleGenerator;
+use crate::history::Features;
 use rand::Rng;
 
 #[derive(Debug, Copy, Clone)]

@@ -1,5 +1,3 @@
-extern crate mcfly;
-
 use mcfly::bash_history;
 use mcfly::fake_typer;
 use mcfly::history::History;

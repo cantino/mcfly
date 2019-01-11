@@ -1,6 +1,4 @@
-pub use self::history::Command;
-pub use self::history::Features;
-pub use self::history::History;
+pub use self::history::{Command, Features, History};
 
 mod db_extensions;
 mod history;

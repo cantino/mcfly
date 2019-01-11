@@ -1,6 +1,4 @@
-extern crate rand;
-
-use history::Features;
+use crate::history::Features;
 use rand::Rng;
 use std::f64;
 

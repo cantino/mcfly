@@ -1,5 +1,5 @@
+use crate::simplified_command::SimplifiedCommand;
 use rusqlite::{Connection, NO_PARAMS};
-use simplified_command::SimplifiedCommand;
 use std::io;
 use std::io::Write;
 

@@ -1,5 +1,5 @@
+use crate::history::Features;
 use csv::Writer;
-use history::Features;
 use std::fs::File;
 use csv::Reader;
 use std::path::PathBuf;

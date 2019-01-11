@@ -1,11 +1,9 @@
-extern crate rand;
-
-use history::Command;
-use history::Features;
-use history::History;
+use crate::history::Command;
+use crate::history::Features;
+use crate::history::History;
+use crate::settings::Settings;
+use crate::training_cache;
 use rand::Rng;
-use settings::Settings;
-use training_cache;
 
 #[derive(Debug)]
 pub struct TrainingSampleGenerator<'a> {
