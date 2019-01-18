@@ -49,7 +49,7 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Add the following to your `~/.bashrc` file:
     ```bash
-    if [[ -f "$(brew --prefix)/opt/mcfly/mcfly.bash" ]]; then
+    if [[ -r "$(brew --prefix)/opt/mcfly/mcfly.bash" ]]; then
       source "$(brew --prefix)/opt/mcfly/mcfly.bash"
     fi
     ```
@@ -74,7 +74,7 @@ When suggesting a command, McFly takes into consideration:
 1. Copy `mcfly.bash` to a known location.
 1. Add the following to your `~/.bashrc` file:
     ```bash
-    if [[ -f /path/to/mcfly.bash ]]; then
+    if [[ -r /path/to/mcfly.bash ]]; then
       source /path/to/mcfly.bash
     fi
     ```
@@ -88,7 +88,7 @@ When suggesting a command, McFly takes into consideration:
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
 1. Add the following to your `~/.bashrc` file:
     ```bash
-    if [[ -f /path/to/mcfly.bash ]]; then
+    if [[ -r /path/to/mcfly.bash ]]; then
       source /path/to/mcfly.bash
     fi
     ```
