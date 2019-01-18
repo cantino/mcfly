@@ -28,7 +28,7 @@ class Mcfly < Formula
     <<~EOS
       ONE MORE STEP! Edit ~/.bashrc and add the following:
 
-      if [ -f $(brew --prefix)/opt/mcfly/mcfly.bash ]; then
+      if [ -r $(brew --prefix)/opt/mcfly/mcfly.bash ]; then
         . $(brew --prefix)/opt/mcfly/mcfly.bash
       fi
     EOS

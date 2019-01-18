@@ -9,7 +9,7 @@ export MCFLY_SESSION_ID=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-zA-Z0-9' | h
 export MCFLY_HISTORY=$(mktemp -t mcfly.XXXX)
 export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
 
-if [[ -f "$HISTFILE" ]];
+if [[ -r "$HISTFILE" ]];
 then
   tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
 else
