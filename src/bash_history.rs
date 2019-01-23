@@ -19,8 +19,7 @@ fn has_leading_timestamp(line: &str) -> bool {
     for (index, c) in line.chars().enumerate() {
         if index == 0 && c == '#' {
             matched_chars += 1;
-        } else if index > 0 && index < 11 && (c == '0' || c == '1' || c == '2' || c == '3' || c == '4' ||
-            c == '5' || c == '6' || c == '7' || c == '8' || c == '9')  {
+        } else if index > 0 && index < 11 && (c.is_digit(10))  {
             matched_chars += 1;
         } else if index > 11 {
             break;
