@@ -7,9 +7,9 @@ use std::fs::File;
 use std::io::Read;
 
 fn read_ignoring_utf_errors(path: &PathBuf) -> String {
-    let mut f = File::open(path).expect(format!("{:?} file not found", &path).as_str());
+    let mut f = File::open(path).expect(format!("McFly error: {:?} file not found", &path).as_str());
     let mut buffer = Vec::new();
-    f.read_to_end(&mut buffer).expect(format!("Unable to read from {:?}", &path).as_str());
+    f.read_to_end(&mut buffer).expect(format!("McFly error: Unable to read from {:?}", &path).as_str());
     String::from_utf8_lossy(&buffer).to_string()
 }
 
@@ -31,8 +31,8 @@ fn has_leading_timestamp(line: &str) -> bool {
 
 pub fn bash_history_file_path() -> PathBuf {
     let path =
-        PathBuf::from(env::var("HISTFILE").expect("Please ensure HISTFILE is set for your shell."));
-    fs::canonicalize(&path).expect("The contents of $HISTFILE appear invalid")
+        PathBuf::from(env::var("HISTFILE").expect("McFly error: Please ensure HISTFILE is set for your shell."));
+    fs::canonicalize(&path).expect("McFly error: The contents of $HISTFILE appear invalid")
 }
 
 pub fn full_history(path: &PathBuf) -> Vec<String> {
@@ -74,7 +74,7 @@ pub fn delete_last_history_entry_if_search(path: &PathBuf) {
 
     lines.push(String::from("")); // New line at end of file expected by bash.
 
-    fs::write(&path, lines.join("\n")).expect(format!("Unable to update {:?}", &path).as_str());
+    fs::write(&path, lines.join("\n")).expect(format!("McFly error: Unable to update {:?}", &path).as_str());
 }
 
 pub fn delete_lines(path: &PathBuf, command: &str) {
@@ -86,7 +86,7 @@ pub fn delete_lines(path: &PathBuf, command: &str) {
         .filter(|cmd| !cmd.eq(command))
         .collect::<Vec<String>>();
 
-    fs::write(&path, lines.join("\n")).expect(format!("Unable to update {:?}", &path).as_str());
+    fs::write(&path, lines.join("\n")).expect(format!("McFly error: Unable to update {:?}", &path).as_str());
 }
 
 pub fn append_history_entry(command: &String, path: &PathBuf) {
@@ -94,7 +94,7 @@ pub fn append_history_entry(command: &String, path: &PathBuf) {
         .write(true)
         .append(true)
         .open(path)
-        .unwrap();
+        .expect("McFly error: please make sure HISTFILE exists.");
 
     if let Err(e) = writeln!(file, "{}", command) {
         eprintln!("Couldn't append to file {:?}: {}", &path, e);

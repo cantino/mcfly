@@ -5,16 +5,20 @@ if [[ "$__MCFLY_LOADED" == "loaded" ]]; then
   return 0
 fi
 __MCFLY_LOADED="loaded"
-export MCFLY_SESSION_ID=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
-export MCFLY_HISTORY=$(mktemp -t mcfly.XXXX)
-export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
 
-if [[ -r "$HISTFILE" ]];
-then
-  tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
-else
-  printf "Welcome to McFly\n" >| ${MCFLY_HISTORY}
+# Ensure HISTFILE exists.
+export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
+if [[ ! -r "${HISTFILE}" ]]; then
+  echo "McFly: ${HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
+  return 1
 fi
+
+# MCFLY_SESSION_ID is used by McFly internally to keep track of the commands from a particular terminal session.
+export MCFLY_SESSION_ID=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
+
+# Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
+export MCFLY_HISTORY=$(mktemp -t mcfly.XXXX)
+tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
 
 # Ignore commands with a leading space
 export HISTCONTROL="ignorespace"

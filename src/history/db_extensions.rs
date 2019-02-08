@@ -31,5 +31,5 @@ pub fn add_db_functions(db: &Connection) {
         };
 
         Ok(network.output(&features))
-    }).expect("Successful create_scalar_function");
+    }).expect("McFly error: Successful create_scalar_function");
 }
