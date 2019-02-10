@@ -17,7 +17,7 @@ fi
 export MCFLY_SESSION_ID=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
 
 # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
-export MCFLY_HISTORY=$(mktemp -t mcfly.XXXX)
+export MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
 tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
 
 # Ignore commands with a leading space
