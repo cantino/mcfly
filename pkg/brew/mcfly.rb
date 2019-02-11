@@ -26,7 +26,7 @@ class Mcfly < Formula
 
   def caveats
     <<~EOS
-      ONE MORE STEP! Edit ~/.bashrc and add the following:
+      ONE MORE STEP! Edit ~/.bashrc and add the following at the end:
 
       if [ -r $(brew --prefix)/opt/mcfly/mcfly.bash ]; then
         . $(brew --prefix)/opt/mcfly/mcfly.bash

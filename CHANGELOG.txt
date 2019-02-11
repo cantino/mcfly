@@ -1,3 +1,10 @@
+0.3.3 - Feb 11, 2019
+ - Fix version number
+0.3.2 - Feb 10, 2019
+ - Fix 'cat /dev/urandom' not closing (thanks @Melkor333!)
+ - Update to Rust 2018
+ - Error gracefully when .bash_history is not found
+ - Add more Xes for Slackware Linux (thanks @aik099)
 0.3.1 - Dec 25, 2018
   - Fix background color on Light Mode
 0.3.0 - Dec 25, 2018
