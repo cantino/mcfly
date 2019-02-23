@@ -420,15 +420,19 @@ impl<'a> Interface<'a> {
         };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
+        let lowercase_search = search.to_lowercase();
+        let lowercase_cmd = command.cmd.to_lowercase();
+        let search_len = search.len();
+
         if !search.is_empty() {
-            for (index, _) in command.cmd.match_indices(search) {
+            for (index, _) in lowercase_cmd.match_indices(&lowercase_search) {
                 if prev != index {
                     out.push_grapheme_str(&command.cmd[prev..index]);
                 }
                 out.push_str(&highlight_color);
-                out.push_grapheme_str(search);
+                out.push_grapheme_str(&command.cmd[index..(index + search_len)]);
                 out.push_str(&base_color);
-                prev = index + search.len();
+                prev = index + search_len;
             }
         }
 
