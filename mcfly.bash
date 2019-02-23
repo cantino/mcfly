@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Ensure stdin is a tty
+[[ -t 0 ]] || return
+
 # Avoid loading this file more than once
 if [[ "$__MCFLY_LOADED" == "loaded" ]]; then
   return 0
