@@ -196,15 +196,13 @@ impl CommandInput {
         let mut new_command = String::with_capacity(self.command.len());
         {
             let vec = self.command.graphemes(true);
-            let mut count = 0;
             let mut pushed = false;
-            for item in vec {
+            for (count, item) in vec.enumerate() {
                 if count == self.cursor {
                     pushed = true;
                     new_command.push(c);
                 }
                 new_command.push_str(item);
-                count += 1;
             }
             if !pushed {
                 new_command.push(c);

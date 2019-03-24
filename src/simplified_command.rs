@@ -9,6 +9,7 @@ pub struct SimplifiedCommand {
     pub truncate: bool,
 }
 
+#[allow(clippy::collapsible_if)]
 /// The goal of SimplifiedCommand is to produce a reduced approximation of the given command for template matching. It may
 /// not produce an exact simplification. (For example, it does not handle deeply nested escaping, and it drops escape characters.)
 /// Possible enhancements:
@@ -67,7 +68,7 @@ impl SimplifiedCommand {
                             }
                         }
 
-                        if self.result.len() > 0 && buffer.contains("/") {
+                        if !self.result.is_empty() && buffer.contains('/') {
                             self.result.push_str("PATH");
                         } else {
                             self.result.push_str(&buffer);
@@ -84,7 +85,7 @@ impl SimplifiedCommand {
                 }
             }
         }
-        if self.result.len() > 0 && buffer.contains("/") {
+        if !self.result.is_empty() && buffer.contains('/') {
             self.result.push_str("PATH");
         } else {
             self.result.push_str(&buffer);

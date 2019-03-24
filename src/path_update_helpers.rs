@@ -10,7 +10,7 @@ pub fn normalize_path(incoming_path: &str) -> String {
     let current_dir = env::var("PWD").expect("McFly error: Unable to determine current directory");
     let current_dir_path = Path::new(&current_dir);
 
-    let path_buf = if expanded_path.starts_with("/") {
+    let path_buf = if expanded_path.starts_with('/') {
         RelativePath::new(&expanded_path.into_owned()).normalize().to_path("/")
     } else {
         let to_current_dir = RelativePath::new(&expanded_path).to_path(current_dir_path);
@@ -36,24 +36,22 @@ pub fn parse_mv_command(command: &str) -> Vec<String> {
                 if escaped {
                     escaped = false;
                     buffer.push_str(grapheme);
-                } else {
-                    if in_double_quote {
-                        in_double_quote = false;
-                        if buffer.len() > 0 {
-                            result.push(buffer);
-                        }
-                        buffer = String::new();
-                    } else if !in_single_quote {
-                        in_double_quote = true;
-                    } else {
-                        buffer.push_str(grapheme);
+                } else if in_double_quote {
+                    in_double_quote = false;
+                    if !buffer.is_empty() {
+                        result.push(buffer);
                     }
+                    buffer = String::new();
+                } else if !in_single_quote {
+                    in_double_quote = true;
+                } else {
+                    buffer.push_str(grapheme);
                 }
             }
             "\'" => {
                 if in_single_quote {
                     in_single_quote = false;
-                    if buffer.len() > 0 {
+                    if !buffer.is_empty() {
                         result.push(buffer);
                     }
                     buffer = String::new();
@@ -68,7 +66,7 @@ pub fn parse_mv_command(command: &str) -> Vec<String> {
                 if in_double_quote || in_single_quote || escaped {
                     buffer.push_str(grapheme);
                 } else {
-                    if buffer.len() > 0 {
+                    if !buffer.is_empty() {
                         result.push(buffer);
                     }
                     buffer = String::new();
@@ -82,14 +80,14 @@ pub fn parse_mv_command(command: &str) -> Vec<String> {
         }
     }
 
-    if buffer.len() > 0 {
+    if !buffer.is_empty() {
         result.push(buffer);
     }
 
     result
         .iter()
         .skip(1)
-        .filter(|s| !s.starts_with("-"))
+        .filter(|s| !s.starts_with('-'))
         .map(|s| s.to_owned())
         .collect()
 }

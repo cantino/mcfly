@@ -15,7 +15,7 @@ fn handle_addition(settings: &Settings, history: &mut History) {
             &settings.session_id,
             &settings.dir,
             &settings.when_run,
-            &settings.exit_code,
+            settings.exit_code,
             &settings.old_dir,
         );
 

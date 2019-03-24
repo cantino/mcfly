@@ -4,7 +4,7 @@ use std::fs::File;
 use csv::Reader;
 use std::path::PathBuf;
 
-pub fn write(data_set: &Vec<(Features, bool)>, cache_path: &PathBuf) {
+pub fn write(data_set: &[(Features, bool)], cache_path: &PathBuf) {
     let mut writer = Writer::from_path(cache_path).expect("McFly error: Expected to be able to write a CSV");
     output_header(&mut writer);
 
