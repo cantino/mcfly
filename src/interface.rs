@@ -22,6 +22,7 @@ pub struct Interface<'a> {
     debug: bool,
     run: bool,
     menu_mode: MenuMode,
+    display_mode: DisplayMode,
 }
 
 pub struct SelectionResult {
@@ -43,7 +44,7 @@ pub enum MenuMode {
 impl MenuMode {
     fn text(&self) -> &str {
         match *self {
-            MenuMode::Normal => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
+            MenuMode::Normal => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete | F4 - Toggle folder",
             MenuMode::ConfirmDelete => "Delete selected command from the history? (Y/N)",
         }
     }
@@ -54,6 +55,12 @@ impl MenuMode {
             MenuMode::ConfirmDelete => color::Bg(color::Red).to_string(),
         }
     }
+}
+
+#[derive(PartialEq)]
+pub enum DisplayMode {
+    Command,
+    WithPath,
 }
 
 const PROMPT_LINE_INDEX: u16 = 3;
@@ -72,6 +79,7 @@ impl<'a> Interface<'a> {
             debug: settings.debug,
             run: false,
             menu_mode: MenuMode::Normal,
+            display_mode: DisplayMode::Command,
         }
     }
 
@@ -211,7 +219,8 @@ impl<'a> Interface<'a> {
                     width,
                     highlight,
                     fg,
-                    self.debug
+                    self.debug,
+                    &self.display_mode,
                 )
             ).unwrap();
 
@@ -248,7 +257,7 @@ impl<'a> Interface<'a> {
 
     fn accept_selection(&mut self) {
         if !self.matches.is_empty() {
-            self.input.set(&self.matches[self.selection].cmd);
+            self.input.set(&Self::full_command(&self.matches[self.selection], &self.display_mode));
         }
     }
 
@@ -379,6 +388,13 @@ impl<'a> Interface<'a> {
                             self.menu_mode = MenuMode::ConfirmDelete;
                         }
                     }
+                    Key::F(4) => {
+                        if self.display_mode == DisplayMode::Command {
+                            self.display_mode = DisplayMode::WithPath;
+                        } else {
+                            self.display_mode = DisplayMode::Command;
+                        }
+                    }
                     Key::Ctrl(_c) => {
                         //                      self.debug(&mut screen, format!("Ctrl({})", c))
                     }
@@ -400,6 +416,14 @@ impl<'a> Interface<'a> {
         write!(screen, "{}{}", clear::All, cursor::Show).unwrap();
     }
 
+    fn full_command(command: &Command, display_mode: &DisplayMode) -> String {
+        match display_mode {
+            DisplayMode::WithPath if command.dir.is_some() => 
+                format!("cd {} && {}", command.dir.as_ref().unwrap().to_string(), command.cmd),
+            _  => command.cmd.clone(),
+        }
+    }
+
     fn truncate_for_display(
         command: &Command,
         search: &str,
@@ -407,6 +431,7 @@ impl<'a> Interface<'a> {
         highlight_color: String,
         base_color: String,
         debug: bool,
+        display_mode: &DisplayMode,
     ) -> String {
         let mut prev = 0;
         let debug_space = if debug { 90 } else { 0 };
@@ -416,25 +441,26 @@ impl<'a> Interface<'a> {
             2
         };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
+        let name = Self::full_command(command, display_mode);
 
         let lowercase_search = search.to_lowercase();
-        let lowercase_cmd = command.cmd.to_lowercase();
+        let lowercase_name = name.to_lowercase();
         let search_len = search.len();
 
         if !search.is_empty() {
-            for (index, _) in lowercase_cmd.match_indices(&lowercase_search) {
+            for (index, _) in lowercase_name.match_indices(&lowercase_search) {
                 if prev != index {
-                    out.push_grapheme_str(&command.cmd[prev..index]);
+                    out.push_grapheme_str(&name[prev..index]);
                 }
                 out.push_str(&highlight_color);
-                out.push_grapheme_str(&command.cmd[index..(index + search_len)]);
+                out.push_grapheme_str(&name[index..(index + search_len)]);
                 out.push_str(&base_color);
                 prev = index + search_len;
             }
         }
 
-        if prev != command.cmd.len() {
-            out.push_grapheme_str(&command.cmd[prev..]);
+        if prev != name.len() {
+            out.push_grapheme_str(&name[prev..]);
         }
 
         if debug {
