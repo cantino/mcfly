@@ -17,7 +17,7 @@ if [[ ! -r "${HISTFILE}" ]]; then
 fi
 
 # MCFLY_SESSION_ID is used by McFly internally to keep track of the commands from a particular terminal session.
-export MCFLY_SESSION_ID=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
+export MCFLY_SESSION_ID=$(dd if=/dev/urandom bs=256 count=1 2> /dev/null | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
 
 # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
 export MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
