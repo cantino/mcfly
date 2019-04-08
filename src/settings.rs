@@ -152,7 +152,7 @@ impl Settings {
         settings.session_id = matches
             .value_of("session_id")
             .map(|s| s.to_string())
-            .unwrap_or(
+            .unwrap_or_else( ||
                 env::var("MCFLY_SESSION_ID")
                     .expect("McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID."),
             );
@@ -160,7 +160,7 @@ impl Settings {
             matches
                 .value_of("mcfly_history")
                 .map(|s| s.to_string())
-                .unwrap_or(
+                .unwrap_or_else( ||
                     env::var("MCFLY_HISTORY").expect("McFly error: Please ensure that MCFLY_HISTORY is set."),
                 ),
         );
@@ -179,7 +179,7 @@ impl Settings {
 
                 settings.append_to_histfile = add_matches.is_present("append_to_histfile");
 
-                if let Some(_) = add_matches.value_of("exit") {
+                if add_matches.value_of("exit").is_some() {
                     settings.exit_code =
                         Some(value_t!(add_matches, "exit", i32).unwrap_or_else(|e| e.exit()));
                 }
@@ -200,7 +200,7 @@ impl Settings {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
                 } else {
                     settings.command = bash_history::last_history_line(&settings.mcfly_history)
-                        .unwrap_or(String::from(""));
+                        .unwrap_or_else(String::new);
                 }
 
                 // CD shows PWD as the resulting directory, but we want it from the source directory.
@@ -223,9 +223,9 @@ impl Settings {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
                     settings.command = bash_history::last_history_line(&settings.mcfly_history)
-                        .unwrap_or(String::from(""))
-                        .trim_left_matches("#mcfly: ")
-                        .trim_left_matches("#mcfly:")
+                        .unwrap_or_else(String::new)
+                        .trim_start_matches("#mcfly: ")
+                        .trim_start_matches("#mcfly:")
                         .to_string();
                     bash_history::delete_last_history_entry_if_search(&settings.mcfly_history);
                 }

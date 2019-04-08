@@ -1,3 +1,4 @@
+#![allow(clippy::module_inception)]
 use crate::bash_history;
 use rusqlite::{Connection, MappedRows, Row, NO_PARAMS};
 use std::{fmt, fs, io};
@@ -72,7 +73,7 @@ impl History {
         history
     }
 
-    pub fn should_add(&self, command: &String) -> bool {
+    pub fn should_add(&self, command: &str) -> bool {
         // Ignore empty commands.
         if command.is_empty() {
             return false;
@@ -89,7 +90,7 @@ impl History {
         }
 
         // Ignore blacklisted commands.
-        if IGNORED_COMMANDS.contains(&command.as_str()) {
+        if IGNORED_COMMANDS.contains(&command) {
             return false;
         }
 
@@ -104,16 +105,16 @@ impl History {
 
     pub fn add(
         &self,
-        command: &String,
-        session_id: &String,
-        dir: &String,
+        command: &str,
+        session_id: &str,
+        dir: &str,
         when_run: &Option<i64>,
-        exit_code: &Option<i32>,
+        exit_code: Option<i32>,
         old_dir: &Option<String>,
     ) {
         self.possibly_update_paths(command, exit_code);
         let selected = self.determine_if_selected_from_ui(command, session_id, dir);
-        let simplified_command = SimplifiedCommand::new(command.as_str(), true);
+        let simplified_command = SimplifiedCommand::new(command, true);
         self.connection.execute_named("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, old_dir) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :selected, :dir, :old_dir)",
                                       &[
                                           (":cmd", &command.to_owned()),
@@ -129,9 +130,9 @@ impl History {
 
     fn determine_if_selected_from_ui(
         &self,
-        command: &String,
-        session_id: &String,
-        dir: &String,
+        command: &str,
+        session_id: &str,
+        dir: &str,
     ) -> bool {
         let rows_affected = self.connection
             .execute_named(
@@ -158,7 +159,7 @@ impl History {
         rows_affected > 0
     }
 
-    pub fn record_selected_from_ui(&self, command: &String, session_id: &String, dir: &String) {
+    pub fn record_selected_from_ui(&self, command: &str, session_id: &str, dir: &str) {
         self.connection.execute_named("INSERT INTO selected_commands (cmd, session_id, dir) VALUES (:cmd, :session_id, :dir)",
                                       &[
                                           (":cmd", &command.to_owned()),
@@ -168,48 +169,50 @@ impl History {
     }
 
     // Update historical paths in our database if a directory has been renamed or moved.
-    pub fn possibly_update_paths(&self, command: &String, exit_code: &Option<i32>) {
-        if exit_code.is_none() || exit_code.unwrap() == 0 {
-            if command.to_lowercase().starts_with("mv ") && !command.contains("*") && !command.contains("?") {
-                let parts = path_update_helpers::parse_mv_command(command);
-                if parts.len() == 2 {
-                    let normalized_from = path_update_helpers::normalize_path(&parts[0]);
-                    let normalized_to = path_update_helpers::normalize_path(&parts[1]);
+    pub fn possibly_update_paths(&self, command: &str, exit_code: Option<i32>) {
+        let successful = exit_code.is_none() || exit_code.unwrap() == 0;
+        let is_move = |c:&str| c.to_lowercase().starts_with("mv ")
+            && !c.contains('*')
+            && !c.contains('?');
+        if successful && is_move(command) {
+            let parts = path_update_helpers::parse_mv_command(command);
+            if parts.len() == 2 {
+                let normalized_from = path_update_helpers::normalize_path(&parts[0]);
+                let normalized_to = path_update_helpers::normalize_path(&parts[1]);
 
-                    // If $to/$(base_name($from)) exists, and is a directory, assume we've moved $from into $to.
-                    // If not, assume we've renamed $from to $to.
+                // If $to/$(base_name($from)) exists, and is a directory, assume we've moved $from into $to.
+                // If not, assume we've renamed $from to $to.
 
-                    if let Some(basename) = PathBuf::from(&normalized_from).file_name() {
-                        if let Some(utf8_basename) = basename.to_str() {
-                            if utf8_basename.contains(".") {
-                                // It was probably a file.
-                                return;
-                            }
-                            let maybe_moved_directory = PathBuf::from(&normalized_to).join(utf8_basename);
-                            if maybe_moved_directory.exists() {
-                                if maybe_moved_directory.is_dir() {
-                                    self.update_paths(&normalized_from, maybe_moved_directory.to_str().unwrap(), false);
-                                } else {
-                                    // The source must have been a file, so ignore it.
-                                }
-                                return;
-                            }
-                        } else {
-                            // Don't try to handle non-utf8 filenames, at least for now.
+                if let Some(basename) = PathBuf::from(&normalized_from).file_name() {
+                    if let Some(utf8_basename) = basename.to_str() {
+                        if utf8_basename.contains('.') {
+                            // It was probably a file.
                             return;
                         }
+                        let maybe_moved_directory = PathBuf::from(&normalized_to).join(utf8_basename);
+                        if maybe_moved_directory.exists() {
+                            if maybe_moved_directory.is_dir() {
+                                self.update_paths(&normalized_from, maybe_moved_directory.to_str().unwrap(), false);
+                            } else {
+                                // The source must have been a file, so ignore it.
+                            }
+                            return;
+                        }
+                    } else {
+                        // Don't try to handle non-utf8 filenames, at least for now.
+                        return;
                     }
+                }
 
-                    let to_pathbuf = PathBuf::from(&normalized_to);
-                    if to_pathbuf.exists() && to_pathbuf.is_dir() {
-                        self.update_paths(&normalized_from, &normalized_to, false);
-                    }
+                let to_pathbuf = PathBuf::from(&normalized_to);
+                if to_pathbuf.exists() && to_pathbuf.is_dir() {
+                    self.update_paths(&normalized_from, &normalized_to, false);
                 }
             }
         }
     }
 
-    pub fn find_matches(&self, cmd: &String, num: i16) -> Vec<Command> {
+    pub fn find_matches(&self, cmd: &str, num: i16) -> Vec<Command> {
         let mut like_query = "%".to_string();
         like_query.push_str(cmd);
         like_query.push_str("%");
@@ -266,7 +269,7 @@ impl History {
 
     pub fn build_cache_table(
         &self,
-        dir: &String,
+        dir: &str,
         session_id: &Option<String>,
         start_time: Option<i64>,
         end_time: Option<i64>,
@@ -294,7 +297,7 @@ impl History {
             )
             .expect("McFly error: Query to work");
 
-        if when_run_min == when_run_max {
+        if (when_run_min - when_run_max).abs() < std::f64::EPSILON {
             when_run_min -= 60.0 * 60.0;
         }
 
@@ -451,7 +454,7 @@ impl History {
     pub fn last_command(&self, session_id: &Option<String>) -> Option<Command> {
         self.commands(session_id, 1, 0, false)
             .get(0)
-            .map(|cmd| cmd.clone())
+            .cloned()
     }
 
     pub fn last_command_templates(
@@ -514,10 +517,8 @@ impl History {
             if print_output {
                 println!("McFly: Command database paths renamed from {} to {} (affected {} commands)", normalized_old_path, normalized_new_path, affected);
             }
-        } else {
-            if print_output {
-                println!("McFly: Not updating paths due to invalid options.");
-            }
+        } else if print_output {
+            println!("McFly: Not updating paths due to invalid options.");
         }
     }
 
@@ -532,14 +533,14 @@ impl History {
 
         // Make ~/.mcfly
         fs::create_dir_all(Settings::storage_dir_path())
-            .expect(format!("Unable to create {:?}", Settings::storage_dir_path()).as_str());
+            .unwrap_or_else(|_| panic!("Unable to create {:?}", Settings::storage_dir_path()));
 
         // Make ~/.mcfly/history.db
-        let connection = Connection::open(Settings::mcfly_db_path()).expect(
-            format!(
+        let connection = Connection::open(Settings::mcfly_db_path()).unwrap_or_else(|_|
+            panic!(
                 "Unable to create history DB at {:?}",
                 Settings::mcfly_db_path()
-            ).as_str(),
+            )
         );
         db_extensions::add_db_functions(&connection);
 

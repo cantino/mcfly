@@ -24,7 +24,7 @@ impl<'a> Trainer<'a> {
         let generator = TrainingSampleGenerator::new(self.settings, self.history);
 
         println!("Evaluating error rate on current {:#?}", self.history.network);
-        let mut best_overall_network = self.history.network.clone();
+        let mut best_overall_network = self.history.network;
         let mut best_overall_error = self.history.network.average_error(&generator, batch_size * 10);
         println!("Current network error rate is {}", best_overall_error);
 
@@ -195,7 +195,7 @@ impl<'a> Trainer<'a> {
 
                 if batch_error / batch_samples < best_restart_error {
                     best_restart_error = batch_error / batch_samples;
-                    best_restart_network = network.clone();
+                    best_restart_network = network;
                     cycles_since_best_restart_error = 0;
                 } else {
                     cycles_since_best_restart_error += 1;

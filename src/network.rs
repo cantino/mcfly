@@ -1,3 +1,4 @@
+#![allow(clippy::unreadable_literal)]
 use crate::node::Node;
 use crate::training_sample_generator::TrainingSampleGenerator;
 use crate::history::Features;

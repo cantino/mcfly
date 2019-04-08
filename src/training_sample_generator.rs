@@ -60,7 +60,7 @@ impl<'a> TrainingSampleGenerator<'a> {
             // Get the features for this command at the time it was logged.
             if positive_examples <= negative_examples {
                 if let Some(our_command_index) = results.iter().position(|ref c| c.cmd.eq(&command.cmd)) {
-                    let what_should_have_been_first = results.get(our_command_index).unwrap();
+                    let what_should_have_been_first = &results[our_command_index];
                     data_set.push((what_should_have_been_first.features.clone(), true));
                     positive_examples += 1;
                 }
@@ -87,7 +87,7 @@ impl<'a> TrainingSampleGenerator<'a> {
     pub fn generate<F>(&self, records: Option<usize>, mut handler: F) where F: FnMut(&Features, bool) {
         let mut positive_examples = 0;
         let mut negative_examples = 0;
-        let records = records.unwrap_or(self.data_set.len());
+        let records = records.unwrap_or_else(|| self.data_set.len());
 
         loop {
             if let Some((features, correct)) = rand::thread_rng().choose(&self.data_set) {

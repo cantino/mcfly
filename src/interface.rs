@@ -81,7 +81,7 @@ impl<'a> Interface<'a> {
 
         let command = self.input.command.to_owned();
 
-        if command.chars().into_iter().any(|c| !c.is_whitespace()) {
+        if command.chars().any(|c| !c.is_whitespace()) {
             self.history.record_selected_from_ui(
                 &command,
                 &self.settings.session_id,
@@ -168,7 +168,7 @@ impl<'a> Interface<'a> {
         ).unwrap();
         let (width, _height): (u16, u16) = terminal_size().unwrap();
 
-        if self.matches.len() > 0 && self.selection > self.matches.len() - 1 {
+        if !self.matches.is_empty() && self.selection > self.matches.len() - 1 {
             self.selection = self.matches.len() - 1;
         }
 
@@ -247,23 +247,20 @@ impl<'a> Interface<'a> {
     }
 
     fn accept_selection(&mut self) {
-        if self.matches.len() > 0 {
+        if !self.matches.is_empty() {
             self.input.set(&self.matches[self.selection].cmd);
         }
     }
 
     fn confirm(&mut self, confirmation: bool) {
         if confirmation {
-            match self.menu_mode {
-                MenuMode::ConfirmDelete => self.delete_selection(),
-                _ => {}
-            };
+            if let MenuMode::ConfirmDelete = self.menu_mode { self.delete_selection() }
         }
         self.menu_mode = MenuMode::Normal;
     }
 
     fn delete_selection(&mut self) {
-        if self.matches.len() > 0 {
+        if !self.matches.is_empty() {
             {
                 let command = &self.matches[self.selection];
                 history_cleaner::clean(self.settings, self.history, &command.cmd);
@@ -378,7 +375,7 @@ impl<'a> Interface<'a> {
                         self.refresh_matches();
                     }
                     Key::F(2) => {
-                        if self.matches.len() > 0 {
+                        if !self.matches.is_empty() {
                             self.menu_mode = MenuMode::ConfirmDelete;
                         }
                     }
