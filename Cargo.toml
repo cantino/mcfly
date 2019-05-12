@@ -29,4 +29,4 @@ unicode-segmentation = "1.2.1"
 
 [dependencies.rusqlite]
 version = "0.15.0"
-features = ["bundled", "functions"]
+features = ["bundled", "functions", "unlock_notify"]
