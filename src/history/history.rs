@@ -580,16 +580,18 @@ impl History {
             for command in &bash_history {
                 if !IGNORED_COMMANDS.contains(&command.as_str()) {
                     let simplified_command = SimplifiedCommand::new(command.as_str(), true);
-                    statement
-                        .execute_named(&[
-                            (":cmd", command),
-                            (":cmd_tpl", &simplified_command.result.to_owned()),
-                            (":session_id", &"IMPORTED"),
-                            (":when_run", &epoch),
-                            (":exit_code", &0),
-                            (":selected", &0),
-                        ])
-                        .expect("McFly error: Insert to work");
+                    if !command.is_empty() && !simplified_command.result.is_empty() {
+                        statement
+                            .execute_named(&[
+                                (":cmd", command),
+                                (":cmd_tpl", &simplified_command.result.to_owned()),
+                                (":session_id", &"IMPORTED"),
+                                (":when_run", &epoch),
+                                (":exit_code", &0),
+                                (":selected", &0),
+                            ])
+                            .expect("McFly error: Insert to work");
+                    }
                 }
             }
         }
