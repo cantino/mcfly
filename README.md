@@ -135,3 +135,4 @@ export MCFLY_LIGHT=TRUE
 1. Let the build finish.
 1. Edit the new Release on Github.
 1. Edit `pkg/brew/mcfly.rb` and update the version and SHAs. (`shasum -a 256 ...`)
+1. `cargo publish`
