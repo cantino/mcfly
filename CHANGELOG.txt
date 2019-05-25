@@ -1,3 +1,8 @@
+0.3.4 - May 24, 2019
+ - Only read 256 bytes for session id generation (thanks @SuperSandro2000!)
+ - Prevent adding empty commands
+ - Try using unlock_notify to prevent race condition with locked DB.
+ - Ensure stdin is a tty to fix issue with Sublime Text 3 (thanks @abuzze!)
 0.3.3 - Feb 11, 2019
  - Fix version number
 0.3.2 - Feb 10, 2019
