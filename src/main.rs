@@ -21,7 +21,7 @@ fn handle_addition(settings: &Settings, history: &mut History) {
 
         if settings.append_to_histfile {
             let histfile = PathBuf::from(env::var("HISTFILE")
-                .expect("McFly error: Please ensure that HISTFILE is set."));
+                .unwrap_or_else(|err| panic!(format!("McFly error: Please ensure that HISTFILE is set ({})", err))));
             bash_history::append_history_entry(&settings.command, &histfile)
         }
     }

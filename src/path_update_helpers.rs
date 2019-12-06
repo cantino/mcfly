@@ -5,9 +5,9 @@ use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;
 
 pub fn normalize_path(incoming_path: &str) -> String {
-    let expanded_path = shellexpand::full(incoming_path).expect("McFly error: Unable to expand command path");
+    let expanded_path = shellexpand::full(incoming_path).unwrap_or_else(|err| panic!(format!("McFly error: Unable to expand command path ({})", err)));
 
-    let current_dir = env::var("PWD").expect("McFly error: Unable to determine current directory");
+    let current_dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
     let current_dir_path = Path::new(&current_dir);
 
     let path_buf = if expanded_path.starts_with('/') {
@@ -17,7 +17,7 @@ pub fn normalize_path(incoming_path: &str) -> String {
         RelativePath::new(to_current_dir.to_str().unwrap()).normalize().to_path("/")
     };
 
-    path_buf.to_str().expect("McFly error: Path must be a valid UTF8 string").to_string()
+    path_buf.to_str().unwrap_or_else(|| panic!("McFly error: Path must be a valid UTF8 string")).to_string()
 }
 
 pub fn parse_mv_command(command: &str) -> Vec<String> {

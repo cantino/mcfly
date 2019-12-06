@@ -162,14 +162,16 @@ impl Settings {
             .map(|s| s.to_string())
             .unwrap_or_else( ||
                 env::var("MCFLY_SESSION_ID")
-                    .expect("McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID."),
+                    .unwrap_or_else(|err| panic!(format!("McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({})", err))),
             );
         settings.mcfly_history = PathBuf::from(
             matches
                 .value_of("mcfly_history")
                 .map(|s| s.to_string())
-                .unwrap_or_else( ||
-                    env::var("MCFLY_HISTORY").expect("McFly error: Please ensure that MCFLY_HISTORY is set."),
+                .unwrap_or_else(||
+                    env::var("MCFLY_HISTORY").unwrap_or_else(|err|
+                        panic!(format!("McFly error: Please ensure that MCFLY_HISTORY is set ({})", err))
+                    ),
                 ),
         );
 
@@ -180,7 +182,7 @@ impl Settings {
                 settings.when_run = Some(
                     value_t!(add_matches, "when", i64).unwrap_or(SystemTime::now()
                         .duration_since(UNIX_EPOCH)
-                        .expect("McFly error: Time went backwards")
+                        .unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err)))
                         .as_secs()
                         as i64),
                 );
@@ -195,7 +197,7 @@ impl Settings {
                 if let Some(dir) = add_matches.value_of("directory") {
                     settings.dir = dir.to_string();
                 } else {
-                    settings.dir = env::var("PWD").expect("McFly error: Unable to determine current directory");
+                    settings.dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
                 }
 
                 if let Some(old_dir) = add_matches.value_of("old_directory") {
@@ -225,7 +227,7 @@ impl Settings {
                 if let Some(dir) = search_matches.value_of("directory") {
                     settings.dir = dir.to_string();
                 } else {
-                    settings.dir = env::var("PWD").expect("McFly error: Unable to determine current directory");
+                    settings.dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
                 }
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
@@ -246,8 +248,8 @@ impl Settings {
 
             ("move", Some(move_matches)) => {
                 settings.mode = Mode::Move;
-                settings.old_dir = Some(String::from(move_matches.value_of("old_dir_path").expect("McFly error: Value for old_dir_path")));
-                settings.dir = String::from(move_matches.value_of("new_dir_path").expect("McFly error: Value for new_dir_path"));
+                settings.old_dir = Some(String::from(move_matches.value_of("old_dir_path").unwrap_or_else(|| panic!("McFly error: Value for old_dir_path"))));
+                settings.dir = String::from(move_matches.value_of("new_dir_path").unwrap_or_else(|| panic!("McFly error: Value for new_dir_path")));
             }
 
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
@@ -272,7 +274,7 @@ impl Settings {
 
     pub fn storage_dir_path() -> PathBuf {
         home_dir()
-            .expect("McFly error: Unable to access home directory")
+            .unwrap_or_else(|| panic!("McFly error: Unable to access home directory"))
             .join(PathBuf::from(".mcfly"))
     }
 
