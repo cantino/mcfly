@@ -2,7 +2,7 @@ use crate::history::Features;
 use rand::Rng;
 use std::f64;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Node {
     pub offset: f64,
     pub age: f64,
@@ -33,22 +33,6 @@ impl Node {
             immediate_overlap: rng.gen_range(-1.0, 1.0),
             selected_occurrences: rng.gen_range(-1.0, 1.0),
             occurrences: rng.gen_range(-1.0, 1.0),
-        }
-    }
-
-    pub fn empty() -> Node {
-        Node {
-            offset: 0.0,
-            age: 0.0,
-            length: 0.0,
-            exit: 0.0,
-            recent_failure: 0.0,
-            selected_dir: 0.0,
-            dir: 0.0,
-            overlap: 0.0,
-            immediate_overlap: 0.0,
-            selected_occurrences: 0.0,
-            occurrences: 0.0,
         }
     }
 
