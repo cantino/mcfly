@@ -408,16 +408,6 @@ impl<'a> Interface<'a> {
                     self.menu_mode = MenuMode::ConfirmDelete;
                 }
             }
-            Key::Ctrl(_c) => {
-                //                      self.debug(&mut screen, format!("Ctrl({})", c))
-            }
-            Key::Alt(_c) => {
-                //                      self.debug(&mut screen, format!("Alt({})", c))
-            }
-            Key::F(_c) => {
-                //                      self.debug(&mut screen, format!("F({})", c))
-            }
-            Key::Insert | Key::Null | Key::__IsNotComplete => {}
             _ => {}
         }
 
@@ -469,16 +459,6 @@ impl<'a> Interface<'a> {
                         self.menu_mode = MenuMode::ConfirmDelete;
                     }
                 }
-                Key::Ctrl(_c) => {
-                    //                      self.debug(&mut screen, format!("Ctrl({})", c))
-                }
-                Key::Alt(_c) => {
-                    //                      self.debug(&mut screen, format!("Alt({})", c))
-                }
-                Key::F(_c) => {
-                    //                      self.debug(&mut screen, format!("F({})", c))
-                }
-                Key::Insert | Key::Null | Key::__IsNotComplete => {}
                 _ => {}
             }
         } else {
@@ -531,16 +511,6 @@ impl<'a> Interface<'a> {
                         self.menu_mode = MenuMode::ConfirmDelete;
                     }
                 }
-                Key::Ctrl(_c) => {
-                    //                      self.debug(&mut screen, format!("Ctrl({})", c))
-                }
-                Key::Alt(_c) => {
-                    //                      self.debug(&mut screen, format!("Alt({})", c))
-                }
-                Key::F(_c) => {
-                    //                      self.debug(&mut screen, format!("F({})", c))
-                }
-                Key::Insert | Key::Null | Key::__IsNotComplete => {}
                 _ => {}
             }
         }
