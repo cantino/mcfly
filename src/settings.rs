@@ -248,8 +248,8 @@ impl Settings {
 
             ("move", Some(move_matches)) => {
                 settings.mode = Mode::Move;
-                settings.old_dir = Some(String::from(move_matches.value_of("old_dir_path").unwrap_or_else(|| panic!("McFly error: Value for old_dir_path"))));
-                settings.dir = String::from(move_matches.value_of("new_dir_path").unwrap_or_else(|| panic!("McFly error: Value for new_dir_path")));
+                settings.old_dir = Some(String::from(move_matches.value_of("old_dir_path").unwrap_or_else(|| panic!("McFly error: Expected value for old_dir_path"))));
+                settings.dir = String::from(move_matches.value_of("new_dir_path").unwrap_or_else(|| panic!("McFly error: Expected value for new_dir_path")));
             }
 
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
