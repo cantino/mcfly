@@ -100,14 +100,18 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 
 <img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
 
-## Light Mode
+## Settings
+A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bash_profile`.
 
+### Light Mode
 To swap the color scheme for use in a light terminal, set the environment variable `MCFLY_LIGHT`.
-
-For example, add the following to your `~/.bash_profile`:
-
 ```bash
 export MCFLY_LIGHT=TRUE
+```
+### VIM Key Scheme
+By default Mcfly uses an `emacs` inspired key scheme. If you would like to switch to the `vim` inspired key scheme, set the environment variable `MCFLY_KEY_SCHEME`.
+```bash
+export MCFLY_KEY_SCHEME=vim
 ```
 
 ## Possible Future Features

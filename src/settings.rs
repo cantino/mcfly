@@ -17,6 +17,12 @@ pub enum Mode {
 }
 
 #[derive(Debug)]
+pub enum KeyScheme {
+    Emacs,
+    Vim
+}
+
+#[derive(Debug)]
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
@@ -30,6 +36,7 @@ pub struct Settings {
     pub append_to_histfile: bool,
     pub refresh_training_cache: bool,
     pub lightmode: bool,
+    pub key_scheme: KeyScheme
 }
 
 impl Default for Settings {
@@ -47,6 +54,7 @@ impl Default for Settings {
             append_to_histfile: false,
             debug: false,
             lightmode: false,
+            key_scheme: KeyScheme::Emacs
         }
     }
 }
@@ -250,6 +258,11 @@ impl Settings {
             Some(_val) => true,
             None => false
         };
+        settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
+            Ok("vim") => KeyScheme::Vim,
+            _ => KeyScheme::Emacs
+        };
+
         settings
     }
 

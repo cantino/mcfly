@@ -5,6 +5,7 @@ use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
 use crate::history::Command;
 use crate::history_cleaner;
 use crate::settings::Settings;
+use crate::settings::KeyScheme;
 use std::io::{stdin, stdout, Write};
 use termion::color;
 use termion::event::Key;
@@ -22,6 +23,7 @@ pub struct Interface<'a> {
     debug: bool,
     run: bool,
     menu_mode: MenuMode,
+    in_vim_insert_mode: bool
 }
 
 pub struct SelectionResult {
@@ -41,9 +43,16 @@ pub enum MenuMode {
 }
 
 impl MenuMode {
-    fn text(&self) -> &str {
+    fn text(&self, interface: &Interface) -> &str {
         match *self {
-            MenuMode::Normal => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
+            MenuMode::Normal => match interface.settings.key_scheme {
+                KeyScheme::Emacs => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
+                KeyScheme::Vim => if interface.in_vim_insert_mode {
+                    "McFly (Vim) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete        -- INSERT --"
+                } else {
+                    "McFly (Vim) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
+                }
+            },
             MenuMode::ConfirmDelete => "Delete selected command from the history? (Y/N)",
         }
     }
@@ -72,6 +81,7 @@ impl<'a> Interface<'a> {
             debug: settings.debug,
             run: false,
             menu_mode: MenuMode::Normal,
+            in_vim_insert_mode: false
         }
     }
 
@@ -119,7 +129,7 @@ impl<'a> Interface<'a> {
             bg = self.menu_mode.bg(),
             cursor = cursor::Goto(1, INFO_LINE_INDEX),
             clear = clear::CurrentLine,
-            text = self.menu_mode.text(),
+            text = self.menu_mode.text(self),
             reset_bg = color::Bg(color::Reset).to_string(),
             width = width as usize
         ).unwrap();
@@ -310,85 +320,13 @@ impl<'a> Interface<'a> {
                     _ => {}
                 }
             } else {
-                match c.unwrap() {
-                    Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
-                        self.run = true;
-                        self.accept_selection();
-                        break;
-                    }
-                    Key::Char('\t') => {
-                        self.run = false;
-                        self.accept_selection();
-                        break;
-                    }
-                    Key::Ctrl('c')
-                    | Key::Ctrl('d')
-                    | Key::Ctrl('g')
-                    | Key::Ctrl('z')
-                    | Key::Esc
-                    | Key::Ctrl('r') => {
-                        self.run = false;
-                        self.input.clear();
-                        break;
-                    }
-                    Key::Ctrl('b') => self.input.move_cursor(Move::Backward),
-                    Key::Ctrl('f') => self.input.move_cursor(Move::Forward),
-                    Key::Ctrl('a') => self.input.move_cursor(Move::BOL),
-                    Key::Ctrl('e') => self.input.move_cursor(Move::EOL),
-                    Key::Ctrl('w') | Key::Alt('\x08') | Key::Alt('\x7f') => {
-                        self.input.delete(Move::BackwardWord);
-                        self.refresh_matches();
-                    }
-                    Key::Alt('d') => {
-                        self.input.delete(Move::ForwardWord);
-                        self.refresh_matches();
-                    }
-                    Key::Ctrl('v') => {
-                        self.debug = !self.debug;
-                    }
-                    Key::Alt('b') => self.input.move_cursor(Move::BackwardWord),
-                    Key::Alt('f') => self.input.move_cursor(Move::ForwardWord),
-                    Key::Left => self.input.move_cursor(Move::Backward),
-                    Key::Right => self.input.move_cursor(Move::Forward),
-                    Key::Up | Key::PageUp | Key::Ctrl('p') => self.move_selection(MoveSelection::Up),
-                    Key::Down | Key::PageDown | Key::Ctrl('n') => self.move_selection(MoveSelection::Down),
-                    Key::Ctrl('k') => {
-                        self.input.delete(Move::EOL);
-                        self.refresh_matches();
-                    }
-                    Key::Ctrl('u') => {
-                        self.input.delete(Move::BOL);
-                        self.refresh_matches();
-                    }
-                    Key::Backspace | Key::Ctrl('h') => {
-                        self.input.delete(Move::Backward);
-                        self.refresh_matches();
-                    }
-                    Key::Delete => {
-                        self.input.delete(Move::Forward);
-                        self.refresh_matches();
-                    }
-                    Key::Home => self.input.move_cursor(Move::BOL),
-                    Key::End => self.input.move_cursor(Move::EOL),
-                    Key::Char(c) => {
-                        self.input.insert(c);
-                        self.refresh_matches();
-                    }
-                    Key::F(2) => {
-                        if !self.matches.is_empty() {
-                            self.menu_mode = MenuMode::ConfirmDelete;
-                        }
-                    }
-                    Key::Ctrl(_c) => {
-                        //                      self.debug(&mut screen, format!("Ctrl({})", c))
-                    }
-                    Key::Alt(_c) => {
-                        //                      self.debug(&mut screen, format!("Alt({})", c))
-                    }
-                    Key::F(_c) => {
-                        //                      self.debug(&mut screen, format!("F({})", c))
-                    }
-                    Key::Insert | Key::Null | Key::__IsNotComplete => {}
+                let early_out = match self.settings.key_scheme {
+                    KeyScheme::Emacs => self.select_with_emacs_key_scheme(c.unwrap()),
+                    KeyScheme::Vim => self.select_with_vim_key_scheme(c.unwrap())
+                };
+
+                if early_out {
+                    break;
                 }
             }
 
@@ -398,6 +336,186 @@ impl<'a> Interface<'a> {
         }
 
         write!(screen, "{}{}", clear::All, cursor::Show).unwrap();
+    }
+
+    fn select_with_emacs_key_scheme(&mut self, k: Key) -> bool {
+        match k {
+            Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
+                self.run = true;
+                self.accept_selection();
+                return true;
+            }
+            Key::Char('\t') => {
+                self.run = false;
+                self.accept_selection();
+                return true;
+            }
+            Key::Ctrl('c')
+            | Key::Ctrl('d')
+            | Key::Ctrl('g')
+            | Key::Ctrl('z')
+            | Key::Esc
+            | Key::Ctrl('r') => {
+                self.run = false;
+                self.input.clear();
+                return true;
+            }
+            Key::Ctrl('b') => self.input.move_cursor(Move::Backward),
+            Key::Ctrl('f') => self.input.move_cursor(Move::Forward),
+            Key::Ctrl('a') => self.input.move_cursor(Move::BOL),
+            Key::Ctrl('e') => self.input.move_cursor(Move::EOL),
+            Key::Ctrl('w') | Key::Alt('\x08') | Key::Alt('\x7f') => {
+                self.input.delete(Move::BackwardWord);
+                self.refresh_matches();
+            }
+            Key::Alt('d') => {
+                self.input.delete(Move::ForwardWord);
+                self.refresh_matches();
+            }
+            Key::Ctrl('v') => {
+                self.debug = !self.debug;
+            }
+            Key::Alt('b') => self.input.move_cursor(Move::BackwardWord),
+            Key::Alt('f') => self.input.move_cursor(Move::ForwardWord),
+            Key::Left => self.input.move_cursor(Move::Backward),
+            Key::Right => self.input.move_cursor(Move::Forward),
+            Key::Up | Key::PageUp | Key::Ctrl('p') => self.move_selection(MoveSelection::Up),
+            Key::Down | Key::PageDown | Key::Ctrl('n') => self.move_selection(MoveSelection::Down),
+            Key::Ctrl('k') => {
+                self.input.delete(Move::EOL);
+                self.refresh_matches();
+            }
+            Key::Ctrl('u') => {
+                self.input.delete(Move::BOL);
+                self.refresh_matches();
+            }
+            Key::Backspace | Key::Ctrl('h') => {
+                self.input.delete(Move::Backward);
+                self.refresh_matches();
+            }
+            Key::Delete => {
+                self.input.delete(Move::Forward);
+                self.refresh_matches();
+            }
+            Key::Home => self.input.move_cursor(Move::BOL),
+            Key::End => self.input.move_cursor(Move::EOL),
+            Key::Char(c) => {
+                self.input.insert(c);
+                self.refresh_matches();
+            }
+            Key::F(2) => {
+                if !self.matches.is_empty() {
+                    self.menu_mode = MenuMode::ConfirmDelete;
+                }
+            }
+            _ => {}
+        }
+
+        false
+    }
+
+    fn select_with_vim_key_scheme(&mut self, k: Key) -> bool {
+        if self.in_vim_insert_mode {
+            match k {
+                Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
+                    self.run = true;
+                    self.accept_selection();
+                    return true;
+                }
+                Key::Char('\t') => {
+                    self.run = false;
+                    self.accept_selection();
+                    return true;
+                }
+                Key::Ctrl('c')
+                | Key::Ctrl('g')
+                | Key::Ctrl('z')
+                | Key::Ctrl('r') => {
+                    self.run = false;
+                    self.input.clear();
+                    return true;
+                }
+                Key::Left => self.input.move_cursor(Move::Backward),
+                Key::Right => self.input.move_cursor(Move::Forward),
+                Key::Up | Key::PageUp | Key::Ctrl('u') => self.move_selection(MoveSelection::Up),
+                Key::Down | Key::PageDown | Key::Ctrl('d') => self.move_selection(MoveSelection::Down),
+                Key::Esc => self.in_vim_insert_mode = false,
+                Key::Backspace => {
+                    self.input.delete(Move::Backward);
+                    self.refresh_matches();
+                }
+                Key::Delete => {
+                    self.input.delete(Move::Forward);
+                    self.refresh_matches();
+                }
+                Key::Home => self.input.move_cursor(Move::BOL),
+                Key::End => self.input.move_cursor(Move::EOL),
+                Key::Char(c) => {
+                    self.input.insert(c);
+                    self.refresh_matches();
+                }
+                Key::F(2) => {
+                    if !self.matches.is_empty() {
+                        self.menu_mode = MenuMode::ConfirmDelete;
+                    }
+                }
+                _ => {}
+            }
+        } else {
+            match k {
+                Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
+                    self.run = true;
+                    self.accept_selection();
+                    return true;
+                }
+                Key::Char('\t') => {
+                    self.run = false;
+                    self.accept_selection();
+                    return true;
+                }
+                Key::Ctrl('c')
+                | Key::Ctrl('g')
+                | Key::Ctrl('z')
+                | Key::Esc
+                | Key::Char('q')
+                // TODO add ZZ as shortcut
+                | Key::Ctrl('r') => {
+                    self.run = false;
+                    self.input.clear();
+                    return true;
+                }
+                Key::Left | Key::Char('h') => self.input.move_cursor(Move::Backward),
+                Key::Right | Key::Char('l') => self.input.move_cursor(Move::Forward),
+                Key::Up | Key::PageUp | Key::Char('k') | Key::Ctrl('u') => self.move_selection(MoveSelection::Up),
+                Key::Down | Key::PageDown | Key::Char('j') | Key::Ctrl('d') => self.move_selection(MoveSelection::Down),
+                Key::Char('b') | Key::Char('e') => self.input.move_cursor(Move::BackwardWord),
+                Key::Char('w') => self.input.move_cursor(Move::ForwardWord),
+                Key::Char('0') | Key::Char('^') => self.input.move_cursor(Move::BOL),
+                Key::Char('$') => self.input.move_cursor(Move::EOL),
+                Key::Char('i') | Key::Char('a') => self.in_vim_insert_mode = true,
+                Key::Backspace => {
+                    self.input.delete(Move::Backward);
+                    self.refresh_matches();
+                }
+                Key::Delete | Key::Char('x') => {
+                    self.input.delete(Move::Forward);
+                    self.refresh_matches();
+                }
+                Key::Home => self.input.move_cursor(Move::BOL),
+                Key::End => self.input.move_cursor(Move::EOL),
+                Key::Char(_c) => {
+
+                }
+                Key::F(2) => {
+                    if !self.matches.is_empty() {
+                        self.menu_mode = MenuMode::ConfirmDelete;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        false
     }
 
     fn truncate_for_display(
