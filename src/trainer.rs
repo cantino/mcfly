@@ -33,7 +33,7 @@ impl<'a> Trainer<'a> {
             let mut best_restart_error = 10000.0;
             let mut cycles_since_best_restart_error = 0;
             let mut network = Network::random();
-            let mut node_increments = [Node::empty(), Node::empty(), Node::empty()];
+            let mut node_increments = [Node::default(), Node::default(), Node::default()];
             let mut output_increments = [0.0, 0.0, 0.0, 0.0];
 
             loop {
