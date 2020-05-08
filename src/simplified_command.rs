@@ -18,7 +18,7 @@ pub struct SimplifiedCommand {
 impl SimplifiedCommand {
     pub fn new<S: Into<String>>(command: S, truncate: bool) -> SimplifiedCommand {
         let mut simplified_command = SimplifiedCommand {
-            original: command.into().clone(),
+            original: command.into(),
             result: String::new(),
             truncate,
         };

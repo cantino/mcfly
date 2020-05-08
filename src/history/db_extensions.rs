@@ -1,6 +1,5 @@
 use crate::history::history::Features;
 use crate::network::Network;
-use rusqlite;
 use rusqlite::Connection;
 
 pub fn add_db_functions(db: &Connection) {

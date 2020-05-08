@@ -1,5 +1,4 @@
 use relative_path::RelativePath;
-use shellexpand;
 use std::env;
 use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;

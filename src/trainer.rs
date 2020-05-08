@@ -17,7 +17,7 @@ impl<'a> Trainer<'a> {
     }
 
     pub fn train(&mut self) {
-        let lr = 0.000005;
+        let lr = 0.000_005;
         let momentum = 0.0;
         let batch_size = 1000;
         let plateau_threshold = 3000;
