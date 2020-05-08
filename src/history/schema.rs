@@ -27,7 +27,9 @@ pub fn migrate(connection: &Connection) {
             "McFly: Upgrading McFly DB to version {}, please wait...",
             CURRENT_SCHEMA_VERSION
         );
-        io::stdout().flush().unwrap_or_else(|err| panic!(format!("McFly error: STDOUT flush should work ({})", err)));
+        io::stdout().flush().unwrap_or_else(|err| {
+            panic!(format!("McFly error: STDOUT flush should work ({})", err))
+        });
     }
 
     if current_version < 1 {
@@ -35,11 +37,18 @@ pub fn migrate(connection: &Connection) {
             .execute_batch(
                 "ALTER TABLE commands ADD COLUMN cmd_tpl TEXT; UPDATE commands SET cmd_tpl = '';",
             )
-            .unwrap_or_else(|err| panic!(format!("McFly error: Unable to add cmd_tpl to commands ({})", err)));
+            .unwrap_or_else(|err| {
+                panic!(format!(
+                    "McFly error: Unable to add cmd_tpl to commands ({})",
+                    err
+                ))
+            });
 
         let mut statement = connection
             .prepare("UPDATE commands SET cmd_tpl = :cmd_tpl WHERE id = :id")
-            .unwrap_or_else(|err| panic!(format!("McFly error: Unable to prepare update ({})", err)));
+            .unwrap_or_else(|err| {
+                panic!(format!("McFly error: Unable to prepare update ({})", err))
+            });
 
         for (id, cmd) in cmd_strings(connection) {
             let simplified_command = SimplifiedCommand::new(cmd.as_str(), true);
@@ -56,12 +65,18 @@ pub fn migrate(connection: &Connection) {
                  UPDATE commands SET session_id = 'UNKNOWN'; \
                  CREATE INDEX command_session_id ON commands (session_id);",
             )
-            .unwrap_or_else(|err| panic!(format!("McFly error: Unable to add session_id to commands ({})", err)));
+            .unwrap_or_else(|err| {
+                panic!(format!(
+                    "McFly error: Unable to add session_id to commands ({})",
+                    err
+                ))
+            });
     }
 
     if current_version < 3 {
-        connection.execute_batch(
-            "CREATE TABLE selected_commands( \
+        connection
+            .execute_batch(
+                "CREATE TABLE selected_commands( \
               id INTEGER PRIMARY KEY AUTOINCREMENT, \
               cmd TEXT NOT NULL, \
               session_id TEXT NOT NULL, \
@@ -70,8 +85,14 @@ pub fn migrate(connection: &Connection) {
             CREATE INDEX selected_command_session_cmds ON selected_commands (session_id, cmd); \
             \
             ALTER TABLE commands ADD COLUMN selected INTEGER; \
-            UPDATE commands SET selected = 0;")
-            .unwrap_or_else(|err| panic!(format!("McFly error: Unable to add selected_commands ({})", err)));
+            UPDATE commands SET selected = 0;",
+            )
+            .unwrap_or_else(|err| {
+                panic!(format!(
+                    "McFly error: Unable to add selected_commands ({})",
+                    err
+                ))
+            });
     }
 
     if current_version < CURRENT_SCHEMA_VERSION {
@@ -90,7 +111,12 @@ fn make_schema_versions_table(connection: &Connection) {
 
              CREATE UNIQUE INDEX IF NOT EXISTS schema_versions_index ON schema_versions (version);",
         )
-        .unwrap_or_else(|err| panic!(format!("McFly error: Unable to create schema_versions db table ({})", err)));
+        .unwrap_or_else(|err| {
+            panic!(format!(
+                "McFly error: Unable to create schema_versions db table ({})",
+                err
+            ))
+        });
 }
 
 fn write_current_schema_version(connection: &Connection) {
@@ -98,9 +124,12 @@ fn write_current_schema_version(connection: &Connection) {
         "INSERT INTO schema_versions (version, when_run) VALUES ({}, strftime('%s','now'))",
         CURRENT_SCHEMA_VERSION
     );
-    connection
-        .execute_batch(&insert)
-        .unwrap_or_else(|err| panic!(format!("McFly error: Unable to update schema_versions ({})", err)));
+    connection.execute_batch(&insert).unwrap_or_else(|err| {
+        panic!(format!(
+            "McFly error: Unable to update schema_versions ({})",
+            err
+        ))
+    });
 }
 
 fn cmd_strings(connection: &Connection) -> Vec<(i64, String)> {

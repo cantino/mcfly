@@ -1,15 +1,17 @@
 use std::env;
 use std::fs;
+use std::fs::File;
 use std::fs::OpenOptions;
+use std::io::Read;
 use std::io::Write;
 use std::path::PathBuf;
-use std::fs::File;
-use std::io::Read;
 
 fn read_ignoring_utf_errors(path: &PathBuf) -> String {
-    let mut f = File::open(path).unwrap_or_else(|_| panic!("McFly error: {:?} file not found", &path));
+    let mut f =
+        File::open(path).unwrap_or_else(|_| panic!("McFly error: {:?} file not found", &path));
     let mut buffer = Vec::new();
-    f.read_to_end(&mut buffer).unwrap_or_else(|_| panic!("McFly error: Unable to read from {:?}", &path));
+    f.read_to_end(&mut buffer)
+        .unwrap_or_else(|_| panic!("McFly error: Unable to read from {:?}", &path));
     String::from_utf8_lossy(&buffer).to_string()
 }
 
@@ -20,7 +22,7 @@ fn has_leading_timestamp(line: &str) -> bool {
     for (index, c) in line.chars().enumerate() {
         if index == 0 && c == '#' {
             matched_chars += 1;
-        } else if index > 0 && index < 11 && (c.is_digit(10))  {
+        } else if index > 0 && index < 11 && (c.is_digit(10)) {
             matched_chars += 1;
         } else if index > 11 {
             break;
@@ -31,9 +33,18 @@ fn has_leading_timestamp(line: &str) -> bool {
 }
 
 pub fn bash_history_file_path() -> PathBuf {
-    let path =
-        PathBuf::from(env::var("HISTFILE").unwrap_or_else(|err| panic!(format!("McFly error: Please ensure HISTFILE is set for your shell ({})", err))));
-    fs::canonicalize(&path).unwrap_or_else(|err| panic!(format!("McFly error: The contents of $HISTFILE appear invalid ({})", err)))
+    let path = PathBuf::from(env::var("HISTFILE").unwrap_or_else(|err| {
+        panic!(format!(
+            "McFly error: Please ensure HISTFILE is set for your shell ({})",
+            err
+        ))
+    }));
+    fs::canonicalize(&path).unwrap_or_else(|err| {
+        panic!(format!(
+            "McFly error: The contents of $HISTFILE appear invalid ({})",
+            err
+        ))
+    })
 }
 
 pub fn full_history(path: &PathBuf) -> Vec<String> {
@@ -75,7 +86,8 @@ pub fn delete_last_history_entry_if_search(path: &PathBuf) {
 
     lines.push(String::from("")); // New line at end of file expected by bash.
 
-    fs::write(&path, lines.join("\n")).unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", &path));
+    fs::write(&path, lines.join("\n"))
+        .unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", &path));
 }
 
 pub fn delete_lines(path: &PathBuf, command: &str) {
@@ -87,7 +99,8 @@ pub fn delete_lines(path: &PathBuf, command: &str) {
         .filter(|cmd| !cmd.eq(command))
         .collect::<Vec<String>>();
 
-    fs::write(&path, lines.join("\n")).unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", &path));
+    fs::write(&path, lines.join("\n"))
+        .unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", &path));
 }
 
 pub fn append_history_entry(command: &str, path: &PathBuf) {
@@ -95,7 +108,12 @@ pub fn append_history_entry(command: &str, path: &PathBuf) {
         .write(true)
         .append(true)
         .open(path)
-        .unwrap_or_else(|err| panic!(format!("McFly error: please make sure HISTFILE exists ({})", err)));
+        .unwrap_or_else(|err| {
+            panic!(format!(
+                "McFly error: please make sure HISTFILE exists ({})",
+                err
+            ))
+        });
 
     if let Err(e) = writeln!(file, "{}", command) {
         eprintln!("Couldn't append to file {:?}: {}", &path, e);

@@ -1,25 +1,25 @@
 use crate::bash_history;
-use clap::{crate_version, crate_authors, value_t};
 use clap::AppSettings;
+use clap::{crate_authors, crate_version, value_t};
 use clap::{App, Arg, SubCommand};
+use dirs::home_dir;
 use std::env;
 use std::path::PathBuf;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use dirs::home_dir;
 
 #[derive(Debug)]
 pub enum Mode {
     Add,
     Search,
     Train,
-    Move
+    Move,
 }
 
 #[derive(Debug)]
 pub enum KeyScheme {
     Emacs,
-    Vim
+    Vim,
 }
 
 #[derive(Debug)]
@@ -36,7 +36,7 @@ pub struct Settings {
     pub append_to_histfile: bool,
     pub refresh_training_cache: bool,
     pub lightmode: bool,
-    pub key_scheme: KeyScheme
+    pub key_scheme: KeyScheme,
 }
 
 impl Default for Settings {
@@ -54,7 +54,7 @@ impl Default for Settings {
             append_to_histfile: false,
             debug: false,
             lightmode: false,
-            key_scheme: KeyScheme::Emacs
+            key_scheme: KeyScheme::Emacs,
         }
     }
 }
@@ -168,11 +168,14 @@ impl Settings {
             matches
                 .value_of("mcfly_history")
                 .map(|s| s.to_string())
-                .unwrap_or_else(||
-                    env::var("MCFLY_HISTORY").unwrap_or_else(|err|
-                        panic!(format!("McFly error: Please ensure that MCFLY_HISTORY is set ({})", err))
-                    ),
-                ),
+                .unwrap_or_else(|| {
+                    env::var("MCFLY_HISTORY").unwrap_or_else(|err| {
+                        panic!(format!(
+                            "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
+                            err
+                        ))
+                    })
+                }),
         );
 
         match matches.subcommand() {
@@ -180,11 +183,14 @@ impl Settings {
                 settings.mode = Mode::Add;
 
                 settings.when_run = Some(
-                    value_t!(add_matches, "when", i64).unwrap_or(SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err)))
-                        .as_secs()
-                        as i64),
+                    value_t!(add_matches, "when", i64).unwrap_or(
+                        SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap_or_else(|err| {
+                                panic!(format!("McFly error: Time went backwards ({})", err))
+                            })
+                            .as_secs() as i64,
+                    ),
                 );
 
                 settings.append_to_histfile = add_matches.is_present("append_to_histfile");
@@ -197,7 +203,12 @@ impl Settings {
                 if let Some(dir) = add_matches.value_of("directory") {
                     settings.dir = dir.to_string();
                 } else {
-                    settings.dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
+                    settings.dir = env::var("PWD").unwrap_or_else(|err| {
+                        panic!(format!(
+                            "McFly error: Unable to determine current directory ({})",
+                            err
+                        ))
+                    });
                 }
 
                 if let Some(old_dir) = add_matches.value_of("old_directory") {
@@ -227,7 +238,12 @@ impl Settings {
                 if let Some(dir) = search_matches.value_of("directory") {
                     settings.dir = dir.to_string();
                 } else {
-                    settings.dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
+                    settings.dir = env::var("PWD").unwrap_or_else(|err| {
+                        panic!(format!(
+                            "McFly error: Unable to determine current directory ({})",
+                            err
+                        ))
+                    });
                 }
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
@@ -248,8 +264,16 @@ impl Settings {
 
             ("move", Some(move_matches)) => {
                 settings.mode = Mode::Move;
-                settings.old_dir = Some(String::from(move_matches.value_of("old_dir_path").unwrap_or_else(|| panic!("McFly error: Expected value for old_dir_path"))));
-                settings.dir = String::from(move_matches.value_of("new_dir_path").unwrap_or_else(|| panic!("McFly error: Expected value for new_dir_path")));
+                settings.old_dir = Some(String::from(
+                    move_matches
+                        .value_of("old_dir_path")
+                        .unwrap_or_else(|| panic!("McFly error: Expected value for old_dir_path")),
+                ));
+                settings.dir = String::from(
+                    move_matches
+                        .value_of("new_dir_path")
+                        .unwrap_or_else(|| panic!("McFly error: Expected value for new_dir_path")),
+                );
             }
 
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
@@ -258,11 +282,11 @@ impl Settings {
 
         settings.lightmode = match env::var_os("MCFLY_LIGHT") {
             Some(_val) => true,
-            None => false
+            None => false,
         };
         settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
             Ok("vim") => KeyScheme::Vim,
-            _ => KeyScheme::Emacs
+            _ => KeyScheme::Emacs,
         };
 
         settings

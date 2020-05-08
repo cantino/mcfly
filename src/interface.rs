@@ -4,8 +4,8 @@ use crate::history::History;
 use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
 use crate::history::Command;
 use crate::history_cleaner;
-use crate::settings::Settings;
 use crate::settings::KeyScheme;
+use crate::settings::Settings;
 use std::io::{stdin, stdout, Write};
 use termion::color;
 use termion::event::Key;
@@ -23,7 +23,7 @@ pub struct Interface<'a> {
     debug: bool,
     run: bool,
     menu_mode: MenuMode,
-    in_vim_insert_mode: bool
+    in_vim_insert_mode: bool,
 }
 
 pub struct SelectionResult {
@@ -47,10 +47,12 @@ impl MenuMode {
         match *self {
             MenuMode::Normal => match interface.settings.key_scheme {
                 KeyScheme::Emacs => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
-                KeyScheme::Vim => if interface.in_vim_insert_mode {
-                    "McFly (Vim) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete        -- INSERT --"
-                } else {
-                    "McFly (Vim) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
+                KeyScheme::Vim => {
+                    if interface.in_vim_insert_mode {
+                        "McFly (Vim) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete        -- INSERT --"
+                    } else {
+                        "McFly (Vim) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
+                    }
                 }
             },
             MenuMode::ConfirmDelete => "Delete selected command from the history? (Y/N)",
@@ -81,7 +83,7 @@ impl<'a> Interface<'a> {
             debug: settings.debug,
             run: false,
             menu_mode: MenuMode::Normal,
-            in_vim_insert_mode: false
+            in_vim_insert_mode: false,
         }
     }
 
@@ -132,7 +134,8 @@ impl<'a> Interface<'a> {
             text = self.menu_mode.text(self),
             reset_bg = color::Bg(color::Reset).to_string(),
             width = width as usize
-        ).unwrap();
+        )
+        .unwrap();
         screen.flush().unwrap();
     }
 
@@ -148,13 +151,15 @@ impl<'a> Interface<'a> {
             cursor::Goto(1, PROMPT_LINE_INDEX),
             clear::CurrentLine,
             self.input
-        ).unwrap();
+        )
+        .unwrap();
         write!(
             screen,
             "{}{}",
             cursor::Goto(self.input.cursor as u16 + 3, PROMPT_LINE_INDEX),
             cursor::Show
-        ).unwrap();
+        )
+        .unwrap();
         screen.flush().unwrap();
     }
 
@@ -164,7 +169,8 @@ impl<'a> Interface<'a> {
             "{}{}",
             cursor::Hide,
             cursor::Goto(0, RESULTS_TOP_INDEX + RESULTS_TO_RETURN + 1)
-        ).unwrap();
+        )
+        .unwrap();
         screen.flush().unwrap();
     }
 
@@ -175,7 +181,8 @@ impl<'a> Interface<'a> {
             cursor::Hide,
             cursor::Goto(1, RESULTS_TOP_INDEX),
             clear::All
-        ).unwrap();
+        )
+        .unwrap();
         let (width, _height): (u16, u16) = terminal_size().unwrap();
 
         if !self.matches.is_empty() && self.selection > self.matches.len() - 1 {
@@ -223,7 +230,8 @@ impl<'a> Interface<'a> {
                     fg,
                     self.debug
                 )
-            ).unwrap();
+            )
+            .unwrap();
 
             write!(screen, "{}", color::Bg(color::Reset)).unwrap();
             write!(screen, "{}", color::Fg(color::Reset)).unwrap();
@@ -239,7 +247,8 @@ impl<'a> Interface<'a> {
             cursor::Goto(1, 2),
             clear::CurrentLine,
             s.into()
-        ).unwrap();
+        )
+        .unwrap();
         screen.flush().unwrap();
     }
 
@@ -264,7 +273,9 @@ impl<'a> Interface<'a> {
 
     fn confirm(&mut self, confirmation: bool) {
         if confirmation {
-            if let MenuMode::ConfirmDelete = self.menu_mode { self.delete_selection() }
+            if let MenuMode::ConfirmDelete = self.menu_mode {
+                self.delete_selection()
+            }
         }
         self.menu_mode = MenuMode::Normal;
     }
@@ -282,7 +293,8 @@ impl<'a> Interface<'a> {
 
     fn refresh_matches(&mut self) {
         self.selection = 0;
-        self.matches = self.history
+        self.matches = self
+            .history
             .find_matches(&self.input.command, RESULTS_TO_RETURN as i16);
     }
 
@@ -322,7 +334,7 @@ impl<'a> Interface<'a> {
             } else {
                 let early_out = match self.settings.key_scheme {
                     KeyScheme::Emacs => self.select_with_emacs_key_scheme(c.unwrap()),
-                    KeyScheme::Vim => self.select_with_vim_key_scheme(c.unwrap())
+                    KeyScheme::Vim => self.select_with_vim_key_scheme(c.unwrap()),
                 };
 
                 if early_out {
@@ -427,10 +439,7 @@ impl<'a> Interface<'a> {
                     self.accept_selection();
                     return true;
                 }
-                Key::Ctrl('c')
-                | Key::Ctrl('g')
-                | Key::Ctrl('z')
-                | Key::Ctrl('r') => {
+                Key::Ctrl('c') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Ctrl('r') => {
                     self.run = false;
                     self.input.clear();
                     return true;
@@ -438,7 +447,9 @@ impl<'a> Interface<'a> {
                 Key::Left => self.input.move_cursor(Move::Backward),
                 Key::Right => self.input.move_cursor(Move::Forward),
                 Key::Up | Key::PageUp | Key::Ctrl('u') => self.move_selection(MoveSelection::Up),
-                Key::Down | Key::PageDown | Key::Ctrl('d') => self.move_selection(MoveSelection::Down),
+                Key::Down | Key::PageDown | Key::Ctrl('d') => {
+                    self.move_selection(MoveSelection::Down)
+                }
                 Key::Esc => self.in_vim_insert_mode = false,
                 Key::Backspace => {
                     self.input.delete(Move::Backward);
@@ -563,13 +574,28 @@ impl<'a> Interface<'a> {
             out.push_grapheme_str(format!("age: {:.*} ", 2, command.features.age_factor));
             out.push_grapheme_str(format!("lng: {:.*} ", 2, command.features.length_factor));
             out.push_grapheme_str(format!("ext: {:.*} ", 0, command.features.exit_factor));
-            out.push_grapheme_str(format!("r_ext: {:.*} ", 0, command.features.recent_failure_factor));
+            out.push_grapheme_str(format!(
+                "r_ext: {:.*} ",
+                0, command.features.recent_failure_factor
+            ));
             out.push_grapheme_str(format!("dir: {:.*} ", 3, command.features.dir_factor));
-            out.push_grapheme_str(format!("s_dir: {:.*} ", 3, command.features.selected_dir_factor));
+            out.push_grapheme_str(format!(
+                "s_dir: {:.*} ",
+                3, command.features.selected_dir_factor
+            ));
             out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.features.overlap_factor));
-            out.push_grapheme_str(format!("i_ovlp: {:.*} ", 3, command.features.immediate_overlap_factor));
-            out.push_grapheme_str(format!("occ: {:.*}", 2, command.features.occurrences_factor));
-            out.push_grapheme_str(format!("s_occ: {:.*} ", 2, command.features.selected_occurrences_factor));
+            out.push_grapheme_str(format!(
+                "i_ovlp: {:.*} ",
+                3, command.features.immediate_overlap_factor
+            ));
+            out.push_grapheme_str(format!(
+                "occ: {:.*}",
+                2, command.features.occurrences_factor
+            ));
+            out.push_grapheme_str(format!(
+                "s_occ: {:.*} ",
+                2, command.features.selected_occurrences_factor
+            ));
             out.push_str(&base_color);
         }
 

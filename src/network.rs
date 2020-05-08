@@ -1,7 +1,7 @@
 #![allow(clippy::unreadable_literal)]
+use crate::history::Features;
 use crate::node::Node;
 use crate::training_sample_generator::TrainingSampleGenerator;
-use crate::history::Features;
 use rand::Rng;
 
 #[derive(Debug, Copy, Clone)]
@@ -19,11 +19,7 @@ impl Default for Network {
     fn default() -> Network {
         Network {
             final_bias: -0.3829333755179377,
-            final_weights: [
-                0.44656858145177714,
-                -1.9550439349609872,
-                -2.963322601316632
-            ],
+            final_weights: [0.44656858145177714, -1.9550439349609872, -2.963322601316632],
             final_sum: 0.0,
             final_output: 0.0,
             hidden_nodes: [
@@ -38,7 +34,7 @@ impl Default for Network {
                     overlap: 0.4791784213482642,
                     immediate_overlap: 0.5565797758340211,
                     selected_occurrences: -0.3600203296209723,
-                    occurrences: 0.15694312742881805
+                    occurrences: 0.15694312742881805,
                 },
                 Node {
                     offset: -0.04362945902379799,
@@ -51,7 +47,7 @@ impl Default for Network {
                     overlap: -0.562274365705918,
                     immediate_overlap: -0.47252489212451904,
                     selected_occurrences: 0.2446391951417497,
-                    occurrences: -1.4846489581676605
+                    occurrences: -1.4846489581676605,
                 },
                 Node {
                     offset: -0.11992725490486622,
@@ -64,19 +60,11 @@ impl Default for Network {
                     overlap: 0.09372412920642742,
                     immediate_overlap: 0.393989158881144,
                     selected_occurrences: -0.2383372126951215,
-                    occurrences: -2.196219880265691
-                }
+                    occurrences: -2.196219880265691,
+                },
             ],
-            hidden_node_sums: [
-                0.0,
-                0.0,
-                0.0
-            ],
-            hidden_node_outputs: [
-                0.0,
-                0.0,
-                0.0
-            ]
+            hidden_node_sums: [0.0, 0.0, 0.0],
+            hidden_node_outputs: [0.0, 0.0, 0.0],
         }
     }
 }
@@ -87,7 +75,11 @@ impl Network {
 
         Network {
             final_bias: rng.gen_range(-1.0, 1.0),
-            final_weights: [rng.gen_range(-1.0, 1.0), rng.gen_range(-1.0, 1.0), rng.gen_range(-1.0, 1.0)],
+            final_weights: [
+                rng.gen_range(-1.0, 1.0),
+                rng.gen_range(-1.0, 1.0),
+                rng.gen_range(-1.0, 1.0),
+            ],
             hidden_nodes: [Node::random(), Node::random(), Node::random()],
             hidden_node_sums: [0.0, 0.0, 0.0],
             hidden_node_outputs: [0.0, 0.0, 0.0],

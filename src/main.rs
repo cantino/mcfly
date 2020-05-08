@@ -5,8 +5,8 @@ use mcfly::interface::Interface;
 use mcfly::settings::Mode;
 use mcfly::settings::Settings;
 use mcfly::trainer::Trainer;
-use std::path::PathBuf;
 use std::env;
+use std::path::PathBuf;
 
 fn handle_addition(settings: &Settings, history: &mut History) {
     if history.should_add(&settings.command) {
@@ -20,8 +20,12 @@ fn handle_addition(settings: &Settings, history: &mut History) {
         );
 
         if settings.append_to_histfile {
-            let histfile = PathBuf::from(env::var("HISTFILE")
-                .unwrap_or_else(|err| panic!(format!("McFly error: Please ensure that HISTFILE is set ({})", err))));
+            let histfile = PathBuf::from(env::var("HISTFILE").unwrap_or_else(|err| {
+                panic!(format!(
+                    "McFly error: Please ensure that HISTFILE is set ({})",
+                    err
+                ))
+            }));
             bash_history::append_history_entry(&settings.command, &histfile)
         }
     }

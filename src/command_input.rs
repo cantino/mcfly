@@ -224,7 +224,8 @@ impl CommandInput {
             return 0;
         }
 
-        let mut word_boundaries = self.command
+        let mut word_boundaries = self
+            .command
             .split_word_bound_indices()
             .map(|(i, _)| i)
             .collect::<Vec<usize>>();
@@ -271,7 +272,8 @@ impl CommandInput {
 
         let grapheme_indices = command_copy.grapheme_indices(true);
 
-        let mut word_boundaries = self.command
+        let mut word_boundaries = self
+            .command
             .split_word_bound_indices()
             .map(|(i, _)| i)
             .collect::<Vec<usize>>();
