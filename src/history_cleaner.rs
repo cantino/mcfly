@@ -1,6 +1,6 @@
-use crate::bash_history;
 use crate::history::History;
 use crate::settings::Settings;
+use crate::shell_history;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -20,7 +20,7 @@ pub fn clean(settings: &Settings, history: &History, command: &str) {
             err
         ))
     }));
-    bash_history::delete_lines(&histfile, command);
+    shell_history::delete_lines(&histfile, command);
 }
 
 fn clean_temporary_files(mcfly_history: &PathBuf, command: &str) {
@@ -39,7 +39,7 @@ fn clean_temporary_files(mcfly_history: &PathBuf, command: &str) {
                 if let Some(file_name) = entry.path().file_name() {
                     if let Some(valid_unicode_str) = file_name.to_str() {
                         if valid_unicode_str.starts_with("mcfly.") {
-                            bash_history::delete_lines(&entry.path(), command);
+                            shell_history::delete_lines(&entry.path(), command);
                         }
                     }
                 }

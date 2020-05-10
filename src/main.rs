@@ -1,9 +1,9 @@
-use mcfly::bash_history;
 use mcfly::fake_typer;
 use mcfly::history::History;
 use mcfly::interface::Interface;
 use mcfly::settings::Mode;
 use mcfly::settings::Settings;
+use mcfly::shell_history;
 use mcfly::trainer::Trainer;
 use std::env;
 use std::path::PathBuf;
@@ -26,7 +26,13 @@ fn handle_addition(settings: &Settings, history: &mut History) {
                     err
                 ))
             }));
-            bash_history::append_history_entry(&settings.command, &histfile)
+            shell_history::append_history_entry(
+                &settings.command,
+                settings.when_run,
+                &histfile,
+                settings.zsh_extended_history,
+                settings.debug,
+            )
         }
     }
 }

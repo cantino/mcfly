@@ -1,7 +1,6 @@
 #!/bin/bash
 # Build mcfly and run a dev environment bash for local mcfly testing
 
-set -e
 this_dir=$(cd `dirname "$0"`; pwd)
 
 cargo build

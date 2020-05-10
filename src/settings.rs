@@ -1,4 +1,4 @@
-use crate::bash_history;
+use crate::shell_history;
 use clap::AppSettings;
 use clap::{crate_authors, crate_version, value_t};
 use clap::{App, Arg, SubCommand};
@@ -26,6 +26,7 @@ pub enum KeyScheme {
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
+    pub zsh_extended_history: bool,
     pub session_id: String,
     pub mcfly_history: PathBuf,
     pub command: String,
@@ -53,6 +54,7 @@ impl Default for Settings {
             refresh_training_cache: false,
             append_to_histfile: false,
             debug: false,
+            zsh_extended_history: false,
             lightmode: false,
             key_scheme: KeyScheme::Emacs,
         }
@@ -92,6 +94,9 @@ impl Settings {
                 .arg(Arg::with_name("append_to_histfile")
                     .long("append-to-histfile")
                     .help("Also append new history to $HISTFILE (e.q., .bash_history)"))
+                .arg(Arg::with_name("zsh_extended_history")
+                    .long("zsh-extended-history")
+                    .help("If appending, use zsh's EXTENDED_HISTORY format"))
                 .arg(Arg::with_name("when")
                     .short("w")
                     .long("when")
@@ -156,7 +161,7 @@ impl Settings {
 
         let mut settings = Settings::default();
 
-        settings.debug = matches.is_present("debug");
+        settings.debug = matches.is_present("debug") || env::var("MCFLY_DEBUG").is_ok();
         settings.session_id = matches
             .value_of("session_id")
             .map(|s| s.to_string())
@@ -194,6 +199,7 @@ impl Settings {
                 );
 
                 settings.append_to_histfile = add_matches.is_present("append_to_histfile");
+                settings.zsh_extended_history = add_matches.is_present("zsh_extended_history");
 
                 if add_matches.value_of("exit").is_some() {
                     settings.exit_code =
@@ -220,7 +226,7 @@ impl Settings {
                 if let Some(commands) = add_matches.values_of("command") {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = bash_history::last_history_line(&settings.mcfly_history)
+                    settings.command = shell_history::last_history_line(&settings.mcfly_history)
                         .unwrap_or_else(String::new);
                 }
 
@@ -248,12 +254,15 @@ impl Settings {
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = bash_history::last_history_line(&settings.mcfly_history)
+                    settings.command = shell_history::last_history_line(&settings.mcfly_history)
                         .unwrap_or_else(String::new)
                         .trim_start_matches("#mcfly: ")
                         .trim_start_matches("#mcfly:")
                         .to_string();
-                    bash_history::delete_last_history_entry_if_search(&settings.mcfly_history);
+                    shell_history::delete_last_history_entry_if_search(
+                        &settings.mcfly_history,
+                        settings.debug,
+                    );
                 }
             }
 

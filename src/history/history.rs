@@ -1,5 +1,5 @@
 #![allow(clippy::module_inception)]
-use crate::bash_history;
+use crate::shell_history;
 use rusqlite::{Connection, MappedRows, Row, NO_PARAMS};
 use std::io::Write;
 use std::path::PathBuf;
@@ -642,14 +642,14 @@ impl History {
 
     fn from_bash_history() -> History {
         print!(
-            "McFly: Importing Bash history for the first time. This may take a minute or two..."
+            "McFly: Importing shell history for the first time. This may take a minute or two..."
         );
         io::stdout().flush().unwrap_or_else(|err| {
             panic!(format!("McFly error: STDOUT flush should work ({})", err))
         });
 
         // Load this first to make sure it works before we create the DB.
-        let bash_history = bash_history::full_history(&bash_history::bash_history_file_path());
+        let bash_history = shell_history::full_history(&shell_history::history_file_path());
 
         // Make ~/.mcfly
         fs::create_dir_all(Settings::storage_dir_path())

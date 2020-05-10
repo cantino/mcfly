@@ -5,17 +5,17 @@
 
 <img src="/docs/screenshot.png" alt="screenshot" width="400">
 
-McFly replaces your default `ctrl-r` Bash history search with an intelligent search engine that takes into account
+McFly replaces your default `ctrl-r` shell history search with an intelligent search engine that takes into account
 your working directory and the context of recently executed commands. McFly's suggestions are prioritized
 in real time with a small neural network.
  
-TL;DR: an upgraded `ctrl-r` for Bash whose history results make sense for what you're working on right now.
+TL;DR: an upgraded `ctrl-r` where history results make sense for what you're working on right now.
 
 ## Features
 
 * Rebinds `ctrl-r` to bring up a full-screen reverse history search prioritized with a small neural network.
 * Augments your shell history to track command exit status, timestamp, and execution directory in a SQLite database.
-* Maintains your normal Bash history file as well so that you can stop using McFly whenever you want.
+* Maintains your normal shell history file as well so that you can stop using McFly whenever you want.
 * Unicode support throughout.
 * Includes a simple action to scrub any history item from the McFly database and your shell history files.
 * Designed to be extensible for other shells in the future.
@@ -47,13 +47,20 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     brew install mcfly
     ```
-1. Add the following to the end of your `~/.bashrc` file:
+1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively:
+    Bash:
     ```bash
     if [[ -r "$(brew --prefix)/opt/mcfly/mcfly.bash" ]]; then
       source "$(brew --prefix)/opt/mcfly/mcfly.bash"
     fi
     ```
-1. Run `. ~/.bashrc` or restart your terminal emulator.
+    Zsh:
+    ```bash
+    if [[ -r "$(brew --prefix)/opt/mcfly/mcfly.zsh" ]]; then
+      source "$(brew --prefix)/opt/mcfly/mcfly.zsh"
+    fi
+    ```
+1. Run `. ~/.bashrc` / `. ~/.zshrc` or restart your terminal emulator.
 
 #### Uninstalling with Homebrew
 
@@ -65,20 +72,27 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     brew untap cantino/mcfly
     ```
-1. Remove the lines you added to `~/.bashrc`.
+1. Remove the lines you added to `~/.bashrc` / `~/.zshrc`.
 
 ### Installing manually from GitHub
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
-1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc`.)
-1. Copy `mcfly.bash` to a known location.
-1. Add the following to the end of your `~/.bashrc` file:
+1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc` / `.zshrc`.)
+1. Copy `mcfly.bash` or `mcfly.zsh` to a known location.
+1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively:
+    Bash:
     ```bash
     if [[ -r /path/to/mcfly.bash ]]; then
       source /path/to/mcfly.bash
     fi
     ```
-1. Run `. ~/.bashrc` or restart your terminal emulator.
+    Zsh:
+    ```bash
+    if [[ -r /path/to/mcfly.zsh ]]; then
+      source /path/to/mcfly.zsh
+    fi
+    ```
+1. Run `. ~/.bashrc` / `. ~/.zshrc` or restart your terminal emulator.
 
 ### Install manually from source
 
@@ -86,13 +100,20 @@ When suggesting a command, McFly takes into consideration:
 1. Run `git clone https://github.com/cantino/mcfly` and `cd mcfly`
 1. Run `cargo install --path .`
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
-1. Add the following to the end of your `~/.bashrc` file:
+1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively:
+    Bash:
     ```bash
     if [[ -r /path/to/mcfly.bash ]]; then
       source /path/to/mcfly.bash
     fi
     ```
-1. Run `. ~/.bashrc` or restart your terminal emulator.
+    Zsh:
+    ```bash
+    if [[ -r /path/to/mcfly.zsh ]]; then
+      source /path/to/mcfly.zsh
+    fi
+    ```
+1. Run `. ~/.bashrc` / `. ~/.zshrc` or restart your terminal emulator.
 
 ## iTerm2
 
@@ -101,7 +122,7 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 <img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
 
 ## Settings
-A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bash_profile`.
+A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc`.
 
 ### Light Mode
 To swap the color scheme for use in a light terminal, set the environment variable `MCFLY_LIGHT`.

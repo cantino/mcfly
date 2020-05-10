@@ -21,16 +21,23 @@ class Mcfly < Formula
 
   def install
     prefix.install "mcfly.bash"
+    prefix.install "mcfly.zsh"
     bin.install "mcfly"
   end
 
   def caveats
     <<~EOS
-      ONE MORE STEP! Edit ~/.bashrc and add the following at the end:
+      ONE MORE STEP!
 
-      if [ -r $(brew --prefix)/opt/mcfly/mcfly.bash ]; then
-        . $(brew --prefix)/opt/mcfly/mcfly.bash
-      fi
+      If you use Bash, edit ~/.bashrc and add the following at the end:
+        if [ -r $(brew --prefix)/opt/mcfly/mcfly.bash ]; then
+          . $(brew --prefix)/opt/mcfly/mcfly.bash
+        fi
+
+      If you use Zsh, edit ~/.zshrc and add the following at the end:
+        if [ -r $(brew --prefix)/opt/mcfly/mcfly.zsh ]; then
+          . $(brew --prefix)/opt/mcfly/mcfly.zsh
+        fi
     EOS
   end
 end

@@ -1,4 +1,3 @@
-pub mod bash_history;
 pub mod command_input;
 pub mod fake_typer;
 pub mod fixed_length_grapheme_string;
@@ -9,6 +8,7 @@ pub mod network;
 pub mod node;
 pub mod path_update_helpers;
 pub mod settings;
+pub mod shell_history;
 pub mod simplified_command;
 pub mod trainer;
 pub mod training_cache;
