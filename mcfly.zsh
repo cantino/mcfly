@@ -19,12 +19,7 @@ fi
 # MCFLY_SESSION_ID is used by McFly internally to keep track of the commands from a particular terminal session.
 export MCFLY_SESSION_ID=$(dd if=/dev/urandom bs=256 count=1 2> /dev/null | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
 
-setopt extended_history       # record timestamp of command in HISTFILE
-setopt hist_expire_dups_first # delete duplicates first when HISTFILE size exceeds HISTSIZE
-setopt hist_ignore_dups       # ignore duplicated commands history list
-setopt hist_ignore_space      # ignore commands that start with space
-setopt inc_append_history     # add commands to HISTFILE in order of execution
-setopt share_history          # share command history data
+# Required for commented out mcfly search commands to work.
 setopt interactive_comments   # allow comments in interactive shells (like Bash does)
 
 # Setup a function to clear the shell history.
@@ -37,12 +32,12 @@ function mcfly_prompt_command {
   # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
   if [[ ! -f "${MCFLY_HISTORY}" ]]; then
     export MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
-    tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
+    fc -ln 2>/dev/null >| ${MCFLY_HISTORY}
   fi
 
   if [[ $(fc -Iln 2>/dev/null | tail -n1) = ' mcfly search'* ]] ; then
     # If the most recent history item is a mcfly search, do not update $MCFLY_HISTORY.
-    [ -n "$MCFLY_DEBUG" ] && echo "Not appending history to $MCFLY_HISTORY."
+    [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Not appending 'mcfly search' to $MCFLY_HISTORY."
   else
     # Write history to $MCFLY_HISTORY.
     fc -W "${MCFLY_HISTORY}"
@@ -52,28 +47,25 @@ function mcfly_prompt_command {
   # * append commands to $HISTFILE, (~/.zsh_history by default)
   #   for backwards compatibility and to load in new terminal sessions;
   # * find the text of the last command in $MCFLY_HISTORY and save it to the database.
-  [ -n "$MCFLY_DEBUG" ] && echo "Run mcfly add --exit ${exit_code}"
-  mcfly add --exit ${exit_code} # --append-to-histfile --zsh-extended-history
+  [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Run mcfly add --exit ${exit_code}"
+  mcfly add --exit ${exit_code}
   # Clear the in-memory history and reload it from $MCFLY_HISTORY
   # (to remove instances of '#mcfly: ' from the local session history).
   erase_history
   fc -R "${MCFLY_HISTORY}"
   return ${exit_code} # Restore the original exit code by returning it.
 }
-
-# Set $PROMPT_COMMAND run mcfly_prompt_command and then any existing $PROMPT_COMMAND.
-PROMPT_COMMAND="mcfly_prompt_command;$PROMPT_COMMAND"
 precmd_functions+=(mcfly_prompt_command)
 
-# Avoid logging #mcfly commands or commands starting with a space to the shell history.
+# Avoid logging #mcfly commands or commands starting with a space to the shell history (this emulates hist_ignore_space).
 hist_filter() {
   emulate -L zsh
   local hist_cmd=${1%%$'\n'}
-  if [[ $hist_cmd = '#mcfly:'* ]] || [[ $hist_cmd = ' '* ]] ; then
-    [ -n "$MCFLY_DEBUG" ] && echo "Not saving: $hist_cmd"
+  if [[ $hist_cmd = '#mcfly:'* ]] || [[ $hist_cmd =~ "^ " ]] ; then
+    [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Not saving '$hist_cmd'"
     return 2
   else
-    [ -n "$MCFLY_DEBUG" ] && echo "Saving: $hist_cmd"
+    [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Saving '$hist_cmd'"
     return 0
   fi
 }
@@ -81,7 +73,7 @@ zshaddhistory_functions+=(hist_filter)
 
 # Cleanup $MCFLY_HISTORY tmp files on exit.
 exit_logger() {
-  [ -n "$MCFLY_DEBUG" ] && echo "Exiting and removing $MCFLY_HISTORY"
+  [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Exiting and removing $MCFLY_HISTORY"
   rm -f $MCFLY_HISTORY
 }
 zshexit_functions+=(exit_logger)

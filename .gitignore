@@ -2,3 +2,5 @@
 /target
 **/*.rs.bk
 update.sh
+.zsh_history
+.zshrc
