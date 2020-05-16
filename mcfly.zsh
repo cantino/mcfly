@@ -27,54 +27,24 @@ MCFLY_PATH=${MCFLY_PATH:-$(which mcfly)}
 # Required for commented out mcfly search commands to work.
 setopt interactive_comments   # allow comments in interactive shells (like Bash does)
 
-# Setup a function to clear the shell history.
-function erase_history { local HISTSIZE=0; }
+# McFly's temporary, per-session history file.
+if [[ ! -f "${MCFLY_HISTORY}" ]]; then
+  export MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
+fi
 
 # Setup a function to be used by $PROMPT_COMMAND.
 function mcfly_prompt_command {
   local exit_code=$? # Record exit status of previous command.
 
-  # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
-  if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-    export MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
-    fc -ln 2>/dev/null >| ${MCFLY_HISTORY}
-  fi
+  # Write history to $MCFLY_HISTORY.
+  fc -W "${MCFLY_HISTORY}"
 
-  if [[ $(fc -Iln 2>/dev/null | tail -n1) = ' mcfly search'* ]] ; then
-    # If the most recent history item is a mcfly search, do not update $MCFLY_HISTORY.
-    [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Not appending 'mcfly search' to $MCFLY_HISTORY."
-  else
-    # Write history to $MCFLY_HISTORY.
-    fc -W "${MCFLY_HISTORY}"
-  fi
-
-  # Run mcfly with the saved code. It will:
-  # * append commands to $HISTFILE, (~/.zsh_history by default)
-  #   for backwards compatibility and to load in new terminal sessions;
-  # * find the text of the last command in $MCFLY_HISTORY and save it to the database.
+  # Run mcfly with the saved code. It fill find the text of the last command in $MCFLY_HISTORY and save it to the database.
   [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Run mcfly add --exit ${exit_code}"
   $MCFLY_PATH add --exit ${exit_code}
-  # Clear the in-memory history and reload it from $MCFLY_HISTORY
-  # (to remove instances of '#mcfly: ' from the local session history).
-  erase_history
-  fc -R "${MCFLY_HISTORY}"
   return ${exit_code} # Restore the original exit code by returning it.
 }
 precmd_functions+=(mcfly_prompt_command)
-
-# Avoid logging #mcfly commands or commands starting with a space to the shell history (this emulates hist_ignore_space).
-hist_filter() {
-  emulate -L zsh
-  local hist_cmd=${1%%$'\n'}
-  if [[ $hist_cmd = '#mcfly:'* ]] || [[ $hist_cmd =~ "^ " ]] ; then
-    [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Not saving '$hist_cmd'"
-    return 2
-  else
-    [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Saving '$hist_cmd'"
-    return 0
-  fi
-}
-zshaddhistory_functions+=(hist_filter)
 
 # Cleanup $MCFLY_HISTORY tmp files on exit.
 exit_logger() {
