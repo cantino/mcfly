@@ -19,6 +19,9 @@ fi
 # MCFLY_SESSION_ID is used by McFly internally to keep track of the commands from a particular terminal session.
 export MCFLY_SESSION_ID=$(dd if=/dev/urandom bs=256 count=1 2> /dev/null | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
 
+# Find the binary
+MCFLY_PATH=${MCFLY_PATH:-$(which mcfly)}
+
 # Ignore commands with a leading space
 export HISTCONTROL="ignorespace"
 
@@ -40,7 +43,7 @@ function mcfly_prompt_command {
   # * append commands to $HISTFILE, (~/.bash_history by default)
   #   for backwards compatibility and to load in new terminal sessions;
   # * find the text of the last command in $MCFLY_HISTORY and save it to the database.
-  mcfly add --exit ${exit_code} --append-to-histfile
+  $MCFLY_PATH add --exit ${exit_code} --append-to-histfile
   # Clear the in-memory history and reload it from $MCFLY_HISTORY
   # (to remove instances of '#mcfly: ' from the local session history).
   history -cr ${MCFLY_HISTORY}

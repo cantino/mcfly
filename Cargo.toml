@@ -16,6 +16,9 @@ exclude = [
 [profile.release]
 lto = true
 
+[profile.dev]
+debug = true
+
 [dependencies]
 clap = "2.33"
 csv = "1"

@@ -9,6 +9,8 @@ if [[ "$__MCFLY_LOADED" == "loaded" ]]; then
 fi
 __MCFLY_LOADED="loaded"
 
+emulate -L zsh
+
 # Ensure HISTFILE exists.
 export HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
 if [[ ! -r "${HISTFILE}" ]]; then
@@ -18,6 +20,9 @@ fi
 
 # MCFLY_SESSION_ID is used by McFly internally to keep track of the commands from a particular terminal session.
 export MCFLY_SESSION_ID=$(dd if=/dev/urandom bs=256 count=1 2> /dev/null | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
+
+# Find the binary
+MCFLY_PATH=${MCFLY_PATH:-$(which mcfly)}
 
 # Required for commented out mcfly search commands to work.
 setopt interactive_comments   # allow comments in interactive shells (like Bash does)
@@ -48,7 +53,7 @@ function mcfly_prompt_command {
   #   for backwards compatibility and to load in new terminal sessions;
   # * find the text of the last command in $MCFLY_HISTORY and save it to the database.
   [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Run mcfly add --exit ${exit_code}"
-  mcfly add --exit ${exit_code}
+  $MCFLY_PATH add --exit ${exit_code}
   # Clear the in-memory history and reload it from $MCFLY_HISTORY
   # (to remove instances of '#mcfly: ' from the local session history).
   erase_history
@@ -79,17 +84,25 @@ exit_logger() {
 zshexit_functions+=(exit_logger)
 
 # If this is an interactive shell, take ownership of ctrl-r.
-# The logic here is:
-#   1. Jump to the beginning of the edit buffer, add 'mcfly: ', and comment out the current line. We comment out the line
-#      to ensure that all possible special characters, including backticks, are ignored. This commented out line will
-#      end up as the most recent entry in the $MCFLY_HISTORY file.
-#   2. Type "mcfly search" and then run the command. McFly will pull the last line from the $MCFLY_HISTORY file,
-#      which should be the commented-out search from step #1. It will then remove that line from the history file and
-#      render the search UI pre-filled with it.
 if [[ $- =~ .*i.* ]]; then
-  if set -o | grep "vi " | grep -q on; then
-    bindkey -s '\C-r' '\e0i#mcfly: \e\C-j mcfly search\C-j'
-  else
-    bindkey -s '\C-r' '\C-a#mcfly: \C-j mcfly search\C-j'
-  fi
+  mcfly-history-widget() {
+    () {
+      exec </dev/tty
+      local mcfly_output=$(mktemp -t mcfly.output.XXXXXXXX)
+      $MCFLY_PATH search -o "${mcfly_output}" "${LBUFFER}"
+      local mode=$(sed -n 1p $mcfly_output)
+      local selected=$(sed 1d $mcfly_output)
+      rm -f $mcfly_output
+      if [[ -n $selected ]]; then
+        RBUFFER=""
+        LBUFFER="${selected}"
+      fi
+      if [[ "${mode}" == "run" ]]; then
+        zle accept-line
+      fi
+      zle redisplay
+    }
+  }
+  zle -N mcfly-history-widget
+  bindkey '^R' mcfly-history-widget
 fi

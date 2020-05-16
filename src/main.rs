@@ -5,7 +5,7 @@ use mcfly::settings::Mode;
 use mcfly::settings::Settings;
 use mcfly::shell_history;
 use mcfly::trainer::Trainer;
-use std::env;
+use std::{env, fs};
 use std::path::PathBuf;
 
 fn handle_addition(settings: &Settings, history: &mut History) {
@@ -40,10 +40,26 @@ fn handle_addition(settings: &Settings, history: &mut History) {
 fn handle_search(settings: &Settings, history: &History) {
     let result = Interface::new(settings, history).display();
     if let Some(cmd) = result.selection {
-        fake_typer::use_tiocsti(&cmd);
+        if let Some(path) = &settings.output_selection {
+            // Output selection to a file, with the first line indicating if the user chose to run the selection or not.
+            let mut out: String = String::new();
 
-        if result.run {
-            fake_typer::use_tiocsti(&"\n".to_string());
+            if result.run {
+                out.push_str("run\n");
+            } else {
+                out.push_str("display\n");
+            }
+
+            out.push_str(&cmd);
+
+            fs::write(path, &out)
+                .unwrap_or_else(|err| panic!(format!("McFly error: unable to write to {}: {}", path, err)));
+        } else {
+            fake_typer::use_tiocsti(&cmd);
+
+            if result.run {
+                fake_typer::use_tiocsti(&"\n".to_string());
+            }
         }
     }
 }

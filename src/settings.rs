@@ -29,6 +29,7 @@ pub struct Settings {
     pub zsh_extended_history: bool,
     pub session_id: String,
     pub mcfly_history: PathBuf,
+    pub output_selection: Option<String>,
     pub command: String,
     pub dir: String,
     pub when_run: Option<i64>,
@@ -44,6 +45,7 @@ impl Default for Settings {
     fn default() -> Settings {
         Settings {
             mode: Mode::Add,
+            output_selection: None,
             command: String::new(),
             session_id: String::new(),
             mcfly_history: PathBuf::new(),
@@ -129,6 +131,12 @@ impl Settings {
                     .long("dir")
                     .value_name("PATH")
                     .help("Directory where command was run")
+                    .takes_value(true))
+                .arg(Arg::with_name("output_selection")
+                    .short("o")
+                    .long("output-selection")
+                    .value_name("PATH")
+                    .help("Write selection to file - the first line will be 'display' or 'run' depending on the selection, the second line will be the selection.")
                     .takes_value(true))
                 .arg(Arg::with_name("command")
                     .help("The command search term(s)")
@@ -251,6 +259,10 @@ impl Settings {
                         ))
                     });
                 }
+
+                settings.output_selection = search_matches.value_of("output_selection")
+                    .and_then(|s| Some(s.to_owned()));
+
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
