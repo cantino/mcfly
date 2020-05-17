@@ -30,6 +30,7 @@ pub struct Settings {
     pub mcfly_history: PathBuf,
     pub command: String,
     pub dir: String,
+    pub results: u16,
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub old_dir: Option<String>,
@@ -47,6 +48,7 @@ impl Default for Settings {
             session_id: String::new(),
             mcfly_history: PathBuf::new(),
             dir: String::new(),
+            results: 10,
             when_run: None,
             exit_code: None,
             old_dir: None,
@@ -124,6 +126,12 @@ impl Settings {
                     .long("dir")
                     .value_name("PATH")
                     .help("Directory where command was run")
+                    .takes_value(true))
+                .arg(Arg::with_name("results")
+                    .short("r")
+                    .long("results")
+                    .value_name("NUMBER")
+                    .help("Number of results to return")
                     .takes_value(true))
                 .arg(Arg::with_name("command")
                     .help("The command search term(s)")
@@ -228,6 +236,9 @@ impl Settings {
                     settings.dir = dir.to_string();
                 } else {
                     settings.dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
+                }
+                if let Ok(results) = value_t!(search_matches.value_of("results"), u16) {
+                    settings.results = results;
                 }
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");

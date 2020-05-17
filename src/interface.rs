@@ -68,7 +68,6 @@ impl MenuMode {
 const PROMPT_LINE_INDEX: u16 = 3;
 const INFO_LINE_INDEX: u16 = 1;
 const RESULTS_TOP_INDEX: u16 = 5;
-const RESULTS_TO_RETURN: u16 = 10;
 
 impl<'a> Interface<'a> {
     pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
@@ -163,7 +162,7 @@ impl<'a> Interface<'a> {
             screen,
             "{}{}",
             cursor::Hide,
-            cursor::Goto(0, RESULTS_TOP_INDEX + RESULTS_TO_RETURN + 1)
+            cursor::Goto(0, RESULTS_TOP_INDEX + self.settings.results + 1)
         ).unwrap();
         screen.flush().unwrap();
     }
@@ -283,7 +282,7 @@ impl<'a> Interface<'a> {
     fn refresh_matches(&mut self) {
         self.selection = 0;
         self.matches = self.history
-            .find_matches(&self.input.command, RESULTS_TO_RETURN as i16);
+            .find_matches(&self.input.command, self.settings.results as i16);
     }
 
     fn select(&mut self) {

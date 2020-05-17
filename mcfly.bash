@@ -60,8 +60,8 @@ PROMPT_COMMAND="mcfly_prompt_command;$PROMPT_COMMAND"
 #      render the search UI pre-filled with it.
 if [[ $- =~ .*i.* ]]; then
   if set -o | grep "vi " | grep -q on; then
-    bind "'\C-r': '\e0i#mcfly: \e\C-j mcfly search\C-j'"
+    bind "'\C-r': '\e0i#mcfly: \e\C-j mcfly search --results 10\C-j'"
   else
-    bind "'\C-r': '\C-amcfly: \e# mcfly search\C-j'"
+    bind "'\C-r': '\C-amcfly: \e# mcfly search --results 10\C-j'"
   fi
 fi
