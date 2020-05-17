@@ -260,8 +260,9 @@ impl Settings {
                     });
                 }
 
-                settings.output_selection = search_matches.value_of("output_selection")
-                    .and_then(|s| Some(s.to_owned()));
+                settings.output_selection = search_matches
+                    .value_of("output_selection")
+                    .map(|s| s.to_owned());
 
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");

@@ -5,8 +5,8 @@ use mcfly::settings::Mode;
 use mcfly::settings::Settings;
 use mcfly::shell_history;
 use mcfly::trainer::Trainer;
-use std::{env, fs};
 use std::path::PathBuf;
+use std::{env, fs};
 
 fn handle_addition(settings: &Settings, history: &mut History) {
     if history.should_add(&settings.command) {
@@ -52,8 +52,9 @@ fn handle_search(settings: &Settings, history: &History) {
 
             out.push_str(&cmd);
 
-            fs::write(path, &out)
-                .unwrap_or_else(|err| panic!(format!("McFly error: unable to write to {}: {}", path, err)));
+            fs::write(path, &out).unwrap_or_else(|err| {
+                panic!(format!("McFly error: unable to write to {}: {}", path, err))
+            });
         } else {
             fake_typer::use_tiocsti(&cmd);
 
