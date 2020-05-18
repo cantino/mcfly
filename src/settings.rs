@@ -6,7 +6,9 @@ use std::env;
 use std::path::PathBuf;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
+use std::str::FromStr;
 use dirs::home_dir;
+
 
 #[derive(Debug)]
 pub enum Mode {
@@ -236,6 +238,11 @@ impl Settings {
                     settings.dir = dir.to_string();
                 } else {
                     settings.dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
+                }
+                if let Some(results) = env::var("MCFLY_RESULTS").ok() {
+                    if let Ok(results) = u16::from_str(&results) {
+                        settings.results = results;
+                    }
                 }
                 if let Ok(results) = value_t!(search_matches.value_of("results"), u16) {
                     settings.results = results;
