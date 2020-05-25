@@ -67,8 +67,8 @@ if [[ $- =~ .*i.* ]]; then
   mcfly-history-widget() {
     () {
       local oldterm=$TERM
-      TERM=vt220
-      tput reset
+      TERM=xterm
+      tput init
       exec </dev/tty
       local mcfly_output=$(mktemp -t mcfly.output.XXXXXXXX)
       $MCFLY_PATH search -o "${mcfly_output}" "${LBUFFER}"
