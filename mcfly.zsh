@@ -12,7 +12,10 @@ __MCFLY_LOADED="loaded"
 emulate -L zsh
 
 # Ensure HISTFILE exists.
-export HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
+if [ -z "${HISTFILE}" ]; then
+  export HISTFILE="${HOME}/.zsh_history"
+fi
+
 if [[ ! -r "${HISTFILE}" ]]; then
   echo "McFly: ${HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
   return 1
@@ -36,6 +39,12 @@ fi
 function mcfly_prompt_command {
   local exit_code=$? # Record exit status of previous command.
 
+  # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
+  if [[ ! -f "${MCFLY_HISTORY}" ]]; then
+    export MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
+    tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
+  fi
+
   # Write history to $MCFLY_HISTORY.
   fc -W "${MCFLY_HISTORY}"
 
@@ -57,12 +66,16 @@ zshexit_functions+=(exit_logger)
 if [[ $- =~ .*i.* ]]; then
   mcfly-history-widget() {
     () {
+      local oldterm=$TERM
+      TERM=vt220
+      tput reset
       exec </dev/tty
       local mcfly_output=$(mktemp -t mcfly.output.XXXXXXXX)
       $MCFLY_PATH search -o "${mcfly_output}" "${LBUFFER}"
       local mode=$(sed -n 1p $mcfly_output)
       local selected=$(sed 1d $mcfly_output)
       rm -f $mcfly_output
+      TERM=$oldterm
       if [[ -n $selected ]]; then
         RBUFFER=""
         LBUFFER="${selected}"
