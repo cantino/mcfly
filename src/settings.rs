@@ -5,6 +5,7 @@ use clap::{App, Arg, SubCommand};
 use dirs::home_dir;
 use std::env;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
@@ -32,6 +33,7 @@ pub struct Settings {
     pub output_selection: Option<String>,
     pub command: String,
     pub dir: String,
+    pub results: u16,
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub old_dir: Option<String>,
@@ -50,6 +52,7 @@ impl Default for Settings {
             session_id: String::new(),
             mcfly_history: PathBuf::new(),
             dir: String::new(),
+            results: 10,
             when_run: None,
             exit_code: None,
             old_dir: None,
@@ -131,6 +134,12 @@ impl Settings {
                     .long("dir")
                     .value_name("PATH")
                     .help("Directory where command was run")
+                    .takes_value(true))
+                .arg(Arg::with_name("results")
+                    .short("r")
+                    .long("results")
+                    .value_name("NUMBER")
+                    .help("Number of results to return")
                     .takes_value(true))
                 .arg(Arg::with_name("output_selection")
                     .short("o")
@@ -258,6 +267,15 @@ impl Settings {
                             err
                         ))
                     });
+                }
+
+                if let Ok(results) = env::var("MCFLY_RESULTS") {
+                    if let Ok(results) = u16::from_str(&results) {
+                        settings.results = results;
+                    }
+                }
+                if let Ok(results) = value_t!(search_matches.value_of("results"), u16) {
+                    settings.results = results;
                 }
 
                 settings.output_selection = search_matches
