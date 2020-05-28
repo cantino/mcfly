@@ -66,13 +66,14 @@ zshexit_functions+=(exit_logger)
 if [[ $- =~ .*i.* ]]; then
   mcfly-history-widget() {
     () {
-      tput init
+      echoti rmkx
       exec </dev/tty
       local mcfly_output=$(mktemp -t mcfly.output.XXXXXXXX)
       $MCFLY_PATH search -o "${mcfly_output}" "${LBUFFER}"
       local mode=$(sed -n 1p $mcfly_output)
       local selected=$(sed 1d $mcfly_output)
       rm -f $mcfly_output
+      echoti smkx
       if [[ -n $selected ]]; then
         RBUFFER=""
         LBUFFER="${selected}"
