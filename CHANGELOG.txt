@@ -1,3 +1,5 @@
+0.4.0 - Jun 28, 2020
+ - Zsh support!
 0.3.6 - Dec 15, 2019
  - Optional VI-style keybindings from @JamJar00
 0.3.5 - Aug 30, 2019
