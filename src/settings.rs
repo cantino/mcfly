@@ -1,35 +1,36 @@
-use crate::bash_history;
-use clap::{crate_version, crate_authors, value_t};
+use crate::shell_history;
 use clap::AppSettings;
+use clap::{crate_authors, crate_version, value_t};
 use clap::{App, Arg, SubCommand};
+use dirs::home_dir;
 use std::env;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use std::str::FromStr;
-use dirs::home_dir;
-
 
 #[derive(Debug)]
 pub enum Mode {
     Add,
     Search,
     Train,
-    Move
+    Move,
 }
 
 #[derive(Debug)]
 pub enum KeyScheme {
     Emacs,
-    Vim
+    Vim,
 }
 
 #[derive(Debug)]
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
+    pub zsh_extended_history: bool,
     pub session_id: String,
     pub mcfly_history: PathBuf,
+    pub output_selection: Option<String>,
     pub command: String,
     pub dir: String,
     pub results: u16,
@@ -39,13 +40,14 @@ pub struct Settings {
     pub append_to_histfile: bool,
     pub refresh_training_cache: bool,
     pub lightmode: bool,
-    pub key_scheme: KeyScheme
+    pub key_scheme: KeyScheme,
 }
 
 impl Default for Settings {
     fn default() -> Settings {
         Settings {
             mode: Mode::Add,
+            output_selection: None,
             command: String::new(),
             session_id: String::new(),
             mcfly_history: PathBuf::new(),
@@ -57,8 +59,9 @@ impl Default for Settings {
             refresh_training_cache: false,
             append_to_histfile: false,
             debug: false,
+            zsh_extended_history: false,
             lightmode: false,
-            key_scheme: KeyScheme::Emacs
+            key_scheme: KeyScheme::Emacs,
         }
     }
 }
@@ -96,6 +99,9 @@ impl Settings {
                 .arg(Arg::with_name("append_to_histfile")
                     .long("append-to-histfile")
                     .help("Also append new history to $HISTFILE (e.q., .bash_history)"))
+                .arg(Arg::with_name("zsh_extended_history")
+                    .long("zsh-extended-history")
+                    .help("If appending, use zsh's EXTENDED_HISTORY format"))
                 .arg(Arg::with_name("when")
                     .short("w")
                     .long("when")
@@ -135,6 +141,12 @@ impl Settings {
                     .value_name("NUMBER")
                     .help("Number of results to return")
                     .takes_value(true))
+                .arg(Arg::with_name("output_selection")
+                    .short("o")
+                    .long("output-selection")
+                    .value_name("PATH")
+                    .help("Write selection to file - the first line will be 'display' or 'run' depending on the selection, the second line will be the selection.")
+                    .takes_value(true))
                 .arg(Arg::with_name("command")
                     .help("The command search term(s)")
                     .value_name("COMMAND")
@@ -166,7 +178,7 @@ impl Settings {
 
         let mut settings = Settings::default();
 
-        settings.debug = matches.is_present("debug");
+        settings.debug = matches.is_present("debug") || env::var("MCFLY_DEBUG").is_ok();
         settings.session_id = matches
             .value_of("session_id")
             .map(|s| s.to_string())
@@ -178,11 +190,14 @@ impl Settings {
             matches
                 .value_of("mcfly_history")
                 .map(|s| s.to_string())
-                .unwrap_or_else(||
-                    env::var("MCFLY_HISTORY").unwrap_or_else(|err|
-                        panic!(format!("McFly error: Please ensure that MCFLY_HISTORY is set ({})", err))
-                    ),
-                ),
+                .unwrap_or_else(|| {
+                    env::var("MCFLY_HISTORY").unwrap_or_else(|err| {
+                        panic!(format!(
+                            "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
+                            err
+                        ))
+                    })
+                }),
         );
 
         match matches.subcommand() {
@@ -190,14 +205,18 @@ impl Settings {
                 settings.mode = Mode::Add;
 
                 settings.when_run = Some(
-                    value_t!(add_matches, "when", i64).unwrap_or(SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err)))
-                        .as_secs()
-                        as i64),
+                    value_t!(add_matches, "when", i64).unwrap_or(
+                        SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap_or_else(|err| {
+                                panic!(format!("McFly error: Time went backwards ({})", err))
+                            })
+                            .as_secs() as i64,
+                    ),
                 );
 
                 settings.append_to_histfile = add_matches.is_present("append_to_histfile");
+                settings.zsh_extended_history = add_matches.is_present("zsh_extended_history");
 
                 if add_matches.value_of("exit").is_some() {
                     settings.exit_code =
@@ -207,7 +226,12 @@ impl Settings {
                 if let Some(dir) = add_matches.value_of("directory") {
                     settings.dir = dir.to_string();
                 } else {
-                    settings.dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
+                    settings.dir = env::var("PWD").unwrap_or_else(|err| {
+                        panic!(format!(
+                            "McFly error: Unable to determine current directory ({})",
+                            err
+                        ))
+                    });
                 }
 
                 if let Some(old_dir) = add_matches.value_of("old_directory") {
@@ -219,7 +243,7 @@ impl Settings {
                 if let Some(commands) = add_matches.values_of("command") {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = bash_history::last_history_line(&settings.mcfly_history)
+                    settings.command = shell_history::last_history_line(&settings.mcfly_history)
                         .unwrap_or_else(String::new);
                 }
 
@@ -237,9 +261,15 @@ impl Settings {
                 if let Some(dir) = search_matches.value_of("directory") {
                     settings.dir = dir.to_string();
                 } else {
-                    settings.dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
+                    settings.dir = env::var("PWD").unwrap_or_else(|err| {
+                        panic!(format!(
+                            "McFly error: Unable to determine current directory ({})",
+                            err
+                        ))
+                    });
                 }
-                if let Some(results) = env::var("MCFLY_RESULTS").ok() {
+
+                if let Ok(results) = env::var("MCFLY_RESULTS") {
                     if let Ok(results) = u16::from_str(&results) {
                         settings.results = results;
                     }
@@ -247,15 +277,23 @@ impl Settings {
                 if let Ok(results) = value_t!(search_matches.value_of("results"), u16) {
                     settings.results = results;
                 }
+
+                settings.output_selection = search_matches
+                    .value_of("output_selection")
+                    .map(|s| s.to_owned());
+
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = bash_history::last_history_line(&settings.mcfly_history)
+                    settings.command = shell_history::last_history_line(&settings.mcfly_history)
                         .unwrap_or_else(String::new)
                         .trim_start_matches("#mcfly: ")
                         .trim_start_matches("#mcfly:")
                         .to_string();
-                    bash_history::delete_last_history_entry_if_search(&settings.mcfly_history);
+                    shell_history::delete_last_history_entry_if_search(
+                        &settings.mcfly_history,
+                        settings.debug,
+                    );
                 }
             }
 
@@ -266,8 +304,16 @@ impl Settings {
 
             ("move", Some(move_matches)) => {
                 settings.mode = Mode::Move;
-                settings.old_dir = Some(String::from(move_matches.value_of("old_dir_path").unwrap_or_else(|| panic!("McFly error: Expected value for old_dir_path"))));
-                settings.dir = String::from(move_matches.value_of("new_dir_path").unwrap_or_else(|| panic!("McFly error: Expected value for new_dir_path")));
+                settings.old_dir = Some(String::from(
+                    move_matches
+                        .value_of("old_dir_path")
+                        .unwrap_or_else(|| panic!("McFly error: Expected value for old_dir_path")),
+                ));
+                settings.dir = String::from(
+                    move_matches
+                        .value_of("new_dir_path")
+                        .unwrap_or_else(|| panic!("McFly error: Expected value for new_dir_path")),
+                );
             }
 
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
@@ -276,11 +322,11 @@ impl Settings {
 
         settings.lightmode = match env::var_os("MCFLY_LIGHT") {
             Some(_val) => true,
-            None => false
+            None => false,
         };
         settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
             Ok("vim") => KeyScheme::Vim,
-            _ => KeyScheme::Emacs
+            _ => KeyScheme::Emacs,
         };
 
         settings

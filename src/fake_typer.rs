@@ -1,5 +1,3 @@
-use libc;
-
 // Should we be using https://docs.rs/libc/0.2.44/libc/fn.ioctl.html instead?
 extern "C" {
     pub fn ioctl(fd: i8, request: u32, arg: *const u8) -> i8;

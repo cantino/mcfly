@@ -1,11 +1,16 @@
 use crate::history::Features;
+use csv::Reader;
 use csv::Writer;
 use std::fs::File;
-use csv::Reader;
 use std::path::PathBuf;
 
 pub fn write(data_set: &[(Features, bool)], cache_path: &PathBuf) {
-    let mut writer = Writer::from_path(cache_path).unwrap_or_else(|err| panic!(format!("McFly error: Expected to be able to write a CSV ({})", err)));
+    let mut writer = Writer::from_path(cache_path).unwrap_or_else(|err| {
+        panic!(format!(
+            "McFly error: Expected to be able to write a CSV ({})",
+            err
+        ))
+    });
     output_header(&mut writer);
 
     for (features, correct) in data_set {
@@ -16,10 +21,20 @@ pub fn write(data_set: &[(Features, bool)], cache_path: &PathBuf) {
 pub fn read(cache_path: &PathBuf) -> Vec<(Features, bool)> {
     let mut data_set: Vec<(Features, bool)> = Vec::new();
 
-    let mut reader = Reader::from_path(cache_path).unwrap_or_else(|err| panic!(format!("McFly error: Expected to be able to read from CSV ({})", err)));
+    let mut reader = Reader::from_path(cache_path).unwrap_or_else(|err| {
+        panic!(format!(
+            "McFly error: Expected to be able to read from CSV ({})",
+            err
+        ))
+    });
 
     for result in reader.records() {
-        let record = result.unwrap_or_else(|err| panic!(format!("McFly error: Expected to be able to unwrap cached result ({})", err)));
+        let record = result.unwrap_or_else(|err| {
+            panic!(format!(
+                "McFly error: Expected to be able to unwrap cached result ({})",
+                err
+            ))
+        });
 
         let features = Features {
             age_factor: record[0].parse().unwrap(),
@@ -31,7 +46,7 @@ pub fn read(cache_path: &PathBuf) -> Vec<(Features, bool)> {
             overlap_factor: record[6].parse().unwrap(),
             immediate_overlap_factor: record[7].parse().unwrap(),
             selected_occurrences_factor: record[8].parse().unwrap(),
-            occurrences_factor: record[9].parse().unwrap()
+            occurrences_factor: record[9].parse().unwrap(),
         };
 
         data_set.push((features, record[10].eq("t")));
@@ -56,7 +71,9 @@ fn output_header(writer: &mut Writer<File>) {
             "correct",
         ])
         .unwrap_or_else(|err| panic!(format!("McFly error: Expected to write to CSV ({})", err)));
-    writer.flush().unwrap_or_else(|err| panic!(format!("McFly error: Expected to flush CSV ({})", err)));
+    writer
+        .flush()
+        .unwrap_or_else(|err| panic!(format!("McFly error: Expected to flush CSV ({})", err)));
 }
 
 fn output_row(writer: &mut Writer<File>, features: &Features, correct: bool) {
@@ -79,5 +96,7 @@ fn output_row(writer: &mut Writer<File>, features: &Features, correct: bool) {
             },
         ])
         .unwrap_or_else(|err| panic!(format!("McFly error: Expected to write to CSV ({})", err)));
-    writer.flush().unwrap_or_else(|err| panic!(format!("McFly error: Expected to flush CSV ({})", err)));
+    writer
+        .flush()
+        .unwrap_or_else(|err| panic!(format!("McFly error: Expected to flush CSV ({})", err)));
 }

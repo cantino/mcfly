@@ -1,8 +1,8 @@
-use crate::history::History;
-use crate::settings::Settings;
 use crate::history::Features;
-use crate::node::Node;
+use crate::history::History;
 use crate::network::Network;
+use crate::node::Node;
+use crate::settings::Settings;
 use crate::training_sample_generator::TrainingSampleGenerator;
 
 #[derive(Debug)]
@@ -17,15 +17,21 @@ impl<'a> Trainer<'a> {
     }
 
     pub fn train(&mut self) {
-        let lr = 0.000005;
+        let lr = 0.000_005;
         let momentum = 0.0;
         let batch_size = 1000;
         let plateau_threshold = 3000;
         let generator = TrainingSampleGenerator::new(self.settings, self.history);
 
-        println!("Evaluating error rate on current {:#?}", self.history.network);
+        println!(
+            "Evaluating error rate on current {:#?}",
+            self.history.network
+        );
         let mut best_overall_network = self.history.network;
-        let mut best_overall_error = self.history.network.average_error(&generator, batch_size * 10);
+        let mut best_overall_error = self
+            .history
+            .network
+            .average_error(&generator, batch_size * 10);
         println!("Current network error rate is {}", best_overall_error);
 
         loop {
@@ -85,13 +91,17 @@ impl<'a> Trainer<'a> {
                     let d_o_3_d_s_3 = 1.0 - network.final_sum.tanh().powi(2);
 
                     // Output bias
-                    output_increments[0] = momentum * output_increments[0] + lr * d_e_d_o_3 * d_o_3_d_s_3 * 1.0;
+                    output_increments[0] =
+                        momentum * output_increments[0] + lr * d_e_d_o_3 * d_o_3_d_s_3 * 1.0;
                     // Final sum node 1 output weight
-                    output_increments[1] = momentum * output_increments[1] + lr * d_e_d_o_3 * d_o_3_d_s_3 * network.hidden_node_outputs[0];
+                    output_increments[1] = momentum * output_increments[1]
+                        + lr * d_e_d_o_3 * d_o_3_d_s_3 * network.hidden_node_outputs[0];
                     // Final sum node 2 output weight
-                    output_increments[2] = momentum * output_increments[2] + lr * d_e_d_o_3 * d_o_3_d_s_3 * network.hidden_node_outputs[1];
+                    output_increments[2] = momentum * output_increments[2]
+                        + lr * d_e_d_o_3 * d_o_3_d_s_3 * network.hidden_node_outputs[1];
                     // Final sum node 3 output weight
-                    output_increments[3] = momentum * output_increments[3] + lr * d_e_d_o_3 * d_o_3_d_s_3 * network.hidden_node_outputs[2];
+                    output_increments[3] = momentum * output_increments[3]
+                        + lr * d_e_d_o_3 * d_o_3_d_s_3 * network.hidden_node_outputs[2];
 
                     let d_s_3_d_o_0 = network.final_weights[0];
                     let d_s_3_d_o_1 = network.final_weights[1];
@@ -103,41 +113,83 @@ impl<'a> Trainer<'a> {
                     let d_e_d_s_1 = d_e_d_o_3 * d_o_3_d_s_3 * d_s_3_d_o_1 * d_o_1_d_s_1;
                     let d_e_d_s_2 = d_e_d_o_3 * d_o_3_d_s_3 * d_s_3_d_o_2 * d_o_2_d_s_2;
 
-                    node_increments[0].offset = momentum * node_increments[0].offset + lr * d_e_d_s_0 * 1.0;
-                    node_increments[0].age = momentum * node_increments[0].age + lr * d_e_d_s_0 * features.age_factor;
-                    node_increments[0].length = momentum * node_increments[0].length + lr * d_e_d_s_0 * features.length_factor;
-                    node_increments[0].exit = momentum * node_increments[0].exit + lr * d_e_d_s_0 * features.exit_factor;
-                    node_increments[0].recent_failure = momentum * node_increments[0].recent_failure + lr * d_e_d_s_0 * features.recent_failure_factor;
-                    node_increments[0].selected_dir = momentum * node_increments[0].selected_dir + lr * d_e_d_s_0 * features.selected_dir_factor;
-                    node_increments[0].dir = momentum * node_increments[0].dir + lr * d_e_d_s_0 * features.dir_factor;
-                    node_increments[0].overlap = momentum * node_increments[0].overlap + lr * d_e_d_s_0 * features.overlap_factor;
-                    node_increments[0].immediate_overlap = momentum * node_increments[0].immediate_overlap + lr * d_e_d_s_0 * features.immediate_overlap_factor;
-                    node_increments[0].selected_occurrences = momentum * node_increments[0].selected_occurrences + lr * d_e_d_s_0 * features.selected_occurrences_factor;
-                    node_increments[0].occurrences = momentum * node_increments[0].occurrences + lr * d_e_d_s_0 * features.occurrences_factor;
+                    node_increments[0].offset =
+                        momentum * node_increments[0].offset + lr * d_e_d_s_0 * 1.0;
+                    node_increments[0].age =
+                        momentum * node_increments[0].age + lr * d_e_d_s_0 * features.age_factor;
+                    node_increments[0].length = momentum * node_increments[0].length
+                        + lr * d_e_d_s_0 * features.length_factor;
+                    node_increments[0].exit =
+                        momentum * node_increments[0].exit + lr * d_e_d_s_0 * features.exit_factor;
+                    node_increments[0].recent_failure = momentum
+                        * node_increments[0].recent_failure
+                        + lr * d_e_d_s_0 * features.recent_failure_factor;
+                    node_increments[0].selected_dir = momentum * node_increments[0].selected_dir
+                        + lr * d_e_d_s_0 * features.selected_dir_factor;
+                    node_increments[0].dir =
+                        momentum * node_increments[0].dir + lr * d_e_d_s_0 * features.dir_factor;
+                    node_increments[0].overlap = momentum * node_increments[0].overlap
+                        + lr * d_e_d_s_0 * features.overlap_factor;
+                    node_increments[0].immediate_overlap = momentum
+                        * node_increments[0].immediate_overlap
+                        + lr * d_e_d_s_0 * features.immediate_overlap_factor;
+                    node_increments[0].selected_occurrences = momentum
+                        * node_increments[0].selected_occurrences
+                        + lr * d_e_d_s_0 * features.selected_occurrences_factor;
+                    node_increments[0].occurrences = momentum * node_increments[0].occurrences
+                        + lr * d_e_d_s_0 * features.occurrences_factor;
 
-                    node_increments[1].offset = momentum * node_increments[1].offset + lr * d_e_d_s_1 * 1.0;
-                    node_increments[1].age = momentum * node_increments[1].age + lr * d_e_d_s_1 * features.age_factor;
-                    node_increments[1].length = momentum * node_increments[1].length + lr * d_e_d_s_1 * features.length_factor;
-                    node_increments[1].exit = momentum * node_increments[1].exit + lr * d_e_d_s_1 * features.exit_factor;
-                    node_increments[1].recent_failure = momentum * node_increments[1].recent_failure + lr * d_e_d_s_1 * features.recent_failure_factor;
-                    node_increments[1].selected_dir = momentum * node_increments[1].selected_dir + lr * d_e_d_s_1 * features.selected_dir_factor;
-                    node_increments[1].dir = momentum * node_increments[1].dir + lr * d_e_d_s_1 * features.dir_factor;
-                    node_increments[1].overlap = momentum * node_increments[1].overlap + lr * d_e_d_s_1 * features.overlap_factor;
-                    node_increments[1].immediate_overlap = momentum * node_increments[1].immediate_overlap + lr * d_e_d_s_1 * features.immediate_overlap_factor;
-                    node_increments[1].selected_occurrences = momentum * node_increments[1].selected_occurrences + lr * d_e_d_s_1 * features.selected_occurrences_factor;
-                    node_increments[1].occurrences = momentum * node_increments[1].occurrences + lr * d_e_d_s_1 * features.occurrences_factor;
+                    node_increments[1].offset =
+                        momentum * node_increments[1].offset + lr * d_e_d_s_1 * 1.0;
+                    node_increments[1].age =
+                        momentum * node_increments[1].age + lr * d_e_d_s_1 * features.age_factor;
+                    node_increments[1].length = momentum * node_increments[1].length
+                        + lr * d_e_d_s_1 * features.length_factor;
+                    node_increments[1].exit =
+                        momentum * node_increments[1].exit + lr * d_e_d_s_1 * features.exit_factor;
+                    node_increments[1].recent_failure = momentum
+                        * node_increments[1].recent_failure
+                        + lr * d_e_d_s_1 * features.recent_failure_factor;
+                    node_increments[1].selected_dir = momentum * node_increments[1].selected_dir
+                        + lr * d_e_d_s_1 * features.selected_dir_factor;
+                    node_increments[1].dir =
+                        momentum * node_increments[1].dir + lr * d_e_d_s_1 * features.dir_factor;
+                    node_increments[1].overlap = momentum * node_increments[1].overlap
+                        + lr * d_e_d_s_1 * features.overlap_factor;
+                    node_increments[1].immediate_overlap = momentum
+                        * node_increments[1].immediate_overlap
+                        + lr * d_e_d_s_1 * features.immediate_overlap_factor;
+                    node_increments[1].selected_occurrences = momentum
+                        * node_increments[1].selected_occurrences
+                        + lr * d_e_d_s_1 * features.selected_occurrences_factor;
+                    node_increments[1].occurrences = momentum * node_increments[1].occurrences
+                        + lr * d_e_d_s_1 * features.occurrences_factor;
 
-                    node_increments[2].offset = momentum * node_increments[2].offset + lr * d_e_d_s_2 * 1.0;
-                    node_increments[2].age = momentum * node_increments[2].age + lr * d_e_d_s_2 * features.age_factor;
-                    node_increments[2].length = momentum * node_increments[2].length + lr * d_e_d_s_2 * features.length_factor;
-                    node_increments[2].exit = momentum * node_increments[2].exit + lr * d_e_d_s_2 * features.exit_factor;
-                    node_increments[2].recent_failure = momentum * node_increments[2].recent_failure + lr * d_e_d_s_2 * features.recent_failure_factor;
-                    node_increments[2].selected_dir = momentum * node_increments[2].selected_dir + lr * d_e_d_s_2 * features.selected_dir_factor;
-                    node_increments[2].dir = momentum * node_increments[2].dir + lr * d_e_d_s_2 * features.dir_factor;
-                    node_increments[2].overlap = momentum * node_increments[2].overlap + lr * d_e_d_s_2 * features.overlap_factor;
-                    node_increments[2].immediate_overlap = momentum * node_increments[2].immediate_overlap + lr * d_e_d_s_2 * features.immediate_overlap_factor;
-                    node_increments[2].selected_occurrences = momentum * node_increments[2].selected_occurrences + lr * d_e_d_s_2 * features.selected_occurrences_factor;
-                    node_increments[2].occurrences = momentum * node_increments[2].occurrences + lr * d_e_d_s_2 * features.occurrences_factor;
+                    node_increments[2].offset =
+                        momentum * node_increments[2].offset + lr * d_e_d_s_2 * 1.0;
+                    node_increments[2].age =
+                        momentum * node_increments[2].age + lr * d_e_d_s_2 * features.age_factor;
+                    node_increments[2].length = momentum * node_increments[2].length
+                        + lr * d_e_d_s_2 * features.length_factor;
+                    node_increments[2].exit =
+                        momentum * node_increments[2].exit + lr * d_e_d_s_2 * features.exit_factor;
+                    node_increments[2].recent_failure = momentum
+                        * node_increments[2].recent_failure
+                        + lr * d_e_d_s_2 * features.recent_failure_factor;
+                    node_increments[2].selected_dir = momentum * node_increments[2].selected_dir
+                        + lr * d_e_d_s_2 * features.selected_dir_factor;
+                    node_increments[2].dir =
+                        momentum * node_increments[2].dir + lr * d_e_d_s_2 * features.dir_factor;
+                    node_increments[2].overlap = momentum * node_increments[2].overlap
+                        + lr * d_e_d_s_2 * features.overlap_factor;
+                    node_increments[2].immediate_overlap = momentum
+                        * node_increments[2].immediate_overlap
+                        + lr * d_e_d_s_2 * features.immediate_overlap_factor;
+                    node_increments[2].selected_occurrences = momentum
+                        * node_increments[2].selected_occurrences
+                        + lr * d_e_d_s_2 * features.selected_occurrences_factor;
+                    node_increments[2].occurrences = momentum * node_increments[2].occurrences
+                        + lr * d_e_d_s_2 * features.occurrences_factor;
 
                     let node0 = network.hidden_nodes[0];
                     let node1 = network.hidden_nodes[1];
@@ -149,12 +201,15 @@ impl<'a> Trainer<'a> {
                                 age: node0.age - node_increments[0].age,
                                 length: node0.length - node_increments[0].length,
                                 exit: node0.exit - node_increments[0].exit,
-                                recent_failure: node0.recent_failure - node_increments[0].recent_failure,
+                                recent_failure: node0.recent_failure
+                                    - node_increments[0].recent_failure,
                                 selected_dir: node0.selected_dir - node_increments[0].selected_dir,
                                 dir: node0.dir - node_increments[0].dir,
                                 overlap: node0.overlap - node_increments[0].overlap,
-                                immediate_overlap: node0.immediate_overlap - node_increments[0].immediate_overlap,
-                                selected_occurrences: node0.selected_occurrences - node_increments[0].selected_occurrences,
+                                immediate_overlap: node0.immediate_overlap
+                                    - node_increments[0].immediate_overlap,
+                                selected_occurrences: node0.selected_occurrences
+                                    - node_increments[0].selected_occurrences,
                                 occurrences: node0.occurrences - node_increments[0].occurrences,
                             },
                             Node {
@@ -162,12 +217,15 @@ impl<'a> Trainer<'a> {
                                 age: node1.age - node_increments[1].age,
                                 length: node1.length - node_increments[1].length,
                                 exit: node1.exit - node_increments[1].exit,
-                                recent_failure: node1.recent_failure - node_increments[1].recent_failure,
+                                recent_failure: node1.recent_failure
+                                    - node_increments[1].recent_failure,
                                 selected_dir: node1.selected_dir - node_increments[1].selected_dir,
                                 dir: node1.dir - node_increments[1].dir,
                                 overlap: node1.overlap - node_increments[1].overlap,
-                                immediate_overlap: node1.immediate_overlap - node_increments[1].immediate_overlap,
-                                selected_occurrences: node1.selected_occurrences - node_increments[1].selected_occurrences,
+                                immediate_overlap: node1.immediate_overlap
+                                    - node_increments[1].immediate_overlap,
+                                selected_occurrences: node1.selected_occurrences
+                                    - node_increments[1].selected_occurrences,
                                 occurrences: node1.occurrences - node_increments[1].occurrences,
                             },
                             Node {
@@ -175,19 +233,26 @@ impl<'a> Trainer<'a> {
                                 age: node2.age - node_increments[2].age,
                                 length: node2.length - node_increments[2].length,
                                 exit: node2.exit - node_increments[2].exit,
-                                recent_failure: node2.recent_failure - node_increments[2].recent_failure,
+                                recent_failure: node2.recent_failure
+                                    - node_increments[2].recent_failure,
                                 selected_dir: node2.selected_dir - node_increments[2].selected_dir,
                                 dir: node2.dir - node_increments[2].dir,
                                 overlap: node2.overlap - node_increments[2].overlap,
-                                immediate_overlap: node2.immediate_overlap - node_increments[2].immediate_overlap,
-                                selected_occurrences: node2.selected_occurrences - node_increments[2].selected_occurrences,
+                                immediate_overlap: node2.immediate_overlap
+                                    - node_increments[2].immediate_overlap,
+                                selected_occurrences: node2.selected_occurrences
+                                    - node_increments[2].selected_occurrences,
                                 occurrences: node2.occurrences - node_increments[2].occurrences,
-                            }
+                            },
                         ],
                         hidden_node_sums: [0.0, 0.0, 0.0],
                         hidden_node_outputs: [0.0, 0.0, 0.0],
                         final_bias: network.final_bias - output_increments[0],
-                        final_weights: [network.final_weights[0] - output_increments[1], network.final_weights[1] - output_increments[2], network.final_weights[2] - output_increments[3]],
+                        final_weights: [
+                            network.final_weights[0] - output_increments[1],
+                            network.final_weights[1] - output_increments[2],
+                            network.final_weights[2] - output_increments[3],
+                        ],
                         final_sum: 0.0,
                         final_output: 0.0,
                     };
@@ -206,15 +271,21 @@ impl<'a> Trainer<'a> {
                             best_overall_error = best_restart_error;
                             best_overall_network = best_restart_network;
 
-                            println!("New best overall for {:#?} with error {} (new best)", best_overall_network, best_overall_error);
+                            println!(
+                                "New best overall for {:#?} with error {} (new best)",
+                                best_overall_network, best_overall_error
+                            );
                         } else {
-                            println!("Best overall remains {:#?} with error {} (old)", best_overall_network, best_overall_error);
+                            println!(
+                                "Best overall remains {:#?} with error {} (old)",
+                                best_overall_network, best_overall_error
+                            );
                         }
                         break;
                     }
                 }
 
-//                println!("Error of {} (vs {} {} ago)", batch_error / batch_samples, best_restart_error, cycles_since_best_restart_error);
+                //                println!("Error of {} (vs {} {} ago)", batch_error / batch_samples, best_restart_error, cycles_since_best_restart_error);
             }
         }
     }

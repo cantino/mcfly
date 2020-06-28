@@ -1,23 +1,39 @@
 use relative_path::RelativePath;
-use shellexpand;
 use std::env;
 use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;
 
 pub fn normalize_path(incoming_path: &str) -> String {
-    let expanded_path = shellexpand::full(incoming_path).unwrap_or_else(|err| panic!(format!("McFly error: Unable to expand command path ({})", err)));
+    let expanded_path = shellexpand::full(incoming_path).unwrap_or_else(|err| {
+        panic!(format!(
+            "McFly error: Unable to expand command path ({})",
+            err
+        ))
+    });
 
-    let current_dir = env::var("PWD").unwrap_or_else(|err| panic!(format!("McFly error: Unable to determine current directory ({})", err)));
+    let current_dir = env::var("PWD").unwrap_or_else(|err| {
+        panic!(format!(
+            "McFly error: Unable to determine current directory ({})",
+            err
+        ))
+    });
     let current_dir_path = Path::new(&current_dir);
 
     let path_buf = if expanded_path.starts_with('/') {
-        RelativePath::new(&expanded_path.into_owned()).normalize().to_path("/")
+        RelativePath::new(&expanded_path.into_owned())
+            .normalize()
+            .to_path("/")
     } else {
         let to_current_dir = RelativePath::new(&expanded_path).to_path(current_dir_path);
-        RelativePath::new(to_current_dir.to_str().unwrap()).normalize().to_path("/")
+        RelativePath::new(to_current_dir.to_str().unwrap())
+            .normalize()
+            .to_path("/")
     };
 
-    path_buf.to_str().unwrap_or_else(|| panic!("McFly error: Path must be a valid UTF8 string")).to_string()
+    path_buf
+        .to_str()
+        .unwrap_or_else(|| panic!("McFly error: Path must be a valid UTF8 string"))
+        .to_string()
 }
 
 pub fn parse_mv_command(command: &str) -> Vec<String> {
@@ -94,8 +110,8 @@ pub fn parse_mv_command(command: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use std::env;
     use super::{normalize_path, parse_mv_command};
+    use std::env;
     use std::path::PathBuf;
 
     #[test]
@@ -107,8 +123,16 @@ mod tests {
 
     #[test]
     fn normalize_path_works_with_tilda() {
-        assert_eq!(normalize_path("~/"), String::from(env::var("HOME").unwrap()));
-        assert_eq!(normalize_path("~/foo"), PathBuf::from(env::var("HOME").unwrap()).join("foo").to_string_lossy());
+        assert_eq!(
+            normalize_path("~/"),
+            String::from(env::var("HOME").unwrap())
+        );
+        assert_eq!(
+            normalize_path("~/foo"),
+            PathBuf::from(env::var("HOME").unwrap())
+                .join("foo")
+                .to_string_lossy()
+        );
     }
 
     #[test]
@@ -119,7 +143,9 @@ mod tests {
         assert_eq!(normalize_path("/foo/bar/../.."), String::from("/"));
         assert_eq!(
             normalize_path("~/foo/bar/../baz"),
-            PathBuf::from(env::var("HOME").unwrap()).join("foo/baz").to_string_lossy()
+            PathBuf::from(env::var("HOME").unwrap())
+                .join("foo/baz")
+                .to_string_lossy()
         );
         assert_eq!(
             normalize_path("~/foo/bar/../.."),
@@ -129,26 +155,53 @@ mod tests {
 
     #[test]
     fn parse_mv_command_works_in_the_basic_case() {
-        assert_eq!(parse_mv_command("mv foo bar"), vec!["foo".to_string(), "bar".to_string()]);
+        assert_eq!(
+            parse_mv_command("mv foo bar"),
+            vec!["foo".to_string(), "bar".to_string()]
+        );
     }
 
     #[test]
     fn parse_mv_command_works_with_options() {
-        assert_eq!(parse_mv_command("mv -v foo bar"), vec!["foo".to_string(), "bar".to_string()]);
+        assert_eq!(
+            parse_mv_command("mv -v foo bar"),
+            vec!["foo".to_string(), "bar".to_string()]
+        );
     }
 
     #[test]
     fn parse_mv_command_works_with_escaped_strings() {
-        assert_eq!(parse_mv_command("mv \"foo baz\" 'bar bing'"), vec!["foo baz".to_string(), "bar bing".to_string()]);
-        assert_eq!(parse_mv_command("mv -v \"foo\" 'bar'"), vec!["foo".to_string(), "bar".to_string()]);
+        assert_eq!(
+            parse_mv_command("mv \"foo baz\" 'bar bing'"),
+            vec!["foo baz".to_string(), "bar bing".to_string()]
+        );
+        assert_eq!(
+            parse_mv_command("mv -v \"foo\" 'bar'"),
+            vec!["foo".to_string(), "bar".to_string()]
+        );
     }
 
     #[test]
     fn parse_mv_command_works_with_escaping() {
-        assert_eq!(parse_mv_command("mv \\foo bar"), vec!["foo".to_string(), "bar".to_string()]);
-        assert_eq!(parse_mv_command("mv foo\\ bar bing"), vec!["foo bar".to_string(), "bing".to_string()]);
-        assert_eq!(parse_mv_command("mv \"foo\\ bar\" bing"), vec!["foo bar".to_string(), "bing".to_string()]);
-        assert_eq!(parse_mv_command("mv \"'foo\\' bar\" bing"), vec!["'foo' bar".to_string(), "bing".to_string()]);
-        assert_eq!(parse_mv_command("mv \"\\\"foo\" bar"), vec!["\"foo".to_string(), "bar".to_string()]);
+        assert_eq!(
+            parse_mv_command("mv \\foo bar"),
+            vec!["foo".to_string(), "bar".to_string()]
+        );
+        assert_eq!(
+            parse_mv_command("mv foo\\ bar bing"),
+            vec!["foo bar".to_string(), "bing".to_string()]
+        );
+        assert_eq!(
+            parse_mv_command("mv \"foo\\ bar\" bing"),
+            vec!["foo bar".to_string(), "bing".to_string()]
+        );
+        assert_eq!(
+            parse_mv_command("mv \"'foo\\' bar\" bing"),
+            vec!["'foo' bar".to_string(), "bing".to_string()]
+        );
+        assert_eq!(
+            parse_mv_command("mv \"\\\"foo\" bar"),
+            vec!["\"foo".to_string(), "bar".to_string()]
+        );
     }
 }

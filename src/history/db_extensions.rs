@@ -1,7 +1,6 @@
-use rusqlite;
-use rusqlite::Connection;
 use crate::history::history::Features;
 use crate::network::Network;
+use rusqlite::Connection;
 
 pub fn add_db_functions(db: &Connection) {
     let network = Network::default();
@@ -31,5 +30,11 @@ pub fn add_db_functions(db: &Connection) {
         };
 
         Ok(network.output(&features))
-    }).unwrap_or_else(|err| panic!(format!("McFly error: Successful create_scalar_function ({})", err)));
+    })
+    .unwrap_or_else(|err| {
+        panic!(format!(
+            "McFly error: Successful create_scalar_function ({})",
+            err
+        ))
+    });
 }
