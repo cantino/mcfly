@@ -12,10 +12,7 @@ __MCFLY_LOADED="loaded"
 emulate -L zsh
 
 # Ensure HISTFILE exists.
-if [ -z "${HISTFILE}" ]; then
-  export HISTFILE="${HOME}/.zsh_history"
-fi
-
+export HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
 if [[ ! -r "${HISTFILE}" ]]; then
   echo "McFly: ${HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
   return 1

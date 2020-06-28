@@ -48,12 +48,14 @@ When suggesting a command, McFly takes into consideration:
     brew install mcfly
     ```
 1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively:
+
     Bash:
     ```bash
     if [[ -r "$(brew --prefix)/opt/mcfly/mcfly.bash" ]]; then
       source "$(brew --prefix)/opt/mcfly/mcfly.bash"
     fi
     ```
+
     Zsh:
     ```bash
     if [[ -r "$(brew --prefix)/opt/mcfly/mcfly.zsh" ]]; then
@@ -80,12 +82,14 @@ When suggesting a command, McFly takes into consideration:
 1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc` / `.zshrc`.)
 1. Copy `mcfly.bash` or `mcfly.zsh` to a known location.
 1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively:
+
     Bash:
     ```bash
     if [[ -r /path/to/mcfly.bash ]]; then
       source /path/to/mcfly.bash
     fi
     ```
+
     Zsh:
     ```bash
     if [[ -r /path/to/mcfly.zsh ]]; then
@@ -101,12 +105,14 @@ When suggesting a command, McFly takes into consideration:
 1. Run `cargo install --path .`
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
 1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively:
+
     Bash:
     ```bash
     if [[ -r /path/to/mcfly.bash ]]; then
       source /path/to/mcfly.bash
     fi
     ```
+
     Zsh:
     ```bash
     if [[ -r /path/to/mcfly.zsh ]]; then

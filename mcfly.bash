@@ -10,10 +10,7 @@ fi
 __MCFLY_LOADED="loaded"
 
 # Ensure HISTFILE exists.
-if [ -z "${HISTFILE}" ]; then
-  export HISTFILE="${HOME}/.bash_history"
-fi
-
+export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
 if [[ ! -r "${HISTFILE}" ]]; then
   echo "McFly: ${HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
   return 1
