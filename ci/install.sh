@@ -31,7 +31,7 @@ main() {
     esac
 
     # This fetches latest stable release
-    local tag=$(git ls-remote --tags --refs --exit-code https://github.com/japaric/cross \
+    local tag=$(git ls-remote --tags --refs --exit-code https://github.com/rust-embedded/cross \
                        | cut -d/ -f3 \
                        | grep -E '^v[0.1.0-9.]+$' \
                        | $sort --version-sort \
@@ -39,7 +39,7 @@ main() {
     curl -LSfs https://japaric.github.io/trust/install.sh | \
         sh -s -- \
            --force \
-           --git japaric/cross \
+           --git rust-embedded/cross \
            --tag $tag \
            --target $target
 }

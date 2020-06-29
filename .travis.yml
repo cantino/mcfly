@@ -76,7 +76,10 @@ before_deploy:
 
 deploy:
   # - Create a `public_repo` GitHub token. Go to: https://github.com/settings/tokens/new
-  # - Encrypt it: `travis encrypt 0123456789012345678901234567890123456789
+  # - Encrypt it: `travis encrypt 0123456789012345678901234567890123456789`
+  # - Note: if your project is on travis-ci.com instead of travis-ci.org you
+  #         need to add the `--pro` flag like:
+  #         `travis encrypt 0123456789012345678901234567890123456789 --pro`
   # - Paste the output down here
   api_key:
     secure: "1rJFIUde5cmrrkrjBkmSFgJ3U1jRl0lf+tm0fkxfaTbaYvM1HeTNUquWKCicFthRul+TihytnIlmeCA0YhSqA+kqJps9Qw3WV9U9kLLpw/nNM1ms1x+SmSP3TetIhNftsOBpVgoX9qS46uQoljZGouU/B3a+1CIaCG+nuQL0MiB4pXi3TrQUnFtaA696NDxZxC3IR+CmTpjgJ+Q2/1oEBUW4cbYJAs8nQe+GZGf2Ijh+gLb2Qtesimf8HG1hxhfPEFq+oPlOiR3EAnFPP4QBBgSO/qo3zp4vPei+pBd3OGuWnPn3KbTNeCD4aojtjKBQQa0VES8CRISZOBwNE4Rl2w1unf4aHmXM/H2Tzy+185a3X1bilv+S6sjJlkAmvsZzdD5H9gBCBLPW0fJpNdAjR7cSaoHU3sNKXuW7pulDselz9I6fAO5Y9avBf0NbrknM3p/Fy5qn2aIQyAt4U7rswgA3ydsgHKclwTZKm6+ub+BB90gRRCX9ugods9zTre0TVxGwgz1fiukfNM1+wNpdz4jpthHi99GF7kzb8hOyHZQo5vx/mBX8kWbvZ3oQO9VA+oBs9rZnabBnJ6Mv/liPGdlbG19dxSSFzig6pza6zkWmi9UC6Ghwh6oQ/mYfaT3+0Tlql0qh0xXG9ogHhTxiexlLlFqFomp4ER+vkjNQXnE="

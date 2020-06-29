@@ -19,7 +19,7 @@ main() {
 
     cross rustc --bin mcfly --target $TARGET --release -- -C lto
 
-    strip target/$TARGET/release/mcfly
+#    strip target/$TARGET/release/mcfly
 
     cp target/$TARGET/release/mcfly $stage/
     cp mcfly.bash $stage/
