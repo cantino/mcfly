@@ -47,19 +47,19 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     brew install mcfly
     ```
-1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively:
+1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively, changing `/usr/local` to your `brew --prefix` if needed:
 
     Bash:
     ```bash
-    if [[ -r "$(brew --prefix)/opt/mcfly/mcfly.bash" ]]; then
-      source "$(brew --prefix)/opt/mcfly/mcfly.bash"
+    if [[ -r "/usr/local/opt/mcfly/mcfly.bash" ]]; then
+      source "/usr/local/opt/mcfly/mcfly.bash"
     fi
     ```
 
     Zsh:
     ```bash
-    if [[ -r "$(brew --prefix)/opt/mcfly/mcfly.zsh" ]]; then
-      source "$(brew --prefix)/opt/mcfly/mcfly.zsh"
+    if [[ -r "/usr/local/opt/mcfly/mcfly.zsh" ]]; then
+      source "/usr/local/opt/mcfly/mcfly.zsh"
     fi
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` or restart your terminal emulator.

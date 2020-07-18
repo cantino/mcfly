@@ -29,14 +29,17 @@ class Mcfly < Formula
     <<~EOS
       ONE MORE STEP!
 
-      If you use Bash, edit ~/.bashrc and add the following at the end:
-        if [ -r $(brew --prefix)/opt/mcfly/mcfly.bash ]; then
-          . $(brew --prefix)/opt/mcfly/mcfly.bash
+      Add the following to the end of your ~/.bashrc or ~/.zshrc file,
+      changing /usr/local to your 'brew --prefix' if needed:
+
+      Bash:
+        if [ -r /usr/local/opt/mcfly/mcfly.bash ]; then
+          . /usr/local/opt/mcfly/mcfly.bash
         fi
 
-      If you use Zsh, edit ~/.zshrc and add the following at the end:
-        if [ -r $(brew --prefix)/opt/mcfly/mcfly.zsh ]; then
-          . $(brew --prefix)/opt/mcfly/mcfly.zsh
+      Zsh:
+        if [ -r /usr/local/opt/mcfly/mcfly.zsh ]; then
+          . /usr/local/opt/mcfly/mcfly.zsh
         fi
     EOS
   end
