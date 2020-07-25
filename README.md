@@ -47,7 +47,7 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     brew install mcfly
     ```
-1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively, changing `/usr/local` to your `brew --prefix` if needed:
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, as appropriate, changing `/usr/local` to your `brew --prefix` if needed:
 
     Bash:
     ```bash
@@ -62,7 +62,15 @@ When suggesting a command, McFly takes into consideration:
       source "/usr/local/opt/mcfly/mcfly.zsh"
     fi
     ```
-1. Run `. ~/.bashrc` / `. ~/.zshrc` or restart your terminal emulator.
+
+    Fish:
+    ```bash
+    if test -r "/usr/local/opt/mcfly/mcfly.fish"
+      source "/usr/local/opt/mcfly/mcfly.fish"
+      mcfly_key_bindings
+    end
+    ```
+1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
 #### Uninstalling with Homebrew
 
@@ -74,14 +82,14 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     brew untap cantino/mcfly
     ```
-1. Remove the lines you added to `~/.bashrc` / `~/.zshrc`.
+1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
 ### Installing manually from GitHub
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
-1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc` / `.zshrc`.)
-1. Copy `mcfly.bash` or `mcfly.zsh` to a known location.
-1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively:
+1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc` / `.zshrc`, or run `set -Ua fish_user_paths "$HOME/bin"` for fish.)
+1. Copy `mcfly.bash`, `mcfly.zsh`, or `mcfly.fish` to a known location.
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
 
     Bash:
     ```bash
@@ -96,7 +104,15 @@ When suggesting a command, McFly takes into consideration:
       source /path/to/mcfly.zsh
     fi
     ```
-1. Run `. ~/.bashrc` / `. ~/.zshrc` or restart your terminal emulator.
+
+    Fish:
+    ```bash
+    if test -r /path/to/mcfly.fish
+      source /path/to/mcfly.fish
+      mcfly_key_bindings
+    end
+    ```
+1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
 ### Install manually from source
 
@@ -104,7 +120,7 @@ When suggesting a command, McFly takes into consideration:
 1. Run `git clone https://github.com/cantino/mcfly` and `cd mcfly`
 1. Run `cargo install --path .`
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
-1. Add the following to the end of your `~/.bashrc` or `~/.zshrc` file, respectively:
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
 
     Bash:
     ```bash
@@ -119,7 +135,15 @@ When suggesting a command, McFly takes into consideration:
       source /path/to/mcfly.zsh
     fi
     ```
-1. Run `. ~/.bashrc` / `. ~/.zshrc` or restart your terminal emulator.
+
+    Fish:
+    ```bash
+    if test -r /path/to/mcfly.fish
+      source /path/to/mcfly.fish
+      mcfly_key_bindings
+    end
+    ```
+1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
 ## iTerm2
 
@@ -128,17 +152,32 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 <img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
 
 ## Settings
-A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc`.
+A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
 ### Light Mode
 To swap the color scheme for use in a light terminal, set the environment variable `MCFLY_LIGHT`.
+
+bash / zsh:
 ```bash
 export MCFLY_LIGHT=TRUE
 ```
+
+fish:
+```bash
+set -gx MCFLY_LIGHT TRUE
+```
+
 ### VIM Key Scheme
 By default Mcfly uses an `emacs` inspired key scheme. If you would like to switch to the `vim` inspired key scheme, set the environment variable `MCFLY_KEY_SCHEME`.
+
+bash / zsh:
 ```bash
 export MCFLY_KEY_SCHEME=vim
+```
+
+fish:
+```bash
+set -gx MCFLY_KEY_SCHEME vim
 ```
 
 ## Possible Future Features

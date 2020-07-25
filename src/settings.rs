@@ -23,11 +23,28 @@ pub enum KeyScheme {
     Vim,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum HistoryFormat {
+    /// bash format - commands in plain text, one per line, with multi-line commands joined.
+    /// HISTTIMEFORMAT is assumed to be empty.
+    Bash,
+
+    /// zsh format - commands in plain text, with multiline commands on multiple lines.
+    /// McFly does not currently handle joining these lines; they're treated as separate commands.
+    /// If --zsh-extended-history was given, `extended_history` will be true, and we'll strip the
+    /// timestamp from the beginning of each command.
+    Zsh { extended_history: bool },
+
+    /// fish's pseudo-yaml, with commands stored as 'cmd' with multiple lines joined into one with
+    /// '\n', and with timestamps stored as 'when'.  ('paths' is ignored.)
+    /// (Some discussion of changing format: https://github.com/fish-shell/fish-shell/pull/6493)
+    Fish,
+}
+
 #[derive(Debug)]
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
-    pub zsh_extended_history: bool,
     pub session_id: String,
     pub mcfly_history: PathBuf,
     pub output_selection: Option<String>,
@@ -41,6 +58,7 @@ pub struct Settings {
     pub refresh_training_cache: bool,
     pub lightmode: bool,
     pub key_scheme: KeyScheme,
+    pub history_format: HistoryFormat,
 }
 
 impl Default for Settings {
@@ -59,9 +77,9 @@ impl Default for Settings {
             refresh_training_cache: false,
             append_to_histfile: false,
             debug: false,
-            zsh_extended_history: false,
             lightmode: false,
             key_scheme: KeyScheme::Emacs,
+            history_format: HistoryFormat::Bash,
         }
     }
 }
@@ -86,6 +104,11 @@ impl Settings {
                 .long("mcfly_history")
                 .help("Shell history file to read from when adding or searching (defaults to $MCFLY_HISTORY)")
                 .value_name("MCFLY_HISTORY")
+                .takes_value(true))
+            .arg(Arg::with_name("history_format")
+                .long("history_format")
+                .help("Shell history file format, 'bash', 'zsh', or 'fish' (defaults to 'bash')")
+                .value_name("FORMAT")
                 .takes_value(true))
             .subcommand(SubCommand::with_name("add")
                 .about("Add commands to the history")
@@ -145,7 +168,7 @@ impl Settings {
                     .short("o")
                     .long("output-selection")
                     .value_name("PATH")
-                    .help("Write selection to file - the first line will be 'display' or 'run' depending on the selection, the second line will be the selection.")
+                    .help("Write results to file, including selection mode, new commandline, and any shell-specific requests")
                     .takes_value(true))
                 .arg(Arg::with_name("command")
                     .help("The command search term(s)")
@@ -199,6 +222,15 @@ impl Settings {
                     })
                 }),
         );
+        settings.history_format = match matches.value_of("history_format") {
+            None => HistoryFormat::Bash,
+            Some("bash") => HistoryFormat::Bash,
+            Some("zsh") => HistoryFormat::Zsh {
+                extended_history: false,
+            },
+            Some("fish") => HistoryFormat::Fish,
+            Some(format) => panic!("McFly error: unknown history format '{}'", format),
+        };
 
         match matches.subcommand() {
             ("add", Some(add_matches)) => {
@@ -216,7 +248,12 @@ impl Settings {
                 );
 
                 settings.append_to_histfile = add_matches.is_present("append_to_histfile");
-                settings.zsh_extended_history = add_matches.is_present("zsh_extended_history");
+                if add_matches.is_present("zsh_extended_history") {
+                    match settings.history_format {
+                        HistoryFormat::Zsh { .. } => settings.history_format = HistoryFormat::Zsh { extended_history: true },
+                        HistoryFormat::Bash | HistoryFormat::Fish => panic!("McFly error: cannot specify zsh extended history with non-zsh history format"),
+                    }
+                }
 
                 if add_matches.value_of("exit").is_some() {
                     settings.exit_code =
@@ -243,8 +280,11 @@ impl Settings {
                 if let Some(commands) = add_matches.values_of("command") {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = shell_history::last_history_line(&settings.mcfly_history)
-                        .unwrap_or_else(String::new);
+                    settings.command = shell_history::last_history_line(
+                        &settings.mcfly_history,
+                        settings.history_format,
+                    )
+                    .unwrap_or_else(String::new);
                 }
 
                 // CD shows PWD as the resulting directory, but we want it from the source directory.
@@ -285,13 +325,17 @@ impl Settings {
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = shell_history::last_history_line(&settings.mcfly_history)
-                        .unwrap_or_else(String::new)
-                        .trim_start_matches("#mcfly: ")
-                        .trim_start_matches("#mcfly:")
-                        .to_string();
+                    settings.command = shell_history::last_history_line(
+                        &settings.mcfly_history,
+                        settings.history_format,
+                    )
+                    .unwrap_or_else(String::new)
+                    .trim_start_matches("#mcfly: ")
+                    .trim_start_matches("#mcfly:")
+                    .to_string();
                     shell_history::delete_last_history_entry_if_search(
                         &settings.mcfly_history,
+                        settings.history_format,
                         settings.debug,
                     );
                 }

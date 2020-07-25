@@ -51,7 +51,7 @@ function mcfly_prompt_command {
 
   # Run mcfly with the saved code. It fill find the text of the last command in $MCFLY_HISTORY and save it to the database.
   [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Run mcfly add --exit ${exit_code}"
-  $MCFLY_PATH add --exit ${exit_code}
+  $MCFLY_PATH --history_format zsh add --exit ${exit_code}
   return ${exit_code} # Restore the original exit code by returning it.
 }
 precmd_functions+=(mcfly_prompt_command)
@@ -70,14 +70,19 @@ if [[ $- =~ .*i.* ]]; then
       echoti rmkx
       exec </dev/tty
       local mcfly_output=$(mktemp -t mcfly.output.XXXXXXXX)
-      $MCFLY_PATH search -o "${mcfly_output}" "${LBUFFER}"
-      local mode=$(sed -n 1p $mcfly_output)
-      local selected=$(sed 1d $mcfly_output)
-      rm -f $mcfly_output
+      $MCFLY_PATH --history_format zsh search -o "${mcfly_output}" "${LBUFFER}"
       echoti smkx
-      if [[ -n $selected ]]; then
+
+      # Interpret commandline/run requests from McFly
+      while read -r key val; do
+        if [[ "$key" = "mode" ]]; then local mode="$val"; fi
+        if [[ "$key" = "commandline" ]]; then local commandline="$val"; fi
+      done < "${mcfly_output}"
+      rm -f $mcfly_output
+
+      if [[ -n $commandline ]]; then
         RBUFFER=""
-        LBUFFER="${selected}"
+        LBUFFER="${commandline}"
       fi
       if [[ "${mode}" == "run" ]]; then
         zle accept-line
