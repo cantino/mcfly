@@ -21,6 +21,10 @@ export MCFLY_SESSION_ID=$(dd if=/dev/urandom bs=256 count=1 2> /dev/null | env L
 
 # Find the binary
 MCFLY_PATH=${MCFLY_PATH:-$(which mcfly)}
+if [ -z "$MCFLY_PATH" ]; then
+  echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.bash."
+  return 1
+fi
 
 # Ignore commands with a leading space
 export HISTCONTROL="ignorespace"
