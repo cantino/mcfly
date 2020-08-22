@@ -22,13 +22,18 @@ pub struct Interface<'a> {
     matches: Vec<Command>,
     debug: bool,
     run: bool,
+    delete_requests: Vec<String>,
     menu_mode: MenuMode,
     in_vim_insert_mode: bool,
 }
 
 pub struct SelectionResult {
+    /// Whether the user requested to run the resulting command immediately.
     pub run: bool,
+    /// The command string the user selected, if any.
     pub selection: Option<String>,
+    /// Commands the user has requested be deleted from shell history.
+    pub delete_requests: Vec<String>,
 }
 
 pub enum MoveSelection {
@@ -81,6 +86,7 @@ impl<'a> Interface<'a> {
             matches: Vec::new(),
             debug: settings.debug,
             run: false,
+            delete_requests: Vec::new(),
             menu_mode: MenuMode::Normal,
             in_vim_insert_mode: false,
         }
@@ -101,11 +107,14 @@ impl<'a> Interface<'a> {
             SelectionResult {
                 run: self.run,
                 selection: Some(command),
+                // Remove delete_requests from the Interface, in case it's used to display() again.
+                delete_requests: self.delete_requests.split_off(0),
             }
         } else {
             SelectionResult {
                 run: self.run,
                 selection: None,
+                delete_requests: self.delete_requests.split_off(0),
             }
         }
     }
@@ -284,6 +293,7 @@ impl<'a> Interface<'a> {
             {
                 let command = &self.matches[self.selection];
                 history_cleaner::clean(self.settings, self.history, &command.cmd);
+                self.delete_requests.push(command.cmd.clone());
             }
             self.build_cache_table();
             self.refresh_matches();

@@ -8,7 +8,7 @@ use std::{fmt, fs, io};
 use crate::history::{db_extensions, schema};
 use crate::network::Network;
 use crate::path_update_helpers;
-use crate::settings::Settings;
+use crate::settings::{HistoryFormat, Settings};
 use crate::simplified_command::SimplifiedCommand;
 use rusqlite::types::ToSql;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
@@ -70,12 +70,12 @@ const IGNORED_COMMANDS: [&str; 7] = [
 ];
 
 impl History {
-    pub fn load() -> History {
+    pub fn load(history_format: HistoryFormat) -> History {
         let db_path = Settings::mcfly_db_path();
         let history = if db_path.exists() {
             History::from_db_path(db_path)
         } else {
-            History::from_bash_history()
+            History::from_shell_history(history_format)
         };
         schema::migrate(&history.connection);
         history
@@ -640,7 +640,7 @@ impl History {
         }
     }
 
-    fn from_bash_history() -> History {
+    fn from_shell_history(history_format: HistoryFormat) -> History {
         print!(
             "McFly: Importing shell history for the first time. This may take a minute or two..."
         );
@@ -649,7 +649,8 @@ impl History {
         });
 
         // Load this first to make sure it works before we create the DB.
-        let bash_history = shell_history::full_history(&shell_history::history_file_path());
+        let commands =
+            shell_history::full_history(&shell_history::history_file_path(), history_format);
 
         // Make ~/.mcfly
         fs::create_dir_all(Settings::storage_dir_path())
@@ -693,20 +694,16 @@ impl History {
             let mut statement = connection
                 .prepare("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, selected) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :selected)")
                 .unwrap_or_else(|err| panic!(format!("McFly error: Unable to prepare insert ({})", err)));
-            let epoch = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err)))
-                .as_secs() as i64;
-            for command in &bash_history {
-                if !IGNORED_COMMANDS.contains(&command.as_str()) {
-                    let simplified_command = SimplifiedCommand::new(command.as_str(), true);
-                    if !command.is_empty() && !simplified_command.result.is_empty() {
+            for command in commands {
+                if !IGNORED_COMMANDS.contains(&command.command.as_str()) {
+                    let simplified_command = SimplifiedCommand::new(&command.command, true);
+                    if !command.command.is_empty() && !simplified_command.result.is_empty() {
                         statement
                             .execute_named(&[
-                                (":cmd", command),
+                                (":cmd", &command.command),
                                 (":cmd_tpl", &simplified_command.result.to_owned()),
                                 (":session_id", &"IMPORTED"),
-                                (":when_run", &epoch),
+                                (":when_run", &command.when),
                                 (":exit_code", &0),
                                 (":selected", &0),
                             ])
