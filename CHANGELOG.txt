@@ -1,3 +1,5 @@
+0.5.0 - Aug 21, 2020
+ - Fish support! Thanks @tjkirch!
 0.4.0 - Jun 28, 2020
  - Zsh support!
 0.3.6 - Dec 15, 2019
