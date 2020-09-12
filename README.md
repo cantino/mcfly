@@ -84,6 +84,49 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
+### Install with MacPorts (on OS X)
+
+1. Update the ports tree
+    ```bash
+    sudo port selfupdate
+    ```
+1. Install `mcfly`:
+    ```bash
+    sudo port install mcfly
+    ```
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, as appropriate:
+
+    Bash:
+    ```bash
+    if [[ -r "/opt/local/share/mcfly/mcfly.bash" ]]; then
+      source "/opt/local/share/mcfly/mcfly.bash"
+    fi
+    ```
+
+    Zsh:
+    ```bash
+    if [[ -r "/opt/local/share/mcfly/mcfly.zsh" ]]; then
+      source "/opt/local/share/mcfly/mcfly.zsh"
+    fi
+    ```
+
+    Fish:
+    ```bash
+    if test -r "/opt/local/share/mcfly/mcfly.fish"
+      source "/opt/local/share/mcfly/mcfly.fish"
+      mcfly_key_bindings
+    end
+    ```
+1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
+
+#### Uninstalling with MacPorts
+
+1. Remove `mcfly`:
+    ```bash
+    sudo port uninstall mcfly
+    ```
+1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
+
 ### Installing manually from GitHub
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
