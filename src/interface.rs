@@ -1,3 +1,5 @@
+extern crate skim;
+
 use crate::command_input::{CommandInput, Move};
 use crate::history::History;
 
@@ -7,6 +9,7 @@ use crate::history_cleaner;
 use crate::settings::KeyScheme;
 use crate::settings::Settings;
 use std::io::{stdin, stdout, Write};
+use skim::prelude::*;
 use termion::color;
 use termion::event::Key;
 use termion::input::TermRead;
@@ -94,7 +97,12 @@ impl<'a> Interface<'a> {
 
     pub fn display(&mut self) -> SelectionResult {
         self.build_cache_table();
-        self.select();
+
+        if self.settings.fuzzy {
+            self.skim();
+        } else {
+            self.select();
+        }
 
         let command = self.input.command.to_owned();
 
@@ -180,6 +188,39 @@ impl<'a> Interface<'a> {
         )
         .unwrap();
         screen.flush().unwrap();
+    }
+
+    fn skim(&mut self) {
+        self.selection = 0;
+        self.matches = self
+            .history
+            .find_matches(&self.input.command, -1);
+
+        let (tx_item, rx_item): (SkimItemSender, SkimItemReceiver) = unbounded();
+        let options = SkimOptionsBuilder::default()
+            .layout("reverse")
+            .color(Some("bw"))
+            .multi(false)
+            .build()
+            .unwrap();
+
+        if !self.matches.is_empty() && self.selection > self.matches.len() - 1 {
+            self.selection = self.matches.len() - 1;
+        }
+
+        for (_index, command) in self.matches.iter().enumerate() {
+            let _ = tx_item.send(Arc::new(command.cmd.to_string()));
+        }
+
+        let skimmed = Skim::run_with(&options, Some(rx_item));
+
+        if skimmed.is_some() {
+            let selection = skimmed.unwrap().selected_items.remove(0);
+
+            self.input.set(&selection.output().to_string());
+        } else {
+            self.input.clear();
+        }
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {
