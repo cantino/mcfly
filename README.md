@@ -223,6 +223,19 @@ fish:
 set -gx MCFLY_KEY_SCHEME vim
 ```
 
+### Fuzzy Searching
+To enable fuzzy searching, set `MCFLY_FUZZY`.
+
+bash / zsh:
+```bash
+export MCFLY_FUZZY=true
+```
+
+fish:
+```bash
+set -gx MCFLY_FUZZY true
+```
+
 ## Possible Future Features
 
 * Add a screencast to README.
