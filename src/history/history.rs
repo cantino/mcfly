@@ -230,9 +230,15 @@ impl History {
         }
     }
 
-    pub fn find_matches(&self, cmd: &str, num: i16) -> Vec<Command> {
+    pub fn find_matches(&self, cmd: &str, num: i16, fuzzy: bool) -> Vec<Command> {
         let mut like_query = "%".to_string();
-        like_query.push_str(cmd);
+
+        if fuzzy {
+            like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join("%"));
+        } else {
+            like_query.push_str(cmd);
+        }
+
         like_query.push_str("%");
 
         let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,

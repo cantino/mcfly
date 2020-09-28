@@ -304,7 +304,7 @@ impl<'a> Interface<'a> {
         self.selection = 0;
         self.matches = self
             .history
-            .find_matches(&self.input.command, self.settings.results as i16);
+            .find_matches(&self.input.command, self.settings.results as i16, self.settings.fuzzy);
     }
 
     fn select(&mut self) {
