@@ -69,6 +69,6 @@ if [[ $- =~ .*i.* ]]; then
   if set -o | grep "vi " | grep -q on; then
     bind "'\C-r': '\e0i#mcfly: \e\C-j mcfly search\C-j'"
   else
-    bind "'\C-r': '\C-amcfly: \e# mcfly search\C-j'"
+    bind -x '"\C-r": "array=($READLINE_LINE); echo \#mcfly: ${array[0]} > $MCFLY_HISTORY ; mcfly search"'
   fi
 fi
