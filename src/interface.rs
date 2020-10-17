@@ -236,7 +236,8 @@ impl<'a> Interface<'a> {
                     width,
                     highlight,
                     fg,
-                    self.debug
+                    self.debug,
+                    self.settings.fuzzy
                 )
             )
             .unwrap();
@@ -545,6 +546,7 @@ impl<'a> Interface<'a> {
         highlight_color: String,
         base_color: String,
         debug: bool,
+        fuzzy: bool
     ) -> String {
         let mut prev = 0;
         let debug_space = if debug { 90 } else { 0 };
@@ -560,14 +562,41 @@ impl<'a> Interface<'a> {
         let search_len = search.len();
 
         if !search.is_empty() {
-            for (index, _) in lowercase_cmd.match_indices(&lowercase_search) {
-                if prev != index {
-                    out.push_grapheme_str(&command.cmd[prev..index]);
+            if fuzzy {
+                let mut search_iter = lowercase_search.chars().peekable();
+                let mut matches = lowercase_cmd.match_indices(|c| {
+                    let next = search_iter.peek();
+
+                    if next.is_some() && next.unwrap() == &c {
+                        let _advance = search_iter.next();
+
+                        return true;
+                    }
+
+                    return false;
+                }).map(|m| m.0);
+
+                let start = matches.next().unwrap_or(0);
+                let end = matches.last().unwrap_or(start) + 1;
+
+                if start != 0 {
+                    out.push_grapheme_str(&command.cmd[prev..start]);
                 }
+
                 out.push_str(&highlight_color);
-                out.push_grapheme_str(&command.cmd[index..(index + search_len)]);
+                out.push_grapheme_str(&command.cmd[start..end]);
                 out.push_str(&base_color);
-                prev = index + search_len;
+                prev = end;
+            } else {
+                for (index, _) in lowercase_cmd.match_indices(&lowercase_search) {
+                    if prev != index {
+                        out.push_grapheme_str(&command.cmd[prev..index]);
+                    }
+                    out.push_str(&highlight_color);
+                    out.push_grapheme_str(&command.cmd[index..(index + search_len)]);
+                    out.push_str(&base_color);
+                    prev = index + search_len;
+                }
             }
         }
 
