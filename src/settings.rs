@@ -324,14 +324,7 @@ impl Settings {
                     settings.results = results;
                 }
 
-                if let Ok(fuzzy) = env::var("MCFLY_FUZZY") {
-                    if let Ok(fuzzy) = bool::from_str(&fuzzy) {
-                        settings.fuzzy = fuzzy;
-                    }
-                }
-                if let Ok(fuzzy) = value_t!(search_matches.value_of("fuzzy"), bool) {
-                    settings.fuzzy = fuzzy;
-                }
+                settings.fuzzy = search_matches.is_present("fuzzy") || env::var("MCFLY_FUZZY").is_ok();
 
                 settings.output_selection = search_matches
                     .value_of("output_selection")

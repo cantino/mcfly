@@ -236,8 +236,7 @@ impl<'a> Interface<'a> {
                     width,
                     highlight,
                     fg,
-                    self.debug,
-                    self.settings.fuzzy
+                    self.debug
                 )
             )
             .unwrap();
@@ -545,10 +544,9 @@ impl<'a> Interface<'a> {
         width: u16,
         highlight_color: String,
         base_color: String,
-        debug: bool,
-        fuzzy: bool
+        debug: bool
     ) -> String {
-        let mut prev = 0;
+        let mut prev:usize= 0;
         let debug_space = if debug { 90 } else { 0 };
         let max_grapheme_length = if width > debug_space {
             width - debug_space
@@ -557,46 +555,16 @@ impl<'a> Interface<'a> {
         };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
-        let lowercase_search = search.to_lowercase();
-        let lowercase_cmd = command.cmd.to_lowercase();
-        let search_len = search.len();
-
         if !search.is_empty() {
-            if fuzzy {
-                let mut search_iter = lowercase_search.chars().peekable();
-                let mut matches = lowercase_cmd.match_indices(|c| {
-                    let next = search_iter.peek();
-
-                    if next.is_some() && next.unwrap() == &c {
-                        let _advance = search_iter.next();
-
-                        return true;
-                    }
-
-                    return false;
-                }).map(|m| m.0);
-
-                let start = matches.next().unwrap_or(0);
-                let end = matches.last().unwrap_or(start) + 1;
-
-                if start != 0 {
-                    out.push_grapheme_str(&command.cmd[prev..start]);
+            for (start, end) in &command.match_bounds {
+                if prev != *start {
+                    out.push_grapheme_str(&command.cmd[prev..*start]);
                 }
 
                 out.push_str(&highlight_color);
-                out.push_grapheme_str(&command.cmd[start..end]);
+                out.push_grapheme_str(&command.cmd[*start..*end]);
                 out.push_str(&base_color);
-                prev = end;
-            } else {
-                for (index, _) in lowercase_cmd.match_indices(&lowercase_search) {
-                    if prev != index {
-                        out.push_grapheme_str(&command.cmd[prev..index]);
-                    }
-                    out.push_str(&highlight_color);
-                    out.push_grapheme_str(&command.cmd[index..(index + search_len)]);
-                    out.push_str(&base_color);
-                    prev = index + search_len;
-                }
+                prev = *end;
             }
         }
 
