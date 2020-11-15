@@ -324,7 +324,8 @@ impl Settings {
                     settings.results = results;
                 }
 
-                settings.fuzzy = search_matches.is_present("fuzzy") || env::var("MCFLY_FUZZY").is_ok();
+                settings.fuzzy =
+                    search_matches.is_present("fuzzy") || env::var("MCFLY_FUZZY").is_ok();
 
                 settings.output_selection = search_matches
                     .value_of("output_selection")

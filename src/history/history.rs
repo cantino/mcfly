@@ -11,9 +11,9 @@ use crate::network::Network;
 use crate::path_update_helpers;
 use crate::settings::{HistoryFormat, Settings};
 use crate::simplified_command::SimplifiedCommand;
+use itertools::Itertools;
 use rusqlite::types::ToSql;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
-use itertools::Itertools;
 
 #[derive(Debug, Clone, Default)]
 pub struct Features {
@@ -41,7 +41,7 @@ pub struct Command {
     pub selected: bool,
     pub dir: Option<String>,
     pub features: Features,
-    pub match_bounds: Vec<(usize, usize)>
+    pub match_bounds: Vec<(usize, usize)>,
 }
 
 impl fmt::Display for Command {
@@ -257,7 +257,7 @@ impl History {
             .unwrap_or_else(|err| panic!(format!("McFly error: Prepare to work ({})", err)));
         let command_iter = statement
             .query_map_named(&[(":like", &like_query), (":limit", &num)], |row| {
-                let text:String = row.get_checked(1).unwrap_or_else(|err| {
+                let text: String = row.get_checked(1).unwrap_or_else(|err| {
                     panic!(format!("McFly error: cmd to be readable ({})", err))
                 });
                 let lowercase_text = text.to_lowercase();
@@ -266,27 +266,29 @@ impl History {
                 let bounds = match fuzzy {
                     true => {
                         let mut search_iter = lowercase_cmd.chars().peekable();
-                        let mut matches = lowercase_text.match_indices(|c| {
-                            let next = search_iter.peek();
+                        let mut matches = lowercase_text
+                            .match_indices(|c| {
+                                let next = search_iter.peek();
 
-                            if next.is_some() && next.unwrap() == &c {
-                                let _advance = search_iter.next();
+                                if next.is_some() && next.unwrap() == &c {
+                                    let _advance = search_iter.next();
 
-                                return true;
-                            }
+                                    return true;
+                                }
 
-                            return false;
-                        }).map(|m| m.0);
+                                return false;
+                            })
+                            .map(|m| m.0);
 
                         let start = matches.next().unwrap_or(0);
                         let end = matches.last().unwrap_or(start) + 1;
 
                         vec![(start, end)]
-                    },
+                    }
                     false => lowercase_text
                         .match_indices(&lowercase_cmd)
                         .map(|(index, _)| (index, index + cmd.len()))
-                        .collect::<Vec<_>>()
+                        .collect::<Vec<_>>(),
                 };
 
                 Command {
@@ -322,8 +324,8 @@ impl History {
                         }),
                         length_factor: row.get_checked(10).unwrap_or_else(|err| {
                             panic!(format!(
-                                    "McFly error: length_factor to be readable ({})",
-                                    err
+                                "McFly error: length_factor to be readable ({})",
+                                err
                             ))
                         }),
                         exit_factor: row.get_checked(11).unwrap_or_else(|err| {
@@ -331,14 +333,14 @@ impl History {
                         }),
                         recent_failure_factor: row.get_checked(12).unwrap_or_else(|err| {
                             panic!(format!(
-                                    "McFly error: recent_failure_factor to be readable ({})",
-                                    err
+                                "McFly error: recent_failure_factor to be readable ({})",
+                                err
                             ))
                         }),
                         selected_dir_factor: row.get_checked(13).unwrap_or_else(|err| {
                             panic!(format!(
-                                    "McFly error: selected_dir_factor to be readable ({})",
-                                    err
+                                "McFly error: selected_dir_factor to be readable ({})",
+                                err
                             ))
                         }),
                         dir_factor: row.get_checked(14).unwrap_or_else(|err| {
@@ -346,32 +348,32 @@ impl History {
                         }),
                         overlap_factor: row.get_checked(15).unwrap_or_else(|err| {
                             panic!(format!(
-                                    "McFly error: overlap_factor to be readable ({})",
-                                    err
+                                "McFly error: overlap_factor to be readable ({})",
+                                err
                             ))
                         }),
                         immediate_overlap_factor: row.get_checked(16).unwrap_or_else(|err| {
                             panic!(format!(
-                                    "McFly error: immediate_overlap_factor to be readable ({})",
-                                    err
+                                "McFly error: immediate_overlap_factor to be readable ({})",
+                                err
                             ))
                         }),
                         selected_occurrences_factor: row.get_checked(17).unwrap_or_else(|err| {
                             panic!(format!(
-                                    "McFly error: selected_occurrences_factor to be readable ({})",
-                                    err
+                                "McFly error: selected_occurrences_factor to be readable ({})",
+                                err
                             ))
                         }),
                         occurrences_factor: row.get_checked(18).unwrap_or_else(|err| {
                             panic!(format!(
-                                    "McFly error: occurrences_factor to be readable ({})",
-                                    err
+                                "McFly error: occurrences_factor to be readable ({})",
+                                err
                             ))
                         }),
                     },
                 }
             })
-        .unwrap_or_else(|err| panic!(format!("McFly error: Query Map to work ({})", err)));
+            .unwrap_or_else(|err| panic!(format!("McFly error: Query Map to work ({})", err)));
 
         let mut names = Vec::new();
         for result in command_iter {
@@ -384,21 +386,25 @@ impl History {
         }
 
         if fuzzy {
-            names = names.into_iter().sorted_by(|a, b| {
-                // results are already sorted by rank, but with fuzzy mode we
-                // need to prioritize shorter matches as well, and can only do
-                // that at runtime. Each match's rank is weighted by the
-                // inverse of its length (relative to both matches) to give
-                // short but lower-ranked matches a chance to beat higher-
-                // ranked but longer matches.
+            names = names
+                .into_iter()
+                .sorted_by(|a, b| {
+                    // results are already sorted by rank, but with fuzzy mode we
+                    // need to prioritize shorter matches as well, and can only do
+                    // that at runtime. Each match's rank is weighted by the
+                    // inverse of its length (relative to both matches) to give
+                    // short but lower-ranked matches a chance to beat higher-
+                    // ranked but longer matches.
 
-                let a_len = a.match_bounds[0].1 - a.match_bounds[0].0;
-                let b_len = b.match_bounds[0].1 - b.match_bounds[0].0;
-                let a_mod = 1.0 - a_len as f64 / (a_len + b_len) as f64;
-                let b_mod = 1.0 - b_len as f64 / (a_len + b_len) as f64;
+                    let a_len = a.match_bounds[0].1 - a.match_bounds[0].0;
+                    let b_len = b.match_bounds[0].1 - b.match_bounds[0].0;
+                    let a_mod = 1.0 - a_len as f64 / (a_len + b_len) as f64;
+                    let b_mod = 1.0 - b_len as f64 / (a_len + b_len) as f64;
 
-                PartialOrd::partial_cmp(&(b.rank + b_mod), &(a.rank + a_mod)).unwrap_or_else(|| Ordering::Equal)
-            }).collect()
+                    PartialOrd::partial_cmp(&(b.rank + b_mod), &(a.rank + a_mod))
+                        .unwrap_or_else(|| Ordering::Equal)
+                })
+                .collect()
         }
 
         names

@@ -302,9 +302,11 @@ impl<'a> Interface<'a> {
 
     fn refresh_matches(&mut self) {
         self.selection = 0;
-        self.matches = self
-            .history
-            .find_matches(&self.input.command, self.settings.results as i16, self.settings.fuzzy);
+        self.matches = self.history.find_matches(
+            &self.input.command,
+            self.settings.results as i16,
+            self.settings.fuzzy,
+        );
     }
 
     fn select(&mut self) {
@@ -544,9 +546,9 @@ impl<'a> Interface<'a> {
         width: u16,
         highlight_color: String,
         base_color: String,
-        debug: bool
+        debug: bool,
     ) -> String {
-        let mut prev:usize= 0;
+        let mut prev: usize = 0;
         let debug_space = if debug { 90 } else { 0 };
         let max_grapheme_length = if width > debug_space {
             width - debug_space
