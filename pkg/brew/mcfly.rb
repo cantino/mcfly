@@ -13,10 +13,10 @@ class Mcfly < Formula
 
   if OS.mac?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-apple-darwin.tar.gz"
-    sha256 "80993484aa814ed96ec06775b85c3357101320c0f18e173d1caca82735e24144"
+    sha256 "c52348b89d68b1053f0fd1e3ff7ca0b91b38a1a281c941fd5bc30b0821eff193"
   elsif OS.linux?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-unknown-linux-gnu.tar.gz"
-    sha256 "9dd0c6e8d781d337d0955107230f4c72a9a836479b49652dab67dbe34ab9207a"
+    sha256 "d1cac8b7d7fc07e32ab6f33f10525bfd3d7dcd255bed469e73ef21a6c6b1a08e"
   end
 
   def install
