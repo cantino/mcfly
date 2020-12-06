@@ -45,6 +45,7 @@ pub enum HistoryFormat {
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
+    pub fuzzy: bool,
     pub session_id: String,
     pub mcfly_history: PathBuf,
     pub output_selection: Option<String>,
@@ -77,6 +78,7 @@ impl Default for Settings {
             refresh_training_cache: false,
             append_to_histfile: false,
             debug: false,
+            fuzzy: false,
             lightmode: false,
             key_scheme: KeyScheme::Emacs,
             history_format: HistoryFormat::Bash,
@@ -164,6 +166,10 @@ impl Settings {
                     .value_name("NUMBER")
                     .help("Number of results to return")
                     .takes_value(true))
+                .arg(Arg::with_name("fuzzy")
+                    .short("f")
+                    .long("fuzzy")
+                    .help("Fuzzy-find results instead of searching for contiguous strings"))
                 .arg(Arg::with_name("output_selection")
                     .short("o")
                     .long("output-selection")
@@ -317,6 +323,9 @@ impl Settings {
                 if let Ok(results) = value_t!(search_matches.value_of("results"), u16) {
                     settings.results = results;
                 }
+
+                settings.fuzzy =
+                    search_matches.is_present("fuzzy") || env::var("MCFLY_FUZZY").is_ok();
 
                 settings.output_selection = search_matches
                     .value_of("output_selection")

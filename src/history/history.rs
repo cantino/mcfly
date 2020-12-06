@@ -1,6 +1,7 @@
 #![allow(clippy::module_inception)]
 use crate::shell_history;
 use rusqlite::{Connection, MappedRows, Row, NO_PARAMS};
+use std::cmp::Ordering;
 use std::io::Write;
 use std::path::PathBuf;
 use std::{fmt, fs, io};
@@ -10,6 +11,7 @@ use crate::network::Network;
 use crate::path_update_helpers;
 use crate::settings::{HistoryFormat, Settings};
 use crate::simplified_command::SimplifiedCommand;
+use itertools::Itertools;
 use rusqlite::types::ToSql;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
@@ -39,6 +41,7 @@ pub struct Command {
     pub selected: bool,
     pub dir: Option<String>,
     pub features: Features,
+    pub match_bounds: Vec<(usize, usize)>,
 }
 
 impl fmt::Display for Command {
@@ -230,9 +233,15 @@ impl History {
         }
     }
 
-    pub fn find_matches(&self, cmd: &str, num: i16) -> Vec<Command> {
+    pub fn find_matches(&self, cmd: &str, num: i16, fuzzy: bool) -> Vec<Command> {
         let mut like_query = "%".to_string();
-        like_query.push_str(cmd);
+
+        if fuzzy {
+            like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join("%"));
+        } else {
+            like_query.push_str(cmd);
+        }
+
         like_query.push_str("%");
 
         let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
@@ -247,98 +256,155 @@ impl History {
             .prepare(query)
             .unwrap_or_else(|err| panic!(format!("McFly error: Prepare to work ({})", err)));
         let command_iter = statement
-            .query_map_named(&[(":like", &like_query), (":limit", &num)], |row| Command {
-                id: row.get_checked(0).unwrap_or_else(|err| {
-                    panic!(format!("McFly error: id to be readable ({})", err))
-                }),
-                cmd: row.get_checked(1).unwrap_or_else(|err| {
+            .query_map_named(&[(":like", &like_query), (":limit", &num)], |row| {
+                let text: String = row.get_checked(1).unwrap_or_else(|err| {
                     panic!(format!("McFly error: cmd to be readable ({})", err))
-                }),
-                cmd_tpl: row.get_checked(2).unwrap_or_else(|err| {
-                    panic!(format!("McFly error: cmd_tpl to be readable ({})", err))
-                }),
-                session_id: row.get_checked(3).unwrap_or_else(|err| {
-                    panic!(format!("McFly error: session_id to be readable ({})", err))
-                }),
-                when_run: row.get_checked(4).unwrap_or_else(|err| {
-                    panic!(format!("McFly error: when_run to be readable ({})", err))
-                }),
-                exit_code: row.get_checked(5).unwrap_or_else(|err| {
-                    panic!(format!("McFly error: exit_code to be readable ({})", err))
-                }),
-                selected: row.get_checked(6).unwrap_or_else(|err| {
-                    panic!(format!("McFly error: selected to be readable ({})", err))
-                }),
-                dir: row.get_checked(7).unwrap_or_else(|err| {
-                    panic!(format!("McFly error: dir to be readable ({})", err))
-                }),
-                rank: row.get_checked(8).unwrap_or_else(|err| {
-                    panic!(format!("McFly error: rank to be readable ({})", err))
-                }),
-                features: Features {
-                    age_factor: row.get_checked(9).unwrap_or_else(|err| {
-                        panic!(format!("McFly error: age_factor to be readable ({})", err))
+                });
+                let lowercase_text = text.to_lowercase();
+                let lowercase_cmd = cmd.to_lowercase();
+
+                let bounds = match fuzzy {
+                    true => {
+                        let mut search_iter = lowercase_cmd.chars().peekable();
+                        let mut matches = lowercase_text
+                            .match_indices(|c| {
+                                let next = search_iter.peek();
+
+                                if next.is_some() && next.unwrap() == &c {
+                                    let _advance = search_iter.next();
+
+                                    return true;
+                                }
+
+                                return false;
+                            })
+                            .map(|m| m.0);
+
+                        let start = matches.next().unwrap_or(0);
+                        let end = matches.last().unwrap_or(start) + 1;
+
+                        vec![(start, end)]
+                    }
+                    false => lowercase_text
+                        .match_indices(&lowercase_cmd)
+                        .map(|(index, _)| (index, index + cmd.len()))
+                        .collect::<Vec<_>>(),
+                };
+
+                Command {
+                    id: row.get_checked(0).unwrap_or_else(|err| {
+                        panic!(format!("McFly error: id to be readable ({})", err))
                     }),
-                    length_factor: row.get_checked(10).unwrap_or_else(|err| {
-                        panic!(format!(
-                            "McFly error: length_factor to be readable ({})",
-                            err
-                        ))
+                    cmd: text,
+                    cmd_tpl: row.get_checked(2).unwrap_or_else(|err| {
+                        panic!(format!("McFly error: cmd_tpl to be readable ({})", err))
                     }),
-                    exit_factor: row.get_checked(11).unwrap_or_else(|err| {
-                        panic!(format!("McFly error: exit_factor to be readable ({})", err))
+                    session_id: row.get_checked(3).unwrap_or_else(|err| {
+                        panic!(format!("McFly error: session_id to be readable ({})", err))
                     }),
-                    recent_failure_factor: row.get_checked(12).unwrap_or_else(|err| {
-                        panic!(format!(
-                            "McFly error: recent_failure_factor to be readable ({})",
-                            err
-                        ))
+                    when_run: row.get_checked(4).unwrap_or_else(|err| {
+                        panic!(format!("McFly error: when_run to be readable ({})", err))
                     }),
-                    selected_dir_factor: row.get_checked(13).unwrap_or_else(|err| {
-                        panic!(format!(
-                            "McFly error: selected_dir_factor to be readable ({})",
-                            err
-                        ))
+                    exit_code: row.get_checked(5).unwrap_or_else(|err| {
+                        panic!(format!("McFly error: exit_code to be readable ({})", err))
                     }),
-                    dir_factor: row.get_checked(14).unwrap_or_else(|err| {
-                        panic!(format!("McFly error: dir_factor to be readable ({})", err))
+                    selected: row.get_checked(6).unwrap_or_else(|err| {
+                        panic!(format!("McFly error: selected to be readable ({})", err))
                     }),
-                    overlap_factor: row.get_checked(15).unwrap_or_else(|err| {
-                        panic!(format!(
-                            "McFly error: overlap_factor to be readable ({})",
-                            err
-                        ))
+                    dir: row.get_checked(7).unwrap_or_else(|err| {
+                        panic!(format!("McFly error: dir to be readable ({})", err))
                     }),
-                    immediate_overlap_factor: row.get_checked(16).unwrap_or_else(|err| {
-                        panic!(format!(
-                            "McFly error: immediate_overlap_factor to be readable ({})",
-                            err
-                        ))
+                    rank: row.get_checked(8).unwrap_or_else(|err| {
+                        panic!(format!("McFly error: rank to be readable ({})", err))
                     }),
-                    selected_occurrences_factor: row.get_checked(17).unwrap_or_else(|err| {
-                        panic!(format!(
-                            "McFly error: selected_occurrences_factor to be readable ({})",
-                            err
-                        ))
-                    }),
-                    occurrences_factor: row.get_checked(18).unwrap_or_else(|err| {
-                        panic!(format!(
-                            "McFly error: occurrences_factor to be readable ({})",
-                            err
-                        ))
-                    }),
-                },
+                    match_bounds: bounds,
+                    features: Features {
+                        age_factor: row.get_checked(9).unwrap_or_else(|err| {
+                            panic!(format!("McFly error: age_factor to be readable ({})", err))
+                        }),
+                        length_factor: row.get_checked(10).unwrap_or_else(|err| {
+                            panic!(format!(
+                                "McFly error: length_factor to be readable ({})",
+                                err
+                            ))
+                        }),
+                        exit_factor: row.get_checked(11).unwrap_or_else(|err| {
+                            panic!(format!("McFly error: exit_factor to be readable ({})", err))
+                        }),
+                        recent_failure_factor: row.get_checked(12).unwrap_or_else(|err| {
+                            panic!(format!(
+                                "McFly error: recent_failure_factor to be readable ({})",
+                                err
+                            ))
+                        }),
+                        selected_dir_factor: row.get_checked(13).unwrap_or_else(|err| {
+                            panic!(format!(
+                                "McFly error: selected_dir_factor to be readable ({})",
+                                err
+                            ))
+                        }),
+                        dir_factor: row.get_checked(14).unwrap_or_else(|err| {
+                            panic!(format!("McFly error: dir_factor to be readable ({})", err))
+                        }),
+                        overlap_factor: row.get_checked(15).unwrap_or_else(|err| {
+                            panic!(format!(
+                                "McFly error: overlap_factor to be readable ({})",
+                                err
+                            ))
+                        }),
+                        immediate_overlap_factor: row.get_checked(16).unwrap_or_else(|err| {
+                            panic!(format!(
+                                "McFly error: immediate_overlap_factor to be readable ({})",
+                                err
+                            ))
+                        }),
+                        selected_occurrences_factor: row.get_checked(17).unwrap_or_else(|err| {
+                            panic!(format!(
+                                "McFly error: selected_occurrences_factor to be readable ({})",
+                                err
+                            ))
+                        }),
+                        occurrences_factor: row.get_checked(18).unwrap_or_else(|err| {
+                            panic!(format!(
+                                "McFly error: occurrences_factor to be readable ({})",
+                                err
+                            ))
+                        }),
+                    },
+                }
             })
             .unwrap_or_else(|err| panic!(format!("McFly error: Query Map to work ({})", err)));
 
         let mut names = Vec::new();
-        for command in command_iter {
-            names.push(command.unwrap_or_else(|err| {
+        for result in command_iter {
+            names.push(result.unwrap_or_else(|err| {
                 panic!(format!(
                     "McFly error: Unable to load command from DB ({})",
                     err
                 ))
             }));
+        }
+
+        if fuzzy {
+            names = names
+                .into_iter()
+                .sorted_by(|a, b| {
+                    // results are already sorted by rank, but with fuzzy mode we
+                    // need to prioritize shorter matches as well, and can only do
+                    // that at runtime. Each match's rank is weighted by the
+                    // inverse of its length (relative to both matches) to give
+                    // short but lower-ranked matches a chance to beat higher-
+                    // ranked but longer matches.
+
+                    let a_len = a.match_bounds[0].1 - a.match_bounds[0].0;
+                    let b_len = b.match_bounds[0].1 - b.match_bounds[0].0;
+                    let a_mod = 1.0 - a_len as f64 / (a_len + b_len) as f64;
+                    let b_mod = 1.0 - b_len as f64 / (a_len + b_len) as f64;
+
+                    PartialOrd::partial_cmp(&(b.rank + b_mod), &(a.rank + a_mod))
+                        .unwrap_or_else(|| Ordering::Equal)
+                })
+                .collect()
         }
 
         names

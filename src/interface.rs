@@ -302,9 +302,11 @@ impl<'a> Interface<'a> {
 
     fn refresh_matches(&mut self) {
         self.selection = 0;
-        self.matches = self
-            .history
-            .find_matches(&self.input.command, self.settings.results as i16);
+        self.matches = self.history.find_matches(
+            &self.input.command,
+            self.settings.results as i16,
+            self.settings.fuzzy,
+        );
     }
 
     fn select(&mut self) {
@@ -546,7 +548,7 @@ impl<'a> Interface<'a> {
         base_color: String,
         debug: bool,
     ) -> String {
-        let mut prev = 0;
+        let mut prev: usize = 0;
         let debug_space = if debug { 90 } else { 0 };
         let max_grapheme_length = if width > debug_space {
             width - debug_space
@@ -555,19 +557,16 @@ impl<'a> Interface<'a> {
         };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
-        let lowercase_search = search.to_lowercase();
-        let lowercase_cmd = command.cmd.to_lowercase();
-        let search_len = search.len();
-
         if !search.is_empty() {
-            for (index, _) in lowercase_cmd.match_indices(&lowercase_search) {
-                if prev != index {
-                    out.push_grapheme_str(&command.cmd[prev..index]);
+            for (start, end) in &command.match_bounds {
+                if prev != *start {
+                    out.push_grapheme_str(&command.cmd[prev..*start]);
                 }
+
                 out.push_str(&highlight_color);
-                out.push_grapheme_str(&command.cmd[index..(index + search_len)]);
+                out.push_grapheme_str(&command.cmd[*start..*end]);
                 out.push_str(&base_color);
-                prev = index + search_len;
+                prev = *end;
             }
         }
 
