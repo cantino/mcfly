@@ -159,7 +159,7 @@ When suggesting a command, McFly takes into consideration:
 
 ### Install manually from source
 
-1. [Install Rust 1.29 or later](https://www.rust-lang.org/tools/install)
+1. [Install Rust 1.40 or later](https://www.rust-lang.org/tools/install)
 1. Run `git clone https://github.com/cantino/mcfly` and `cd mcfly`
 1. Run `cargo install --path .`
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
