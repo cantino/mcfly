@@ -88,7 +88,7 @@ impl<'a> Interface<'a> {
             run: false,
             delete_requests: Vec::new(),
             menu_mode: MenuMode::Normal,
-            in_vim_insert_mode: false,
+            in_vim_insert_mode: true,
         }
     }
 
