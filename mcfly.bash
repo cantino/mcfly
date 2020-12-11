@@ -58,17 +58,21 @@ function mcfly_prompt_command {
 PROMPT_COMMAND="mcfly_prompt_command;$PROMPT_COMMAND"
 
 # If this is an interactive shell, take ownership of ctrl-r.
-# The logic here is:
-#   1. Jump to the beginning of the edit buffer, add 'mcfly: ', and comment out the current line. We comment out the line
-#      to ensure that all possible special characters, including backticks, are ignored. This commented out line will
-#      end up as the most recent entry in the $MCFLY_HISTORY file.
-#   2. Type "mcfly search" and then run the command. McFly will pull the last line from the $MCFLY_HISTORY file,
-#      which should be the commented-out search from step #1. It will then remove that line from the history file and
-#      render the search UI pre-filled with it.
 if [[ $- =~ .*i.* ]]; then
-  if set -o | grep "vi " | grep -q on; then
-    bind "'\C-r': '\e0i#mcfly: \e\C-m mcfly search\C-m'"
+  if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+    bind -x '"\C-r": "echo \#mcfly: ${READLINE_LINE[@]} > $MCFLY_HISTORY ; READLINE_LINE= ; mcfly search"'
   else
-    bind "'\C-r': '\C-amcfly: \e# mcfly search\C-m'"
+    # The logic here is:
+    #   1. Jump to the beginning of the edit buffer, add 'mcfly: ', and comment out the current line. We comment out the line
+    #      to ensure that all possible special characters, including backticks, are ignored. This commented out line will
+    #      end up as the most recent entry in the $MCFLY_HISTORY file.
+    #   2. Type "mcfly search" and then run the command. McFly will pull the last line from the $MCFLY_HISTORY file,
+    #      which should be the commented-out search from step #1. It will then remove that line from the history file and
+    #      render the search UI pre-filled with it.
+    if set -o | grep "vi " | grep -q on; then
+      bind "'\C-r': '\e0i#mcfly: \e\C-m mcfly search\C-m'"
+    else
+      bind "'\C-r': '\C-amcfly: \e# mcfly search\C-m'"
+    fi
   fi
 fi
