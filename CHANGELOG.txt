@@ -1,3 +1,6 @@
+0.5.2 - Dec 10, 2020
+ - Bash 4+ should no longer have a cluttered terminal buffer (thanks @CreativeCactus)
+ - Vim mode now starts in insert mode (thanks @JamJar00)
 0.5.1 - Dec 6, 2020
  - Fuzzy searching via the MCFLY_FUZZY option from @dmfay.
 0.5.0 - Aug 21, 2020
