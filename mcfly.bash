@@ -60,7 +60,7 @@ PROMPT_COMMAND="mcfly_prompt_command;$PROMPT_COMMAND"
 # If this is an interactive shell, take ownership of ctrl-r.
 if [[ $- =~ .*i.* ]]; then
   if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-    bind -x '"\C-r": "echo \#mcfly: ${READLINE_LINE[@]} > $MCFLY_HISTORY ; READLINE_LINE= ; mcfly search"'
+    bind -x '"\C-r": "echo \#mcfly: ${READLINE_LINE[@]} >> $MCFLY_HISTORY ; READLINE_LINE= ; mcfly search"'
   else
     # The logic here is:
     #   1. Jump to the beginning of the edit buffer, add 'mcfly: ', and comment out the current line. We comment out the line
