@@ -1,3 +1,5 @@
+0.5.3 - Jan 17, 2021
+ - Ensure that history is appended in Bash 4+.
 0.5.2 - Dec 10, 2020
  - Bash 4+ should no longer have a cluttered terminal buffer (thanks @CreativeCactus)
  - Vim mode now starts in insert mode (thanks @JamJar00)
