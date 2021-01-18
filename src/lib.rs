@@ -13,3 +13,4 @@ pub mod simplified_command;
 pub mod trainer;
 pub mod training_cache;
 pub mod training_sample_generator;
+pub mod init;

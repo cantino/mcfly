@@ -15,6 +15,7 @@ pub enum Mode {
     Search,
     Train,
     Move,
+    Init,
 }
 
 #[derive(Debug)]
@@ -22,6 +23,14 @@ pub enum KeyScheme {
     Emacs,
     Vim,
 }
+
+#[derive(Debug)]
+pub enum InitMode {
+    Bash,
+    Zsh,
+    Fish,
+}
+
 
 #[derive(Debug, Clone, Copy)]
 pub enum HistoryFormat {
@@ -60,6 +69,8 @@ pub struct Settings {
     pub lightmode: bool,
     pub key_scheme: KeyScheme,
     pub history_format: HistoryFormat,
+    pub is_dummy: bool,
+    pub init_mode: InitMode,
 }
 
 impl Default for Settings {
@@ -82,6 +93,8 @@ impl Default for Settings {
             lightmode: false,
             key_scheme: KeyScheme::Emacs,
             history_format: HistoryFormat::Bash,
+            is_dummy: false,
+            init_mode: InitMode::Bash,
         }
     }
 }
@@ -203,9 +216,19 @@ impl Settings {
                     .long("refresh_cache")
                     .help("Directory where command was run")
                     .required(false)))
+            .subcommand(SubCommand::with_name("init")
+                .about("Prints the shell code used to execute mcfly")
+                .subcommand(SubCommand::with_name("bash")
+                    .about("Prints the shell code used to execute mcfly in bash"))
+                .subcommand(SubCommand::with_name("zsh")
+                    .about("Prints the shell code used to execute mcfly in zsh"))
+                .subcommand(SubCommand::with_name("fish")
+                    .about("Prints the shell code used to execute mcfly in fish"))
+            )
             .get_matches();
 
         let mut settings = Settings::default();
+        if matches.is_present("init") { settings.is_dummy = true; }
 
         settings.debug = matches.is_present("debug") || env::var("MCFLY_DEBUG").is_ok();
         settings.session_id = matches
@@ -213,18 +236,35 @@ impl Settings {
             .map(|s| s.to_string())
             .unwrap_or_else( ||
                 env::var("MCFLY_SESSION_ID")
-                    .unwrap_or_else(|err| panic!(format!("McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({})", err))),
-            );
+                    .unwrap_or_else(|err| { 
+                        if !settings.is_dummy
+                        { 
+                            panic!(format!(
+                            "McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({})",
+                            err))
+                        }
+                        else 
+                        { 
+                            return std::string::String::new() 
+                        }
+                    }));
         settings.mcfly_history = PathBuf::from(
             matches
                 .value_of("mcfly_history")
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| {
                     env::var("MCFLY_HISTORY").unwrap_or_else(|err| {
-                        panic!(format!(
+                        if !settings.is_dummy
+                        { 
+                            panic!(format!(
                             "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
                             err
-                        ))
+                            ))
+                        }
+                        else 
+                        { 
+                            return std::string::String::new() 
+                        }
                     })
                 }),
         );
@@ -367,6 +407,23 @@ impl Settings {
                         .value_of("new_dir_path")
                         .unwrap_or_else(|| panic!("McFly error: Expected value for new_dir_path")),
                 );
+            }
+
+            ("init", Some(init_matches)) => {
+                settings.mode = Mode::Init;
+                match init_matches.subcommand() {
+                    ("bash", Some(_bash_matches)) => {
+                        settings.init_mode = InitMode::Bash;
+                    }
+                    ("zsh", Some(_zsh_matches)) => {
+                        settings.init_mode = InitMode::Zsh;
+                    }
+                    ("fish", Some(_fish_matches)) => {
+                        settings.init_mode = InitMode::Fish;
+                    }
+                    ("", None) => println!("Please specify a shell to init for"), // If no subcommand was used it'll match the tuple ("", None)
+                    _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
+                }
             }
 
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
