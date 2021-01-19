@@ -69,7 +69,7 @@ pub struct Settings {
     pub lightmode: bool,
     pub key_scheme: KeyScheme,
     pub history_format: HistoryFormat,
-    pub is_dummy: bool,
+    pub skip_environment_check: bool,
     pub init_mode: InitMode,
 }
 
@@ -93,7 +93,7 @@ impl Default for Settings {
             lightmode: false,
             key_scheme: KeyScheme::Emacs,
             history_format: HistoryFormat::Bash,
-            is_dummy: false,
+            skip_environment_check: false,
             init_mode: InitMode::Bash,
         }
     }
@@ -228,7 +228,7 @@ impl Settings {
             .get_matches();
 
         let mut settings = Settings::default();
-        if matches.is_present("init") { settings.is_dummy = true; }
+        if matches.is_present("init") { settings.skip_environment_check = true; }
 
         settings.debug = matches.is_present("debug") || env::var("MCFLY_DEBUG").is_ok();
         settings.session_id = matches
@@ -237,7 +237,7 @@ impl Settings {
             .unwrap_or_else( ||
                 env::var("MCFLY_SESSION_ID")
                     .unwrap_or_else(|err| { 
-                        if !settings.is_dummy
+                        if !settings.skip_environment_check
                         { 
                             panic!(format!(
                             "McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({})",
@@ -254,7 +254,7 @@ impl Settings {
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| {
                     env::var("MCFLY_HISTORY").unwrap_or_else(|err| {
-                        if !settings.is_dummy
+                        if !settings.skip_environment_check
                         { 
                             panic!(format!(
                             "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
