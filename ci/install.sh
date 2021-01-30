@@ -6,7 +6,7 @@ main() {
         target=x86_64-unknown-linux-musl
         sort=sort
     else
-        target=x86_64-apple-darwin
+        target=$TARGET
         sort=gsort  # for `sort --sort-version`, from brew's coreutils.
     fi
 
