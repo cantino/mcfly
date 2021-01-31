@@ -15,6 +15,7 @@ impl Init {
             InitMode::Fish => {
                 Init::init_fish();
             }
+            _ => {},
         }
     }
     pub fn init_bash() {   
