@@ -218,12 +218,10 @@ impl Settings {
                     .required(false)))
             .subcommand(SubCommand::with_name("init")
                 .about("Prints the shell code used to execute mcfly")
-                .subcommand(SubCommand::with_name("bash")
-                    .about("Prints the shell code used to execute mcfly in bash"))
-                .subcommand(SubCommand::with_name("zsh")
-                    .about("Prints the shell code used to execute mcfly in zsh"))
-                .subcommand(SubCommand::with_name("fish")
-                    .about("Prints the shell code used to execute mcfly in fish"))
+                .arg(Arg::with_name("shell")
+                    .help("Shell to init — one of bash, zsh, or fish")
+                    .possible_values(&["bash", "zsh", "fish"])
+                    .required(true))
             )
             .get_matches();
 
@@ -411,18 +409,17 @@ impl Settings {
 
             ("init", Some(init_matches)) => {
                 settings.mode = Mode::Init;
-                match init_matches.subcommand() {
-                    ("bash", Some(_bash_matches)) => {
+                match init_matches.value_of("shell").unwrap() {
+                    "bash" => {
                         settings.init_mode = InitMode::Bash;
                     }
-                    ("zsh", Some(_zsh_matches)) => {
+                    "zsh" => {
                         settings.init_mode = InitMode::Zsh;
                     }
-                    ("fish", Some(_fish_matches)) => {
+                    "fish" => {
                         settings.init_mode = InitMode::Fish;
                     }
-                    ("", None) => println!("Please specify a shell to init for"), // If no subcommand was used it'll match the tuple ("", None)
-                    _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
+                    _ => unreachable!(),
                 }
             }
 
