@@ -29,7 +29,6 @@ pub enum InitMode {
     Bash,
     Zsh,
     Fish,
-    Empty,
 }
 
 
@@ -422,10 +421,7 @@ impl Settings {
                     ("fish", Some(_fish_matches)) => {
                         settings.init_mode = InitMode::Fish;
                     }
-                    ("", None) => {
-                        println!("Please specify a shell to init for"); // If no subcommand was used it'll match the tuple ("", None)
-                        settings.init_mode = InitMode::Empty;
-                    }
+                    ("", None) => println!("Please specify a shell to init for"), // If no subcommand was used it'll match the tuple ("", None)
                     _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
                 }
             }
