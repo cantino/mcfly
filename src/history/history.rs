@@ -417,6 +417,7 @@ impl History {
         start_time: Option<i64>,
         end_time: Option<i64>,
         now: Option<i64>,
+        limit: Option<i64>,
     ) {
         let lookback: u16 = 3;
 
@@ -512,7 +513,7 @@ impl History {
                   /* percentage of time this command is run relative to the most common command (1: this is the most common command, 0: this is the least common command) */
                   COUNT(*) / :max_occurrences AS occurrences_factor
 
-                  FROM commands c WHERE when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC;",
+                  FROM commands c WHERE when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC LIMIT :limit;",
             &[
                 (":when_run_max", &when_run_max),
                 (":history_duration", &(when_run_max - when_run_min)),
@@ -527,7 +528,8 @@ impl History {
                 (":last_commands2", &last_commands[2].to_owned()),
                 (":start_time", &start_time.unwrap_or(0).to_owned()),
                 (":end_time", &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err))).as_secs() as i64).to_owned()),
-                (":now", &now.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err))).as_secs() as i64).to_owned())
+                (":now", &now.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err))).as_secs() as i64).to_owned()),
+                (":limit", &limit.unwrap_or(i64::max_value()).to_owned())
             ]).unwrap_or_else(|err| panic!(format!("McFly error: Creation of temp table to work ({})", err)));
 
         self.connection

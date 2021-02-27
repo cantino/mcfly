@@ -60,6 +60,7 @@ pub struct Settings {
     pub lightmode: bool,
     pub key_scheme: KeyScheme,
     pub history_format: HistoryFormat,
+    pub limit: Option<i64>,
 }
 
 impl Default for Settings {
@@ -82,6 +83,7 @@ impl Default for Settings {
             lightmode: false,
             key_scheme: KeyScheme::Emacs,
             history_format: HistoryFormat::Bash,
+            limit: None,
         }
     }
 }
@@ -208,6 +210,9 @@ impl Settings {
         let mut settings = Settings::default();
 
         settings.debug = matches.is_present("debug") || env::var("MCFLY_DEBUG").is_ok();
+        settings.limit = env::var("MCFLY_HISTORY_LIMIT")
+            .ok()
+            .and_then(|o| o.parse::<i64>().ok());
         settings.session_id = matches
             .value_of("session_id")
             .map(|s| s.to_string())
