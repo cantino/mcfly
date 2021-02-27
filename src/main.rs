@@ -1,9 +1,9 @@
 use mcfly::fake_typer;
 use mcfly::history::History;
+use mcfly::init::Init;
 use mcfly::interface::Interface;
 use mcfly::settings::Mode;
 use mcfly::settings::Settings;
-use mcfly::init::Init;
 use mcfly::shell_history;
 use mcfly::trainer::Trainer;
 use std::path::PathBuf;

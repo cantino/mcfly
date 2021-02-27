@@ -31,7 +31,6 @@ pub enum InitMode {
     Fish,
 }
 
-
 #[derive(Debug, Clone, Copy)]
 pub enum HistoryFormat {
     /// bash format - commands in plain text, one per line, with multi-line commands joined.
@@ -226,7 +225,9 @@ impl Settings {
             .get_matches();
 
         let mut settings = Settings::default();
-        if matches.is_present("init") { settings.skip_environment_check = true; }
+        if matches.is_present("init") {
+            settings.skip_environment_check = true;
+        }
 
         settings.debug = matches.is_present("debug") || env::var("MCFLY_DEBUG").is_ok();
         settings.session_id = matches
@@ -234,16 +235,15 @@ impl Settings {
             .map(|s| s.to_string())
             .unwrap_or_else( ||
                 env::var("MCFLY_SESSION_ID")
-                    .unwrap_or_else(|err| { 
+                    .unwrap_or_else(|err| {
                         if !settings.skip_environment_check
-                        { 
+                        {
                             panic!(format!(
                             "McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({})",
                             err))
                         }
-                        else 
-                        { 
-                            return std::string::String::new() 
+                        else {
+                            std::string::String::new()
                         }
                     }));
         settings.mcfly_history = PathBuf::from(
@@ -252,16 +252,13 @@ impl Settings {
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| {
                     env::var("MCFLY_HISTORY").unwrap_or_else(|err| {
-                        if !settings.skip_environment_check
-                        { 
+                        if !settings.skip_environment_check {
                             panic!(format!(
-                            "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
-                            err
+                                "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
+                                err
                             ))
-                        }
-                        else 
-                        { 
-                            return std::string::String::new() 
+                        } else {
+                            std::string::String::new()
                         }
                     })
                 }),
