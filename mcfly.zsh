@@ -9,8 +9,6 @@ if [[ "$__MCFLY_LOADED" == "loaded" ]]; then
 fi
 __MCFLY_LOADED="loaded"
 
-emulate -L zsh
-
 # Ensure HISTFILE exists.
 export HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
 if [[ ! -r "${HISTFILE}" ]]; then
