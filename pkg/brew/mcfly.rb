@@ -20,9 +20,6 @@ class Mcfly < Formula
   end
 
   def install
-    prefix.install "mcfly.bash"
-    prefix.install "mcfly.zsh"
-    prefix.install "mcfly.fish"
     bin.install "mcfly"
   end
 
@@ -30,24 +27,17 @@ class Mcfly < Formula
     <<~EOS
       ONE MORE STEP!
 
-      Add the following to the end of your ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish file,
-      as appropriate, changing /usr/local to your 'brew --prefix' if needed:
+      Add the following to the end of your ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish file.
 
       Bash:
-        if [ -r /usr/local/opt/mcfly/mcfly.bash ]; then
-          . /usr/local/opt/mcfly/mcfly.bash
-        fi
+        eval "$(mcfly init bash)"
 
       Zsh:
-        if [ -r /usr/local/opt/mcfly/mcfly.zsh ]; then
-          . /usr/local/opt/mcfly/mcfly.zsh
-        fi
+        eval "$(mcfly init zsh)"
 
       Fish:
-        if test -r /usr/local/opt/mcfly/mcfly.fish
-          source /usr/local/opt/mcfly/mcfly.fish
-          mcfly_key_bindings
-        end
+        mcfly init fish | source
+        mcfly_key_bindings
     EOS
   end
 end
