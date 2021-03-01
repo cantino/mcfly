@@ -230,7 +230,7 @@ set -gx MCFLY_FUZZY true
 
 1. Edit `Cargo.toml` and bump the version.
 1. Edit CHANGELOG.txt
-1. Recompile.
+1. Recompile (`cargo build`).
 1. `git add -p`
 1. `git ci -m 'Bumping to vx.x.x'`
 1. `git tag vx.x.x`

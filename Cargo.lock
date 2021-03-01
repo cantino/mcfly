@@ -227,7 +227,7 @@ dependencies = [
 
 [[package]]
 name = "mcfly"
-version = "0.5.3"
+version = "0.5.4"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "csv 1.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
