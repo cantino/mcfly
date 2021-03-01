@@ -1,3 +1,5 @@
+0.5.4 - Feb 28, 2021
+ - Switched to `mcfly init` pattern for shell config files (thanks @b3nj5m1n!)
 0.5.3 - Jan 17, 2021
  - Ensure that history is appended in Bash 4+.
 0.5.2 - Dec 10, 2020

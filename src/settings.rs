@@ -15,12 +15,20 @@ pub enum Mode {
     Search,
     Train,
     Move,
+    Init,
 }
 
 #[derive(Debug)]
 pub enum KeyScheme {
     Emacs,
     Vim,
+}
+
+#[derive(Debug)]
+pub enum InitMode {
+    Bash,
+    Zsh,
+    Fish,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -61,6 +69,8 @@ pub struct Settings {
     pub key_scheme: KeyScheme,
     pub history_format: HistoryFormat,
     pub limit: Option<i64>,
+    pub skip_environment_check: bool,
+    pub init_mode: InitMode,
 }
 
 impl Default for Settings {
@@ -84,6 +94,8 @@ impl Default for Settings {
             key_scheme: KeyScheme::Emacs,
             history_format: HistoryFormat::Bash,
             limit: None,
+            skip_environment_check: false,
+            init_mode: InitMode::Bash,
         }
     }
 }
@@ -205,9 +217,19 @@ impl Settings {
                     .long("refresh_cache")
                     .help("Directory where command was run")
                     .required(false)))
+            .subcommand(SubCommand::with_name("init")
+                .about("Prints the shell code used to execute mcfly")
+                .arg(Arg::with_name("shell")
+                    .help("Shell to init — one of bash, zsh, or fish")
+                    .possible_values(&["bash", "zsh", "fish"])
+                    .required(true))
+            )
             .get_matches();
 
         let mut settings = Settings::default();
+        if matches.is_present("init") {
+            settings.skip_environment_check = true;
+        }
 
         settings.debug = matches.is_present("debug") || env::var("MCFLY_DEBUG").is_ok();
         settings.limit = env::var("MCFLY_HISTORY_LIMIT")
@@ -218,18 +240,31 @@ impl Settings {
             .map(|s| s.to_string())
             .unwrap_or_else( ||
                 env::var("MCFLY_SESSION_ID")
-                    .unwrap_or_else(|err| panic!(format!("McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({})", err))),
-            );
+                    .unwrap_or_else(|err| {
+                        if !settings.skip_environment_check
+                        {
+                            panic!(format!(
+                            "McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({})",
+                            err))
+                        }
+                        else {
+                            std::string::String::new()
+                        }
+                    }));
         settings.mcfly_history = PathBuf::from(
             matches
                 .value_of("mcfly_history")
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| {
                     env::var("MCFLY_HISTORY").unwrap_or_else(|err| {
-                        panic!(format!(
-                            "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
-                            err
-                        ))
+                        if !settings.skip_environment_check {
+                            panic!(format!(
+                                "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
+                                err
+                            ))
+                        } else {
+                            std::string::String::new()
+                        }
                     })
                 }),
         );
@@ -372,6 +407,22 @@ impl Settings {
                         .value_of("new_dir_path")
                         .unwrap_or_else(|| panic!("McFly error: Expected value for new_dir_path")),
                 );
+            }
+
+            ("init", Some(init_matches)) => {
+                settings.mode = Mode::Init;
+                match init_matches.value_of("shell").unwrap() {
+                    "bash" => {
+                        settings.init_mode = InitMode::Bash;
+                    }
+                    "zsh" => {
+                        settings.init_mode = InitMode::Zsh;
+                    }
+                    "fish" => {
+                        settings.init_mode = InitMode::Fish;
+                    }
+                    _ => unreachable!(),
+                }
             }
 
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)

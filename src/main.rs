@@ -1,5 +1,6 @@
 use mcfly::fake_typer;
 use mcfly::history::History;
+use mcfly::init::Init;
 use mcfly::interface::Interface;
 use mcfly::settings::Mode;
 use mcfly::settings::Settings;
@@ -93,6 +94,10 @@ fn handle_move(settings: &Settings, history: &mut History) {
     history.update_paths(&settings.old_dir.clone().unwrap(), &settings.dir, true);
 }
 
+fn handle_init(settings: &Settings, _history: &mut History) {
+    Init::new(&settings.init_mode);
+}
+
 fn main() {
     let settings = Settings::parse_args();
 
@@ -110,6 +115,9 @@ fn main() {
         }
         Mode::Move => {
             handle_move(&settings, &mut history);
+        }
+        Mode::Init => {
+            handle_init(&settings, &mut history);
         }
     }
 }

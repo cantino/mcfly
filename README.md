@@ -51,24 +51,18 @@ When suggesting a command, McFly takes into consideration:
 
     Bash:
     ```bash
-    if [[ -r "/usr/local/opt/mcfly/mcfly.bash" ]]; then
-      source "/usr/local/opt/mcfly/mcfly.bash"
-    fi
+    eval "$(mcfly init bash)"
     ```
 
     Zsh:
     ```bash
-    if [[ -r "/usr/local/opt/mcfly/mcfly.zsh" ]]; then
-      source "/usr/local/opt/mcfly/mcfly.zsh"
-    fi
+    eval "$(mcfly init zsh)"
     ```
 
     Fish:
     ```bash
-    if test -r "/usr/local/opt/mcfly/mcfly.fish"
-      source "/usr/local/opt/mcfly/mcfly.fish"
-      mcfly_key_bindings
-    end
+    mcfly init fish | source
+    mcfly_key_bindings
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
@@ -98,24 +92,18 @@ When suggesting a command, McFly takes into consideration:
 
     Bash:
     ```bash
-    if [[ -r "/opt/local/share/mcfly/mcfly.bash" ]]; then
-      source "/opt/local/share/mcfly/mcfly.bash"
-    fi
+    eval "$(mcfly init bash)"
     ```
 
     Zsh:
     ```bash
-    if [[ -r "/opt/local/share/mcfly/mcfly.zsh" ]]; then
-      source "/opt/local/share/mcfly/mcfly.zsh"
-    fi
+    eval "$(mcfly init zsh)"
     ```
 
     Fish:
     ```bash
-    if test -r "/opt/local/share/mcfly/mcfly.fish"
-      source "/opt/local/share/mcfly/mcfly.fish"
-      mcfly_key_bindings
-    end
+    mcfly init fish | source
+    mcfly_key_bindings
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
@@ -131,29 +119,22 @@ When suggesting a command, McFly takes into consideration:
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
 1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc` / `.zshrc`, or run `set -Ua fish_user_paths "$HOME/bin"` for fish.)
-1. Copy `mcfly.bash`, `mcfly.zsh`, or `mcfly.fish` to a known location.
 1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
 
     Bash:
     ```bash
-    if [[ -r /path/to/mcfly.bash ]]; then
-      source /path/to/mcfly.bash
-    fi
+    eval "$(mcfly init bash)"
     ```
 
     Zsh:
     ```bash
-    if [[ -r /path/to/mcfly.zsh ]]; then
-      source /path/to/mcfly.zsh
-    fi
+    eval "$(mcfly init zsh)"
     ```
 
     Fish:
     ```bash
-    if test -r /path/to/mcfly.fish
-      source /path/to/mcfly.fish
-      mcfly_key_bindings
-    end
+    mcfly init fish | source
+    mcfly_key_bindings
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
@@ -167,24 +148,18 @@ When suggesting a command, McFly takes into consideration:
 
     Bash:
     ```bash
-    if [[ -r /path/to/mcfly.bash ]]; then
-      source /path/to/mcfly.bash
-    fi
+    eval "$(mcfly init bash)"
     ```
 
     Zsh:
     ```bash
-    if [[ -r /path/to/mcfly.zsh ]]; then
-      source /path/to/mcfly.zsh
-    fi
+    eval "$(mcfly init zsh)"
     ```
 
     Fish:
     ```bash
-    if test -r /path/to/mcfly.fish
-      source /path/to/mcfly.fish
-      mcfly_key_bindings
-    end
+    mcfly init fish | source
+    mcfly_key_bindings
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
@@ -255,7 +230,7 @@ set -gx MCFLY_FUZZY true
 
 1. Edit `Cargo.toml` and bump the version.
 1. Edit CHANGELOG.txt
-1. Recompile.
+1. Recompile (`cargo build`).
 1. `git add -p`
 1. `git ci -m 'Bumping to vx.x.x'`
 1. `git tag vx.x.x`
@@ -263,4 +238,5 @@ set -gx MCFLY_FUZZY true
 1. Let the build finish.
 1. Edit the new Release on Github.
 1. Edit `pkg/brew/mcfly.rb` and update the version and SHAs. (`shasum -a 256 ...`)
+1. `git push`
 1. `cargo publish`
