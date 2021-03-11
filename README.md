@@ -211,6 +211,10 @@ fish:
 set -gx MCFLY_FUZZY true
 ```
 
+### Slow startup
+
+If you have a very large history database and you notice that McFly launches slowly, you can set `MCFLY_HISTORY_LIMIT` to something like 10000 to limit how many records are considered when searching. In this example, McFly would search only the latest 10,000 entries.
+
 ## Possible Future Features
 
 * Add a screencast to README.
