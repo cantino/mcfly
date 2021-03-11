@@ -126,6 +126,7 @@ impl<'a> Interface<'a> {
             None,
             None,
             None,
+            self.settings.limit.to_owned(),
         );
     }
 
