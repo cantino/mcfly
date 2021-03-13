@@ -432,7 +432,9 @@ impl History {
         #[allow(unused_variables)]
         let beginning_of_execution = Instant::now();
 
-        self.connection.execute("PRAGMA temp_store = MEMORY;", NO_PARAMS).unwrap();
+        self.connection
+            .execute("PRAGMA temp_store = MEMORY;", NO_PARAMS)
+            .unwrap();
 
         self.connection
             .execute("DROP TABLE IF EXISTS temp.contextual_commands;", NO_PARAMS)
@@ -471,16 +473,20 @@ impl History {
 
         let max_length: f64 = self
             .connection
-            .query_row("SELECT IFNULL(MAX(LENGTH(cmd)), 0) FROM commands", NO_PARAMS, |row| {
-                row.get(0)
-            })
+            .query_row(
+                "SELECT IFNULL(MAX(LENGTH(cmd)), 0) FROM commands",
+                NO_PARAMS,
+                |row| row.get(0),
+            )
             .unwrap_or(100.0);
 
         let max_id: i64 = self
             .connection
-            .query_row("SELECT IFNULL(MAX(id), 0) FROM commands", NO_PARAMS, |row| {
-                row.get(0)
-            })
+            .query_row(
+                "SELECT IFNULL(MAX(id), 0) FROM commands",
+                NO_PARAMS,
+                |row| row.get(0),
+            )
             .unwrap_or(0);
 
         let min_id = if let Some(limit_value) = limit {
