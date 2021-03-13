@@ -446,7 +446,7 @@ impl History {
         let (mut when_run_min, when_run_max): (f64, f64) = self
             .connection
             .query_row(
-                "SELECT MIN(when_run), MAX(when_run) FROM commands",
+                "SELECT IFNULL(MIN(when_run), 0), IFNULL(MAX(when_run), 0) FROM commands",
                 NO_PARAMS,
                 |row| (row.get(0), row.get(1)),
             )
@@ -471,14 +471,14 @@ impl History {
 
         let max_length: f64 = self
             .connection
-            .query_row("SELECT MAX(LENGTH(cmd)) FROM commands", NO_PARAMS, |row| {
+            .query_row("SELECT IFNULL(MAX(LENGTH(cmd)), 0) FROM commands", NO_PARAMS, |row| {
                 row.get(0)
             })
             .unwrap_or(100.0);
 
         let max_id: i64 = self
             .connection
-            .query_row("SELECT MAX(id) FROM commands", NO_PARAMS, |row| {
+            .query_row("SELECT IFNULL(MAX(id), 0) FROM commands", NO_PARAMS, |row| {
                 row.get(0)
             })
             .unwrap_or(0);
