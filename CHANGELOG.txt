@@ -1,3 +1,7 @@
+0.5.5 - Mar 12, 2021
+ - Fixed a crash during init without any history
+ - Fixed issue when deleting all history (thanks @akinnane!)
+ - Add MCFLY_HISTORY_LIMIT to limit history search
 0.5.4 - Feb 28, 2021
  - Switched to `mcfly init` pattern for shell config files (thanks @b3nj5m1n!)
 0.5.3 - Jan 17, 2021
