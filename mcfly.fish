@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 # Ensure stdin is a tty
-test -t 0; or exit 0
+isatty stdin; or exit 0
 
 # Avoid loading this file more than once
 if test "$__MCFLY_LOADED" = "loaded"
