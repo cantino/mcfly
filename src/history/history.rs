@@ -718,7 +718,7 @@ impl History {
         let commands =
             shell_history::full_history(&shell_history::history_file_path(), history_format);
 
-        // Use ~/.mcfly if it already exists, or create 'mcfly' folder in XDG_DATA_DIR 
+        // Use ~/.mcfly if it already exists, or create 'mcfly' folder in XDG_DATA_DIR
         let mcfly_db_path = Settings::mcfly_db_path();
         let mcfly_db_dir = mcfly_db_path.parent().unwrap();
 
@@ -726,9 +726,8 @@ impl History {
             .unwrap_or_else(|_| panic!("Unable to create {:?}", mcfly_db_dir));
 
         // Make ~/.mcfly/history.db
-        let connection = Connection::open(mcfly_db_path).unwrap_or_else(|_| {
-            panic!("Unable to create history DB")
-        });
+        let connection = Connection::open(mcfly_db_path)
+            .unwrap_or_else(|_| panic!("Unable to create history DB"));
 
         db_extensions::add_db_functions(&connection);
 
