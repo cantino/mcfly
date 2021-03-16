@@ -400,7 +400,7 @@ impl Settings {
     }
     
     fn mcfly_xdg_dir() -> ProjectDirs {
-        ProjectDirs::from("io", "github",  "McFly").unwrap()
+        ProjectDirs::from("", "",  "McFly").unwrap()
     }
     
     fn mcfly_base_path(base_dir: PathBuf) -> PathBuf {
