@@ -197,6 +197,13 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 ## Settings
 A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
+McFly creates its configuration folder under XDG_DATA_DIR, in accordance with [XDG Base Directory specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html). This is generally at 
+1. `~/.local/share/mcfly` on Linux
+1. `~/Library/Application Support/McFly` on MacOS
+1. `C:\Users\<user_name>\AppData\Roaming\McFly\data` on Windows
+
+If McFly detects configuration information used by previous versions under `~/.mcfly` it would continue to use that location.
+
 ### Light Mode
 To swap the color scheme for use in a light terminal, set the environment variable `MCFLY_LIGHT`.
 
