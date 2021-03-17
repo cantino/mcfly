@@ -417,6 +417,7 @@ impl History {
         start_time: Option<i64>,
         end_time: Option<i64>,
         now: Option<i64>,
+        limit: Option<i64>,
     ) {
         let lookback: u16 = 3;
 
@@ -427,6 +428,13 @@ impl History {
                 last_commands.push(String::from(""));
             }
         }
+
+        #[allow(unused_variables)]
+        let beginning_of_execution = Instant::now();
+
+        self.connection
+            .execute("PRAGMA temp_store = MEMORY;", NO_PARAMS)
+            .unwrap();
 
         self.connection
             .execute("DROP TABLE IF EXISTS temp.contextual_commands;", NO_PARAMS)
@@ -440,7 +448,7 @@ impl History {
         let (mut when_run_min, when_run_max): (f64, f64) = self
             .connection
             .query_row(
-                "SELECT MIN(when_run), MAX(when_run) FROM commands",
+                "SELECT IFNULL(MIN(when_run), 0), IFNULL(MAX(when_run), 0) FROM commands",
                 NO_PARAMS,
                 |row| (row.get(0), row.get(1)),
             )
@@ -461,17 +469,36 @@ impl History {
 
         let max_selected_occurrences: f64 = self.connection
             .query_row("SELECT COUNT(*) AS c FROM commands WHERE selected = 1 GROUP BY cmd ORDER BY c DESC LIMIT 1", NO_PARAMS,
-                       |row| row.get(0)).unwrap_or(1.0);
+                       |row| row.get(0)).unwrap_or(1.0); // FIXME: 1.0 seems wrong.
 
         let max_length: f64 = self
             .connection
-            .query_row("SELECT MAX(LENGTH(cmd)) FROM commands", NO_PARAMS, |row| {
-                row.get(0)
-            })
+            .query_row(
+                "SELECT IFNULL(MAX(LENGTH(cmd)), 0) FROM commands",
+                NO_PARAMS,
+                |row| row.get(0),
+            )
             .unwrap_or(100.0);
 
-        #[allow(unused_variables)]
-        let beginning_of_execution = Instant::now();
+        let max_id: i64 = self
+            .connection
+            .query_row(
+                "SELECT IFNULL(MAX(id), 0) FROM commands",
+                NO_PARAMS,
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+
+        let min_id = if let Some(limit_value) = limit {
+            if limit_value > max_id {
+                0
+            } else {
+                (max_id as f64 * (1.0 - (limit_value as f64 / max_id as f64))) as i64
+            }
+        } else {
+            0
+        };
+
         self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
                   id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir,
@@ -512,7 +539,7 @@ impl History {
                   /* percentage of time this command is run relative to the most common command (1: this is the most common command, 0: this is the least common command) */
                   COUNT(*) / :max_occurrences AS occurrences_factor
 
-                  FROM commands c WHERE when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC;",
+                  FROM commands c WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC;",
             &[
                 (":when_run_max", &when_run_max),
                 (":history_duration", &(when_run_max - when_run_min)),
@@ -527,7 +554,8 @@ impl History {
                 (":last_commands2", &last_commands[2].to_owned()),
                 (":start_time", &start_time.unwrap_or(0).to_owned()),
                 (":end_time", &end_time.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err))).as_secs() as i64).to_owned()),
-                (":now", &now.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err))).as_secs() as i64).to_owned())
+                (":now", &now.unwrap_or(SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_else(|err| panic!(format!("McFly error: Time went backwards ({})", err))).as_secs() as i64).to_owned()),
+                (":min_id", &min_id)
             ]).unwrap_or_else(|err| panic!(format!("McFly error: Creation of temp table to work ({})", err)));
 
         self.connection

@@ -295,7 +295,7 @@ dependencies = [
 
 [[package]]
 name = "mcfly"
-version = "0.5.3"
+version = "0.5.5"
 dependencies = [
  "clap",
  "csv",

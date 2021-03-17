@@ -1,5 +1,6 @@
 use mcfly::fake_typer;
 use mcfly::history::History;
+use mcfly::init::Init;
 use mcfly::interface::Interface;
 use mcfly::settings::Mode;
 use mcfly::settings::Settings;
@@ -9,7 +10,8 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, fs};
 
-fn handle_addition(settings: &Settings, history: &mut History) {
+fn handle_addition(settings: &Settings) {
+    let history = History::load(settings.history_format);
     if history.should_add(&settings.command) {
         history.add(
             &settings.command,
@@ -44,8 +46,9 @@ fn handle_addition(settings: &Settings, history: &mut History) {
     }
 }
 
-fn handle_search(settings: &Settings, history: &History) {
-    let result = Interface::new(settings, history).display();
+fn handle_search(settings: &Settings) {
+    let history = History::load(settings.history_format);
+    let result = Interface::new(settings, &history).display();
     if let Some(cmd) = result.selection {
         if let Some(path) = &settings.output_selection {
             // Output selection results to a file.
@@ -85,31 +88,38 @@ fn handle_search(settings: &Settings, history: &History) {
     }
 }
 
-fn handle_train(settings: &Settings, history: &mut History) {
-    Trainer::new(settings, history).train();
+fn handle_train(settings: &Settings) {
+    let mut history = History::load(settings.history_format);
+    Trainer::new(settings, &mut history).train();
 }
 
-fn handle_move(settings: &Settings, history: &mut History) {
+fn handle_move(settings: &Settings) {
+    let history = History::load(settings.history_format);
     history.update_paths(&settings.old_dir.clone().unwrap(), &settings.dir, true);
+}
+
+fn handle_init(settings: &Settings) {
+    Init::new(&settings.init_mode);
 }
 
 fn main() {
     let settings = Settings::parse_args();
 
-    let mut history = History::load(settings.history_format);
-
     match settings.mode {
         Mode::Add => {
-            handle_addition(&settings, &mut history);
+            handle_addition(&settings);
         }
         Mode::Search => {
-            handle_search(&settings, &history);
+            handle_search(&settings);
         }
         Mode::Train => {
-            handle_train(&settings, &mut history);
+            handle_train(&settings);
         }
         Mode::Move => {
-            handle_move(&settings, &mut history);
+            handle_move(&settings);
+        }
+        Mode::Init => {
+            handle_init(&settings);
         }
     }
 }

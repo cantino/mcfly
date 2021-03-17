@@ -3,6 +3,7 @@ pub mod fake_typer;
 pub mod fixed_length_grapheme_string;
 pub mod history;
 pub mod history_cleaner;
+pub mod init;
 pub mod interface;
 pub mod network;
 pub mod node;

@@ -7,22 +7,19 @@
 #   brew untap cantino/mcfly
 
 class Mcfly < Formula
-  version 'v0.5.3'
+  version 'v0.5.5'
   desc "McFly"
   homepage "https://github.com/cantino/mcfly"
 
   if OS.mac?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-apple-darwin.tar.gz"
-    sha256 "151b36e0b3a357718f06c65317545f9b186aa8b47e512dfef3757a5732dd6487"
+    sha256 "2ba77cd5cf231817322eb2a08256614d6b296a8999d3809ac8053f3b29544bde"
   elsif OS.linux?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-unknown-linux-gnu.tar.gz"
-    sha256 "11a1112e73c66b559b37f7a8ce8f6465d56f2506af6c816386e22525aa54b883"
+    sha256 "ae41010e77592ed96a082c449dfa2a31b6a2f96cf1b6380f4478e5395e5210ba"
   end
 
   def install
-    prefix.install "mcfly.bash"
-    prefix.install "mcfly.zsh"
-    prefix.install "mcfly.fish"
     bin.install "mcfly"
   end
 
@@ -30,24 +27,17 @@ class Mcfly < Formula
     <<~EOS
       ONE MORE STEP!
 
-      Add the following to the end of your ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish file,
-      as appropriate, changing /usr/local to your 'brew --prefix' if needed:
+      Add the following to the end of your ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish file.
 
       Bash:
-        if [ -r /usr/local/opt/mcfly/mcfly.bash ]; then
-          . /usr/local/opt/mcfly/mcfly.bash
-        fi
+        eval "$(mcfly init bash)"
 
       Zsh:
-        if [ -r /usr/local/opt/mcfly/mcfly.zsh ]; then
-          . /usr/local/opt/mcfly/mcfly.zsh
-        fi
+        eval "$(mcfly init zsh)"
 
       Fish:
-        if test -r /usr/local/opt/mcfly/mcfly.fish
-          source /usr/local/opt/mcfly/mcfly.fish
-          mcfly_key_bindings
-        end
+        mcfly init fish | source
+        mcfly_key_bindings
     EOS
   end
 end

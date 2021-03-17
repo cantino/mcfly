@@ -65,6 +65,7 @@ impl<'a> TrainingSampleGenerator<'a> {
                 None,
                 command.when_run,
                 command.when_run,
+                None,
             );
 
             // Load the entire match set.
