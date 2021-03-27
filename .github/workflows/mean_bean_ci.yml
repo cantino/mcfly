@@ -32,7 +32,9 @@ jobs:
         channel: [stable, beta, nightly]
         target:
           - x86_64-apple-darwin
-          - aarch64-apple-darwin
+          ### Disable running tests on M1 target, not currently working
+          ### https://github.com/rust-lang/rust/issues/73908
+          # - aarch64-apple-darwin
     steps:
       - name: Setup | Checkout
         uses: actions/checkout@v2
@@ -44,8 +46,14 @@ jobs:
           profile: minimal
           target: ${{ matrix.target }}
       - run: ci/set_rust_version.bash ${{ matrix.channel }} ${{ matrix.target }}
-      - run: cargo clippy --target ${{ matrix.target }}
-      - run: cargo test --target ${{ matrix.target }} --all-features
+      - name: Test
+        uses: actions-rs/cargo@v1
+        env:
+          SDKROOT: /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
+        with:
+          command: test
+          args: --target ${{ matrix.target }}
+          use-cross: false
 
   linux:
     runs-on: ubuntu-latest
