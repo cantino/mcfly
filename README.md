@@ -62,7 +62,6 @@ When suggesting a command, McFly takes into consideration:
     Fish:
     ```bash
     mcfly init fish | source
-    mcfly_key_bindings
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
@@ -103,7 +102,6 @@ When suggesting a command, McFly takes into consideration:
     Fish:
     ```bash
     mcfly init fish | source
-    mcfly_key_bindings
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
@@ -134,7 +132,6 @@ When suggesting a command, McFly takes into consideration:
     Fish:
     ```bash
     mcfly init fish | source
-    mcfly_key_bindings
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
@@ -159,7 +156,6 @@ When suggesting a command, McFly takes into consideration:
     Fish:
     ```bash
     mcfly init fish | source
-    mcfly_key_bindings
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
