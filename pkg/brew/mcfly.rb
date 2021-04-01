@@ -37,7 +37,6 @@ class Mcfly < Formula
 
       Fish:
         mcfly init fish | source
-        mcfly_key_bindings
     EOS
   end
 end
