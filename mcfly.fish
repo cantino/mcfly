@@ -1,8 +1,5 @@
 #!/usr/bin/env fish
 
-# Ensure stdin is a tty
-isatty stdin; or exit 0
-
 # Avoid loading this file more than once
 if test "$__MCFLY_LOADED" = "loaded"
   exit 0
@@ -75,4 +72,6 @@ if status is-interactive
        bind -M insert \cr __mcfly-history-widget
      end
   end
+
+  mcfly_key_bindings
 end
