@@ -38,15 +38,15 @@ function __mcfly_add_command -d 'Add run commands to McFly database' -e fish_pos
   # Handle first call of this function after sourcing mcfly.fish, when the old PWD won't be set
   set -q __MCFLY_OLD_PWD; or set -g __MCFLY_OLD_PWD "$PWD"
 
-  test -n "$MCFLY_DEBUG"; and echo mcfly.fish: Run eval $__MCFLY_CMD add --exit '$last_status' --old-dir '$__MCFLY_OLD_PWD' '$argv[1]'
-  eval $__MCFLY_CMD add --exit '$last_status' --old-dir '$__MCFLY_OLD_PWD' '$argv[1]'
+  test -n "$MCFLY_DEBUG"; and echo mcfly.fish: Run eval $__MCFLY_CMD add --exit '$last_status' --old-dir '$__MCFLY_OLD_PWD' -- '$argv[1]'
+  eval $__MCFLY_CMD add --exit '$last_status' --old-dir '$__MCFLY_OLD_PWD' -- '$argv[1]'
 end
 
 # If this is an interactive shell, set up key binding functions.
 if status is-interactive
   function __mcfly-history-widget -d "Search command history with McFly"
     set -l mcfly_output (mktemp -t mcfly.output.XXXXXXXX)
-    eval $__MCFLY_CMD search -o '$mcfly_output' (commandline)
+    eval $__MCFLY_CMD search -o '$mcfly_output' -- (commandline)
 
     # Interpret commandline/run requests from McFly
     set -l mode; set -l commandline
