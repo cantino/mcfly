@@ -1,4 +1,8 @@
+0.5.6 - Apr 1, 2021
+ - Fix fish shell initialization (thanks @domoritz)
+ - Fix fish shell escaping (thanks @scooter-dangle!)
 0.5.5 - Mar 12, 2021
+ - Fixed a crash during init without any history
  - Fixed a crash during init without any history
  - Fixed issue when deleting all history (thanks @akinnane!)
  - Add MCFLY_HISTORY_LIMIT to limit history search
