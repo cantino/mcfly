@@ -26,8 +26,7 @@ main() {
     cp mcfly.zsh $stage/
     cp mcfly.fish $stage/
 
-    cd $stage
-    tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz *
+    tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz $stage
     cd $src
 
     rm -rf $stage
