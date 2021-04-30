@@ -217,7 +217,7 @@ export MCFLY_RESULTS=50
 
 fish:
 ```bash
-set -gx MCFLY_FUZZY 50
+set -gx MCFLY_RESULTS 50
 ```
 
 ### Slow startup
