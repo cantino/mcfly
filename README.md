@@ -207,6 +207,19 @@ fish:
 set -gx MCFLY_FUZZY true
 ```
 
+### Results Count
+To change the maximum number of results shown, set `MCFLY_RESULTS` (default: 10).
+
+bash / zsh:
+```bash
+export MCFLY_RESULTS=50
+```
+
+fish:
+```bash
+set -gx MCFLY_FUZZY 50
+```
+
 ### Slow startup
 
 If you have a very large history database and you notice that McFly launches slowly, you can set `MCFLY_HISTORY_LIMIT` to something like 10000 to limit how many records are considered when searching. In this example, McFly would search only the latest 10,000 entries.
