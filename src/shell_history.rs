@@ -39,16 +39,16 @@ fn has_leading_timestamp(line: &str) -> bool {
 
 pub fn history_file_path() -> PathBuf {
     let path = PathBuf::from(env::var("HISTFILE").unwrap_or_else(|err| {
-        panic!(format!(
+        panic!(
             "McFly error: Please ensure HISTFILE is set for your shell ({})",
             err
-        ))
+        )
     }));
     fs::canonicalize(&path).unwrap_or_else(|err| {
-        panic!(format!(
+        panic!(
             "McFly error: The contents of $HISTFILE appear invalid ({})",
             err
-        ))
+        )
     })
 }
 
@@ -210,12 +210,7 @@ pub fn append_history_entry(command: &HistoryCommand, path: &PathBuf, debug: boo
         .write(true)
         .append(true)
         .open(path)
-        .unwrap_or_else(|err| {
-            panic!(format!(
-                "McFly error: please make sure HISTFILE exists ({})",
-                err
-            ))
-        });
+        .unwrap_or_else(|err| panic!("McFly error: please make sure HISTFILE exists ({})", err));
 
     if debug {
         println!("McFly: Appended to file '{:?}': {}", &path, command);
