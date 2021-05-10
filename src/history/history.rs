@@ -751,7 +751,7 @@ impl History {
             .unwrap_or_else(|_| panic!("Unable to create {:?}", Settings::storage_dir_path()));
 
         // Make ~/.mcfly/history.db
-        let connection = Connection::open(Settings::mcfly_db_path()).unwrap_or_else(|_| {
+        let mut connection = Connection::open(Settings::mcfly_db_path()).unwrap_or_else(|_| {
             panic!(
                 "Unable to create history DB at {:?}",
                 Settings::mcfly_db_path()
@@ -784,8 +784,11 @@ impl History {
                   CREATE INDEX selected_command_session_cmds ON selected_commands (session_id, cmd);"
         ).unwrap_or_else(|err| panic!(format!("McFly error: Unable to initialize history db ({})", err)));
 
+        let transaction = connection
+            .transaction()
+            .unwrap_or_else(|err| panic!("McFly error: Unable to begin transaction ({})", err));
         {
-            let mut statement = connection
+            let mut statement = transaction
                 .prepare("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, selected) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :selected)")
                 .unwrap_or_else(|err| panic!(format!("McFly error: Unable to prepare insert ({})", err)));
             for command in commands {
@@ -808,6 +811,9 @@ impl History {
                 }
             }
         }
+        transaction
+            .commit()
+            .unwrap_or_else(|err| panic!("McFly error: Unable to commit transaction: ({})", err));
 
         schema::first_time_setup(&connection);
 
