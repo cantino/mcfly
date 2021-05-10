@@ -1,4 +1,3 @@
-use core::mem;
 use std::fmt;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -103,7 +102,7 @@ impl CommandInput {
                     }
                 }
 
-                mem::replace(&mut self.command, new_command);
+                self.command = new_command;
                 self.recompute_caches();
             }
             Move::Forward => {
@@ -117,7 +116,7 @@ impl CommandInput {
                     }
                 }
 
-                mem::replace(&mut self.command, new_command);
+                self.command = new_command;
                 self.recompute_caches();
             }
             Move::EOL => {
@@ -131,7 +130,7 @@ impl CommandInput {
                     }
                 }
 
-                mem::replace(&mut self.command, new_command);
+                self.command = new_command;
                 self.recompute_caches();
                 self.move_cursor(Move::EOL);
             }
@@ -146,7 +145,7 @@ impl CommandInput {
                     }
                 }
 
-                mem::replace(&mut self.command, new_command);
+                self.command = new_command;
                 self.recompute_caches();
                 self.move_cursor(Move::BOL);
             }
@@ -163,7 +162,7 @@ impl CommandInput {
                     }
                 }
 
-                mem::replace(&mut self.command, new_command);
+                self.command = new_command;
                 self.recompute_caches();
             }
             Move::BackwardWord => {
@@ -183,7 +182,7 @@ impl CommandInput {
                     }
                 }
 
-                mem::replace(&mut self.command, new_command);
+                self.command = new_command;
                 self.recompute_caches();
                 let new_cursor_pos = self.cursor - removed_characters;
                 self.move_cursor(Move::Exact(new_cursor_pos));
@@ -208,7 +207,7 @@ impl CommandInput {
                 new_command.push(c);
             }
         }
-        mem::replace(&mut self.command, new_command);
+        self.command = new_command;
         self.recompute_caches();
         self.move_cursor(Move::Forward);
     }
