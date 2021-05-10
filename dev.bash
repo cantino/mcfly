@@ -1,7 +1,9 @@
 #!/bin/bash
 # Build mcfly and run a dev environment bash for local mcfly testing
 
-this_dir=$(cd `dirname "$0"`; pwd)
+if ! this_dir=$(cd "$(dirname "$0")" && pwd); then
+    exit $?
+fi
 
 rm -f target/debug/mcfly
 rm -rf target/debug/deps/mcfly-*

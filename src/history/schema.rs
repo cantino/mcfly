@@ -19,7 +19,7 @@ pub fn migrate(connection: &Connection) {
             NO_PARAMS,
             |row| row.get(0),
         )
-        .unwrap_or_else(|err| panic!(format!("McFly error: Query to work ({})", err)))
+        .unwrap_or_else(|err| panic!("McFly error: Query to work ({})", err))
         .unwrap_or(0);
 
     if current_version < CURRENT_SCHEMA_VERSION {
@@ -27,9 +27,9 @@ pub fn migrate(connection: &Connection) {
             "McFly: Upgrading McFly DB to version {}, please wait...",
             CURRENT_SCHEMA_VERSION
         );
-        io::stdout().flush().unwrap_or_else(|err| {
-            panic!(format!("McFly error: STDOUT flush should work ({})", err))
-        });
+        io::stdout()
+            .flush()
+            .unwrap_or_else(|err| panic!("McFly error: STDOUT flush should work ({})", err));
     }
 
     if current_version < 1 {
@@ -38,23 +38,18 @@ pub fn migrate(connection: &Connection) {
                 "ALTER TABLE commands ADD COLUMN cmd_tpl TEXT; UPDATE commands SET cmd_tpl = '';",
             )
             .unwrap_or_else(|err| {
-                panic!(format!(
-                    "McFly error: Unable to add cmd_tpl to commands ({})",
-                    err
-                ))
+                panic!("McFly error: Unable to add cmd_tpl to commands ({})", err)
             });
 
         let mut statement = connection
             .prepare("UPDATE commands SET cmd_tpl = :cmd_tpl WHERE id = :id")
-            .unwrap_or_else(|err| {
-                panic!(format!("McFly error: Unable to prepare update ({})", err))
-            });
+            .unwrap_or_else(|err| panic!("McFly error: Unable to prepare update ({})", err));
 
         for (id, cmd) in cmd_strings(connection) {
             let simplified_command = SimplifiedCommand::new(cmd.as_str(), true);
             statement
                 .execute_named(&[(":cmd_tpl", &simplified_command.result), (":id", &id)])
-                .unwrap_or_else(|err| panic!(format!("McFly error: Insert to work ({})", err)));
+                .unwrap_or_else(|err| panic!("McFly error: Insert to work ({})", err));
         }
     }
 
@@ -66,10 +61,10 @@ pub fn migrate(connection: &Connection) {
                  CREATE INDEX command_session_id ON commands (session_id);",
             )
             .unwrap_or_else(|err| {
-                panic!(format!(
+                panic!(
                     "McFly error: Unable to add session_id to commands ({})",
                     err
-                ))
+                )
             });
     }
 
@@ -87,12 +82,7 @@ pub fn migrate(connection: &Connection) {
             ALTER TABLE commands ADD COLUMN selected INTEGER; \
             UPDATE commands SET selected = 0;",
             )
-            .unwrap_or_else(|err| {
-                panic!(format!(
-                    "McFly error: Unable to add selected_commands ({})",
-                    err
-                ))
-            });
+            .unwrap_or_else(|err| panic!("McFly error: Unable to add selected_commands ({})", err));
     }
 
     if current_version < CURRENT_SCHEMA_VERSION {
@@ -112,10 +102,10 @@ fn make_schema_versions_table(connection: &Connection) {
              CREATE UNIQUE INDEX IF NOT EXISTS schema_versions_index ON schema_versions (version);",
         )
         .unwrap_or_else(|err| {
-            panic!(format!(
+            panic!(
                 "McFly error: Unable to create schema_versions db table ({})",
                 err
-            ))
+            )
         });
 }
 
@@ -124,12 +114,9 @@ fn write_current_schema_version(connection: &Connection) {
         "INSERT INTO schema_versions (version, when_run) VALUES ({}, strftime('%s','now'))",
         CURRENT_SCHEMA_VERSION
     );
-    connection.execute_batch(&insert).unwrap_or_else(|err| {
-        panic!(format!(
-            "McFly error: Unable to update schema_versions ({})",
-            err
-        ))
-    });
+    connection
+        .execute_batch(&insert)
+        .unwrap_or_else(|err| panic!("McFly error: Unable to update schema_versions ({})", err));
 }
 
 fn cmd_strings(connection: &Connection) -> Vec<(i64, String)> {
@@ -137,7 +124,7 @@ fn cmd_strings(connection: &Connection) -> Vec<(i64, String)> {
     let mut statement = connection.prepare(query).unwrap();
     let command_iter = statement
         .query_map(NO_PARAMS, |row| (row.get(0), row.get(1)))
-        .unwrap_or_else(|err| panic!(format!("McFly error: Query Map to work ({})", err)));
+        .unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));
 
     let mut vec = Vec::new();
     for result in command_iter {

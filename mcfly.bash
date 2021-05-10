@@ -17,7 +17,8 @@ if [[ ! -r "${HISTFILE}" ]]; then
 fi
 
 # MCFLY_SESSION_ID is used by McFly internally to keep track of the commands from a particular terminal session.
-export MCFLY_SESSION_ID=$(dd if=/dev/urandom bs=256 count=1 2> /dev/null | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
+MCFLY_SESSION_ID="$(dd if=/dev/urandom bs=256 count=1 2> /dev/null | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)"
+export MCFLY_SESSION_ID
 
 # Find the binary
 MCFLY_PATH=${MCFLY_PATH:-$(which mcfly)}
@@ -38,11 +39,12 @@ function mcfly_prompt_command {
 
   # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
   if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-    export MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
-    tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
+    MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
+    export MCFLY_HISTORY
+    tail -n100 "${HISTFILE}" >| "${MCFLY_HISTORY}"
   fi
 
-  history -a ${MCFLY_HISTORY} # Append history to $MCFLY_HISTORY.
+  history -a "${MCFLY_HISTORY}" # Append history to $MCFLY_HISTORY.
   # Run mcfly with the saved code. It will:
   # * append commands to $HISTFILE, (~/.bash_history by default)
   #   for backwards compatibility and to load in new terminal sessions;
@@ -50,7 +52,7 @@ function mcfly_prompt_command {
   $MCFLY_PATH add --exit ${exit_code} --append-to-histfile
   # Clear the in-memory history and reload it from $MCFLY_HISTORY
   # (to remove instances of '#mcfly: ' from the local session history).
-  history -cr ${MCFLY_HISTORY}
+  history -cr "${MCFLY_HISTORY}"
   return ${exit_code} # Restore the original exit code by returning it.
 }
 
@@ -60,7 +62,8 @@ PROMPT_COMMAND="mcfly_prompt_command;$PROMPT_COMMAND"
 # If this is an interactive shell, take ownership of ctrl-r.
 if [[ $- =~ .*i.* ]]; then
   if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-    bind -x '"\C-r": "echo \#mcfly: ${READLINE_LINE[@]} >> $MCFLY_HISTORY ; READLINE_LINE= ; mcfly search"'
+    # shellcheck disable=SC2016
+    bind -x '"\C-r": "echo \#mcfly: ${READLINE_LINE[@]} >> "$MCFLY_HISTORY" ; READLINE_LINE= ; mcfly search"'
   else
     # The logic here is:
     #   1. Jump to the beginning of the edit buffer, add 'mcfly: ', and comment out the current line. We comment out the line

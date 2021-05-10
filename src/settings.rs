@@ -243,9 +243,9 @@ impl Settings {
                     .unwrap_or_else(|err| {
                         if !settings.skip_environment_check
                         {
-                            panic!(format!(
+                            panic!(
                             "McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({})",
-                            err))
+                            err)
                         }
                         else {
                             std::string::String::new()
@@ -258,10 +258,10 @@ impl Settings {
                 .unwrap_or_else(|| {
                     env::var("MCFLY_HISTORY").unwrap_or_else(|err| {
                         if !settings.skip_environment_check {
-                            panic!(format!(
+                            panic!(
                                 "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
                                 err
-                            ))
+                            )
                         } else {
                             std::string::String::new()
                         }
@@ -287,7 +287,7 @@ impl Settings {
                         SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .unwrap_or_else(|err| {
-                                panic!(format!("McFly error: Time went backwards ({})", err))
+                                panic!("McFly error: Time went backwards ({})", err)
                             })
                             .as_secs() as i64,
                     ),
@@ -310,10 +310,10 @@ impl Settings {
                     settings.dir = dir.to_string();
                 } else {
                     settings.dir = env::var("PWD").unwrap_or_else(|err| {
-                        panic!(format!(
+                        panic!(
                             "McFly error: Unable to determine current directory ({})",
                             err
-                        ))
+                        )
                     });
                 }
 
@@ -348,10 +348,10 @@ impl Settings {
                     settings.dir = dir.to_string();
                 } else {
                     settings.dir = env::var("PWD").unwrap_or_else(|err| {
-                        panic!(format!(
+                        panic!(
                             "McFly error: Unable to determine current directory ({})",
                             err
-                        ))
+                        )
                     });
                 }
 

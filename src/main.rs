@@ -24,19 +24,14 @@ fn handle_addition(settings: &Settings) {
 
         if settings.append_to_histfile {
             let histfile = PathBuf::from(env::var("HISTFILE").unwrap_or_else(|err| {
-                panic!(format!(
-                    "McFly error: Please ensure that HISTFILE is set ({})",
-                    err
-                ))
+                panic!("McFly error: Please ensure that HISTFILE is set ({})", err)
             }));
             let command = shell_history::HistoryCommand::new(
                 &settings.command,
                 settings.when_run.unwrap_or(
                     SystemTime::now()
                         .duration_since(UNIX_EPOCH)
-                        .unwrap_or_else(|err| {
-                            panic!(format!("McFly error: Time went backwards ({})", err))
-                        })
+                        .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({})", err))
                         .as_secs() as i64,
                 ),
                 settings.history_format,
@@ -75,9 +70,8 @@ fn handle_search(settings: &Settings) {
                 out.push('\n');
             }
 
-            fs::write(path, &out).unwrap_or_else(|err| {
-                panic!(format!("McFly error: unable to write to {}: {}", path, err))
-            });
+            fs::write(path, &out)
+                .unwrap_or_else(|err| panic!("McFly error: unable to write to {}: {}", path, err));
         } else {
             fake_typer::use_tiocsti(&cmd);
 
