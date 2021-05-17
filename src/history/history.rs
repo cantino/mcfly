@@ -37,6 +37,7 @@ pub struct Command {
     pub session_id: String,
     pub rank: f64,
     pub when_run: Option<i64>,
+    pub last_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub selected: bool,
     pub dir: Option<String>,
@@ -244,13 +245,27 @@ impl History {
 
         like_query.push_str("%");
 
-        let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
+        let query = "WITH matched_commands AS (
+                           SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
                                   age_factor, length_factor, exit_factor, recent_failure_factor,
                                   selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
                                   selected_occurrences_factor, occurrences_factor
                            FROM contextual_commands
                            WHERE cmd LIKE (:like)
-                           ORDER BY rank DESC LIMIT :limit";
+                           ORDER BY rank DESC LIMIT :limit
+                     ), by_cmd AS (
+                           SELECT cmd, MAX(when_run) AS last_run
+                           FROM commands
+                           WHERE cmd IN (SELECT cmd FROM matched_commands)
+                           GROUP BY cmd
+                     )
+                     SELECT id, matched_commands.cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
+                            age_factor, length_factor, exit_factor, recent_failure_factor,
+                            selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
+                            selected_occurrences_factor, occurrences_factor, by_cmd.last_run
+                     FROM matched_commands
+                     JOIN by_cmd
+                       ON by_cmd.cmd = matched_commands.cmd";
         let mut statement = self
             .connection
             .prepare(query)
@@ -359,6 +374,9 @@ impl History {
                             panic!("McFly error: occurrences_factor to be readable ({})", err)
                         }),
                     },
+                    last_run: row.get_checked(19).unwrap_or_else(|err| {
+                        panic!("McFly error: last_run to be readable ({})", err)
+                    }),
                 }
             })
             .unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));

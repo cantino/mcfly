@@ -6,6 +6,8 @@ use crate::history::Command;
 use crate::history_cleaner;
 use crate::settings::KeyScheme;
 use crate::settings::Settings;
+use chrono::{Duration, TimeZone, Utc};
+use humantime::format_duration;
 use std::io::{stdin, stdout, Write};
 use termion::color;
 use termion::event::Key;
@@ -557,6 +559,43 @@ impl<'a> Interface<'a> {
             2
         };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
+
+        if command.last_run.is_some() {
+            let duration = &format_duration(
+                Duration::seconds(
+                    Utc::now()
+                        .signed_duration_since(Utc.timestamp(command.last_run.unwrap(), 0))
+                        .num_seconds(),
+                )
+                .to_std()
+                .unwrap(),
+            )
+            .to_string()
+            .split(" ")
+            .take(2)
+            .map(|s| {
+                s.replace("years", "y")
+                    .replace("year", "y")
+                    .replace("months", "mo")
+                    .replace("month", "mo")
+                    .replace("days", "d")
+                    .replace("day", "d")
+                    .replace("hours", "h")
+                    .replace("hour", "h")
+                    .replace("minutes", "m")
+                    .replace("minute", "m")
+                    .replace("seconds", "s")
+                    .replace("second", "s")
+                    .to_string()
+            })
+            .collect::<Vec<String>>()
+            .join(" ");
+
+            out.push_str(&color::Fg(color::Blue).to_string());
+            out.push_str(&format!("{:>8}", duration));
+            out.push_str(&base_color);
+            out.push_str(" ");
+        }
 
         if !search.is_empty() {
             for (start, end) in &command.match_bounds {
