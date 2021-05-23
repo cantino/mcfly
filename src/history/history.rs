@@ -245,27 +245,13 @@ impl History {
 
         like_query.push_str("%");
 
-        let query = "WITH matched_commands AS (
-                           SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
-                                  age_factor, length_factor, exit_factor, recent_failure_factor,
-                                  selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
-                                  selected_occurrences_factor, occurrences_factor
-                           FROM contextual_commands
-                           WHERE cmd LIKE (:like)
-                           ORDER BY rank DESC LIMIT :limit
-                     ), by_cmd AS (
-                           SELECT cmd, MAX(when_run) AS last_run
-                           FROM commands
-                           WHERE cmd IN (SELECT cmd FROM matched_commands)
-                           GROUP BY cmd
-                     )
-                     SELECT id, matched_commands.cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
-                            age_factor, length_factor, exit_factor, recent_failure_factor,
-                            selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
-                            selected_occurrences_factor, occurrences_factor, by_cmd.last_run
-                     FROM matched_commands
-                     JOIN by_cmd
-                       ON by_cmd.cmd = matched_commands.cmd";
+        let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
+                              age_factor, length_factor, exit_factor, recent_failure_factor,
+                              selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
+                              selected_occurrences_factor, occurrences_factor, last_run
+                      FROM contextual_commands
+                      WHERE cmd LIKE (:like)
+                      ORDER BY rank DESC LIMIT :limit";
         let mut statement = self
             .connection
             .prepare(query)
@@ -499,7 +485,7 @@ impl History {
 
         self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
-                  id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir,
+                  id, cmd, cmd_tpl, session_id, when_run, MAX(when_run) AS last_run, exit_code, selected, dir,
 
                   /* to be filled in later */
                   0.0 AS rank,
@@ -537,7 +523,10 @@ impl History {
                   /* percentage of time this command is run relative to the most common command (1: this is the most common command, 0: this is the least common command) */
                   COUNT(*) / :max_occurrences AS occurrences_factor
 
-                  FROM commands c WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC;",
+                  FROM commands c
+                  WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time
+                  GROUP BY cmd
+                  ORDER BY id DESC;",
             &[
                 (":when_run_max", &when_run_max),
                 (":history_duration", &(when_run_max - when_run_min)),
