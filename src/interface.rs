@@ -562,10 +562,10 @@ impl<'a> Interface<'a> {
 
         if command.last_run.is_some() {
             let duration = &format_duration(
-                Duration::seconds(
+                Duration::minutes(
                     Utc::now()
                         .signed_duration_since(Utc.timestamp(command.last_run.unwrap(), 0))
-                        .num_seconds(),
+                        .num_minutes(),
                 )
                 .to_std()
                 .unwrap(),
@@ -584,8 +584,7 @@ impl<'a> Interface<'a> {
                     .replace("hour", "h")
                     .replace("minutes", "m")
                     .replace("minute", "m")
-                    .replace("seconds", "s")
-                    .replace("second", "s")
+                    .replace("0s", "< 1m")
                     .to_string()
             })
             .collect::<Vec<String>>()
