@@ -41,7 +41,7 @@ When suggesting a command, McFly takes into consideration:
 
 1. Install the tap:
     ```bash
-    brew tap cantino/mcfly https://github.com/cantino/mcfly
+    brew tap cantino/mcfly
     ```
 1. Install `mcfly`:
     ```bash
@@ -239,7 +239,7 @@ If you have a very large history database and you notice that McFly launches slo
 
 `cargo test`
 
-### Releasing
+### Releasing (notes for @cantino)
 
 1. Edit `Cargo.toml` and bump the version.
 1. Edit CHANGELOG.txt
@@ -251,5 +251,7 @@ If you have a very large history database and you notice that McFly launches slo
 1. Let the build finish.
 1. Edit the new Release on Github.
 1. Edit `pkg/brew/mcfly.rb` and update the version and SHAs. (`shasum -a 256 ...`)
+1. Edit `../homebrew-mcfly/pkg/brew/mcfly.rb` too.
+1. Compare with `diff ../homebrew-mcfly/pkg/brew/mcfly.rb ../mcfly/pkg/brew/mcfly.rb ; diff ../homebrew-mcfly/HomebrewFormula/mcfly.rb ../mcfly/HomebrewFormula/mcfly.rb`
 1. `git push`
 1. `cargo publish`

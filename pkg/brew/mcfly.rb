@@ -1,5 +1,5 @@
 # To install:
-#   brew tap cantino/mcfly https://github.com/cantino/mcfly
+#   brew tap cantino/mcfly
 #   brew install mcfly
 #
 # To remove:
