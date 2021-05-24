@@ -59,7 +59,7 @@ function mcfly_prompt_command {
 # Set $PROMPT_COMMAND run mcfly_prompt_command and then any existing $PROMPT_COMMAND.
 PROMPT_COMMAND="mcfly_prompt_command;$PROMPT_COMMAND"
 
-# If this is an interactive shell, take ownership of ctrl-r.
+# If this is an interactive shell, take ownership of ctrl-r and set terminal color.
 if [[ $- =~ .*i.* ]]; then
   if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
     # shellcheck disable=SC2016
@@ -77,5 +77,9 @@ if [[ $- =~ .*i.* ]]; then
     else
       bind "'\C-r': '\C-amcfly: \e# mcfly search\C-m'"
     fi
+  fi
+
+  if [[ "$COLORFGBG" =~ \;15$ ]]; then
+    export MCFLY_LIGHT=TRUE
   fi
 fi

@@ -42,7 +42,7 @@ function __mcfly_add_command -d 'Add run commands to McFly database' -e fish_pos
   eval $__MCFLY_CMD add --exit '$last_status' --old-dir '$__MCFLY_OLD_PWD' -- '$argv[1]'
 end
 
-# If this is an interactive shell, set up key binding functions.
+# If this is an interactive shell, set up key binding functions and terminal color.
 if status is-interactive
   function __mcfly-history-widget -d "Search command history with McFly"
     set -l mcfly_output (mktemp -t mcfly.output.XXXXXXXX)
@@ -73,5 +73,12 @@ if status is-interactive
     end
   end
 
+  function mcfly_detect_terminal_color -d 'Attempt to determine if running in light mode'
+    if string match -r '\;15$' $COLORFGBG &> /dev/null
+      set -gx MCFLY_LIGHT TRUE
+    end
+  end
+
   mcfly_key_bindings
+  mcfly_detect_terminal_color
 end
