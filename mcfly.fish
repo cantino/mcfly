@@ -67,10 +67,10 @@ if status is-interactive
   end
 
   function mcfly_key_bindings -d "Default key bindings for McFly"
-     bind \cr __mcfly-history-widget
-     if bind -M insert >/dev/null 2>&1
-       bind -M insert \cr __mcfly-history-widget
-     end
+    bind \cr __mcfly-history-widget
+    if bind -M insert >/dev/null 2>&1
+      bind -M insert \cr __mcfly-history-widget
+    end
   end
 
   mcfly_key_bindings
