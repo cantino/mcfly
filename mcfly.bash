@@ -81,5 +81,7 @@ if [[ $- =~ .*i.* ]]; then
 
   if [[ "$COLORFGBG" =~ \;15$ ]]; then
     export MCFLY_LIGHT=TRUE
+  elif [[ "$TERM_PROGRAM" == "Apple_Terminal" && $(defaults read -g AppleInterfaceStyle 2> /dev/null) != 'Dark' ]]; then
+    export MCFLY_LIGHT=TRUE
   fi
 fi

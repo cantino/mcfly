@@ -76,6 +76,11 @@ if status is-interactive
   function mcfly_detect_terminal_color -d 'Attempt to determine if running in light mode'
     if string match -r '\;15$' $COLORFGBG &> /dev/null
       set -gx MCFLY_LIGHT TRUE
+    else if test "$TERM_PROGRAM" = "Apple_Terminal"
+      set apple_interface (defaults read -g AppleInterfaceStyle 2> /dev/null)
+      if [ "$apple_interface" != 'Dark' ]
+        set -gx MCFLY_LIGHT TRUE
+      end
     end
   end
 
