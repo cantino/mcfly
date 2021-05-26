@@ -41,7 +41,8 @@ jobs:
         target:
           # macOS
           - x86_64-apple-darwin
-          - aarch64-apple-darwin
+          ## Disabling creating M1 builds, will need to wait for github to release M1 VMs
+          # - aarch64-apple-darwin
     steps:
       - name: Get tag
         id: tag
