@@ -135,7 +135,9 @@ case "$(uname -s)" in
       target="x86_64-apple-darwin"
       ;;
     "arm64")
-      target="aarch64-apple-darwin"
+      ## replace when M1 builds are working
+      # target="aarch64-apple-darwin"
+      target="x86_64-apple-darwin"
       ;;
   esac
   ;;
