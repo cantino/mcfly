@@ -244,6 +244,45 @@ impl<'a> Interface<'a> {
             )
             .unwrap();
 
+            if command.last_run.is_some() {
+                let duration = &format_duration(
+                    Duration::minutes(
+                        Utc::now()
+                            .signed_duration_since(Utc.timestamp(command.last_run.unwrap(), 0))
+                            .num_minutes(),
+                    )
+                    .to_std()
+                    .unwrap(),
+                )
+                .to_string()
+                .split(" ")
+                .take(2)
+                .map(|s| {
+                    s.replace("years", "y")
+                        .replace("year", "y")
+                        .replace("months", "mo")
+                        .replace("month", "mo")
+                        .replace("days", "d")
+                        .replace("day", "d")
+                        .replace("hours", "h")
+                        .replace("hour", "h")
+                        .replace("minutes", "m")
+                        .replace("minute", "m")
+                        .replace("0s", "< 1m")
+                })
+                .collect::<Vec<String>>()
+                .join(" ");
+
+                let highlight = if self.settings.lightmode {
+                    color::Fg(color::Blue).to_string()
+                } else {
+                    color::Fg(color::LightBlue).to_string()
+                };
+
+                write!(screen, "{}", highlight).unwrap();
+                write!(screen, "{:>9}", duration).unwrap();
+            }
+
             write!(screen, "{}", color::Bg(color::Reset)).unwrap();
             write!(screen, "{}", color::Fg(color::Reset)).unwrap();
         }
@@ -554,47 +593,11 @@ impl<'a> Interface<'a> {
         let mut prev: usize = 0;
         let debug_space = if debug { 90 } else { 0 };
         let max_grapheme_length = if width > debug_space {
-            width - debug_space
+            width - debug_space - 9
         } else {
-            2
+            11
         };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
-
-        if command.last_run.is_some() {
-            let duration = &format_duration(
-                Duration::minutes(
-                    Utc::now()
-                        .signed_duration_since(Utc.timestamp(command.last_run.unwrap(), 0))
-                        .num_minutes(),
-                )
-                .to_std()
-                .unwrap(),
-            )
-            .to_string()
-            .split(" ")
-            .take(2)
-            .map(|s| {
-                s.replace("years", "y")
-                    .replace("year", "y")
-                    .replace("months", "mo")
-                    .replace("month", "mo")
-                    .replace("days", "d")
-                    .replace("day", "d")
-                    .replace("hours", "h")
-                    .replace("hour", "h")
-                    .replace("minutes", "m")
-                    .replace("minute", "m")
-                    .replace("0s", "< 1m")
-                    .to_string()
-            })
-            .collect::<Vec<String>>()
-            .join(" ");
-
-            out.push_str(&color::Fg(color::Blue).to_string());
-            out.push_str(&format!("{:>8}", duration));
-            out.push_str(&base_color);
-            out.push_str(" ");
-        }
 
         if !search.is_empty() {
             for (start, end) in &command.match_bounds {
