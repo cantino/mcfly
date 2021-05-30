@@ -245,6 +245,8 @@ impl<'a> Interface<'a> {
             .unwrap();
 
             if command.last_run.is_some() {
+                write!(screen, "{}", cursor::Goto(width - 9, index as u16 + RESULTS_TOP_INDEX)).unwrap();
+
                 let duration = &format_duration(
                     Duration::minutes(
                         Utc::now()
