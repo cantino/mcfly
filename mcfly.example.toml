@@ -1,0 +1,31 @@
+# Mcfly sample configuration, to be placed in ~/.mcfly/mcfly.toml
+
+fuzzy = true
+results = 25
+key_scheme = "Vim" # Vim or Emacs (case-sensitive)
+
+[colors]
+# Colors correspond to the ANSI colors defined for your terminal, and are
+# named in crossterm style (case-insensitive):
+# black         dark_grey
+# dark_red      red
+# dark_green    green
+# dark_yellow   yellow
+# dark_blue     blue
+# dark_magenta  magenta
+# dark_cyan     cyan
+# grey          white
+
+menu_bg = "dark_red"
+menu_fg = "white"
+menu_deleting_bg = "cyan"
+menu_deleting_fg = "dark_red"
+
+bg = "black"
+fg = "white"
+prompt_fg = "white"
+highlight = "red"
+timing = "magenta"
+cursor_bg = "dark_grey"
+cursor_fg = "white"
+cursor_highlight = "red"

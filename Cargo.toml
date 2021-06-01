@@ -23,15 +23,17 @@ debug = true
 chrono = "0.4.19"
 clap = "2.33"
 csv = "1"
+crossterm = "0.18"
 dirs = "2.0"
+figment = { version = "0.10", features = ["toml"] }
 humantime = "2.1.0"
 itertools = "0.9.0"
 libc = "0.2"
 rand = "0.7"
 regex = "1"
 relative-path = "1.0"
+serde = { version = "1.0", features = ["derive"] }
 shellexpand = "2.0"
-termion = "1.5.5"
 unicode-segmentation = "1.6"
 
 [dependencies.rusqlite]

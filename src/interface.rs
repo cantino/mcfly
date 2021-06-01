@@ -1,3 +1,4 @@
+
 use crate::command_input::{CommandInput, Move};
 use crate::history::History;
 
@@ -6,15 +7,16 @@ use crate::history::Command;
 use crate::history_cleaner;
 use crate::settings::Settings;
 use crate::settings::{InterfaceView, KeyScheme};
+use crossterm::cursor;
+use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::queue;
+use crossterm::style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor};
+use crossterm::terminal;
+use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen};
+use std::io::{stdout, Write};
+use std::str::FromStr;
 use chrono::{Duration, TimeZone, Utc};
 use humantime::format_duration;
-use std::io::{stdin, stdout, Write};
-use termion::color;
-use termion::event::Key;
-use termion::input::TermRead;
-use termion::raw::IntoRawMode;
-use termion::screen::AlternateScreen;
-use termion::{clear, cursor, terminal_size};
 
 pub struct Interface<'a> {
     history: &'a History,
@@ -66,17 +68,28 @@ impl MenuMode {
         }
     }
 
-    fn bg(&self) -> String {
+    fn bg(&self, interface: &Interface) -> Color {
         match *self {
-            MenuMode::Normal => color::Bg(color::LightBlue).to_string(),
-            MenuMode::ConfirmDelete => color::Bg(color::Red).to_string(),
+            MenuMode::Normal => Color::from_str(&interface.settings.colors.menu_bg).unwrap(),
+            MenuMode::ConfirmDelete => {
+                Color::from_str(&interface.settings.colors.menu_deleting_bg).unwrap()
+            }
+        }
+    }
+
+    fn fg(&self, interface: &Interface) -> Color {
+        match *self {
+            MenuMode::Normal => Color::from_str(&interface.settings.colors.menu_fg).unwrap(),
+            MenuMode::ConfirmDelete => {
+                Color::from_str(&interface.settings.colors.menu_deleting_fg).unwrap()
+            }
         }
     }
 }
 
-const PROMPT_LINE_INDEX: u16 = 3;
-const INFO_LINE_INDEX: u16 = 1;
-const RESULTS_TOP_INDEX: u16 = 5;
+const PROMPT_LINE_INDEX: u16 = 2;
+const INFO_LINE_INDEX: u16 = 0;
+const RESULTS_TOP_INDEX: u16 = 4;
 
 impl<'a> Interface<'a> {
     pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
@@ -133,136 +146,89 @@ impl<'a> Interface<'a> {
     }
 
     fn menubar<W: Write>(&self, screen: &mut W) {
-        let (width, _height): (u16, u16) = terminal_size().unwrap();
-        write!(
+        let (width, _height): (u16, u16) = terminal::size().unwrap();
+
+        let _ = queue!(screen, cursor::MoveTo(0, self.info_line_index()));
+        let _ = queue!(screen, SetBackgroundColor(self.menu_mode.bg(self)));
+        let _ = queue!(screen, SetForegroundColor(self.menu_mode.fg(self)));
+        let _ = queue!(
             screen,
-            "{hide}{cursor}{clear}{fg}{bg}{text:width$}{reset_bg}",
-            hide = cursor::Hide,
-            fg = color::Fg(color::LightWhite).to_string(),
-            bg = self.menu_mode.bg(),
-            cursor = cursor::Goto(1, self.info_line_index()),
-            clear = clear::CurrentLine,
-            text = self.menu_mode.text(self),
-            reset_bg = color::Bg(color::Reset).to_string(),
-            width = width as usize
-        )
-        .unwrap();
+            Print(format!(
+                "{text:width$}",
+                text = self.menu_mode.text(self),
+                width = width as usize
+            ))
+        );
+        let _ = queue!(screen, ResetColor);
+
         screen.flush().unwrap();
     }
 
     fn prompt<W: Write>(&self, screen: &mut W) {
-        let prompt_line_index = self.prompt_line_index();
-        write!(
+        let _ = queue!(
             screen,
-            "{}{}{}$ {}",
-            if self.settings.lightmode {
-                color::Fg(color::Black).to_string()
-            } else {
-                color::Fg(color::LightWhite).to_string()
-            },
-            cursor::Goto(1, self.prompt_line_index()),
-            clear::CurrentLine,
-            self.input
-        )
-        .unwrap();
-        write!(
+            SetForegroundColor(Color::from_str(&self.settings.colors.prompt_fg).unwrap())
+        );
+        let _ = queue!(screen, cursor::MoveTo(0, self.prompt_line_index()));
+        let _ = queue!(screen, Clear(ClearType::CurrentLine));
+        let _ = queue!(screen, Print(format!("$ {}", self.input)));
+        let _ = queue!(
             screen,
-            "{}{}",
-            cursor::Goto(self.input.cursor as u16 + 3, prompt_line_index),
-            cursor::Show
-        )
-        .unwrap();
-        screen.flush().unwrap();
-    }
+            cursor::MoveTo(self.input.cursor as u16 + 2, self.prompt_line_index())
+        );
 
-    fn debug_cursor<W: Write>(&self, screen: &mut W) {
-        let result_top_index = self.result_top_index();
-        write!(
-            screen,
-            "{}{}",
-            cursor::Hide,
-            cursor::Goto(0, result_top_index + self.settings.results + 1)
-        )
-        .unwrap();
+        if self.in_vim_insert_mode {
+            let _ = queue!(screen, cursor::EnableBlinking);
+        } else {
+            let _ = queue!(screen, cursor::DisableBlinking);
+        }
+
+        let _ = queue!(screen, cursor::Show);
+
         screen.flush().unwrap();
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {
-        let result_top_index = self.result_top_index();
-        write!(
-            screen,
-            "{}{}{}",
-            cursor::Hide,
-            cursor::Goto(1, result_top_index),
-            clear::All
-        )
-        .unwrap();
-        let (width, _height): (u16, u16) = terminal_size().unwrap();
+        let _ = queue!(screen, cursor::Hide);
+        let _ = queue!(screen, cursor::MoveTo(0, self.result_top_index()));
+        let _ = queue!(screen, Clear(ClearType::All));
+
+        let (width, _height): (u16, u16) = terminal::size().unwrap();
 
         if !self.matches.is_empty() && self.selection > self.matches.len() - 1 {
             self.selection = self.matches.len() - 1;
         }
 
         for (index, command) in self.matches.iter().enumerate() {
-            let mut fg = if self.settings.lightmode {
-                color::Fg(color::Black).to_string()
-            } else {
-                color::Fg(color::LightWhite).to_string()
-            };
-
-            let mut highlight = if self.settings.lightmode {
-                color::Fg(color::Blue).to_string()
-            } else {
-                color::Fg(color::Green).to_string()
-            };
-
-            let mut bg = color::Bg(color::Reset).to_string();
+            let mut fg = Color::from_str(&self.settings.colors.fg).unwrap();
+            let mut bg = Color::Reset;
+            let mut highlight = Color::from_str(&self.settings.colors.highlight).unwrap();
+            let mut timing_color = Color::from_str(&self.settings.colors.timing).unwrap();
 
             if index == self.selection {
-                if self.settings.lightmode {
-                    fg = color::Fg(color::LightWhite).to_string();
-                    bg = color::Bg(color::LightBlack).to_string();
-                    highlight = color::Fg(color::White).to_string();
-                } else {
-                    fg = color::Fg(color::Black).to_string();
-                    bg = color::Bg(color::LightWhite).to_string();
-                    highlight = color::Fg(color::Green).to_string();
-                }
+                fg = Color::from_str(&self.settings.colors.cursor_fg).unwrap();
+                bg = Color::from_str(&self.settings.colors.cursor_bg).unwrap();
+                highlight = Color::from_str(&self.settings.colors.cursor_highlight).unwrap();
+                timing_color = Color::from_str(&self.settings.colors.timing).unwrap();
             }
 
-            write!(screen, "{}{}", fg, bg).unwrap();
-
             let command_line_index = self.command_line_index(index as i16);
-
-            write!(
+            let _ = queue!(screen, cursor::MoveTo(0, (command_line_index as i16 + self.result_top_index() as i16) as u16));
+            let _ = queue!(screen, SetBackgroundColor(bg));
+            let _ = queue!(screen, SetForegroundColor(fg));
+            let _ = queue!(
                 screen,
-                "{}{}",
-                cursor::Goto(
-                    1,
-                    (command_line_index as i16 + result_top_index as i16) as u16
-                ),
-                Interface::truncate_for_display(
+                Print(&format!("{:<width$}", Interface::truncate_for_display(
                     command,
                     &self.input.command,
                     width,
                     highlight,
                     fg,
                     self.debug
-                )
-            )
-            .unwrap();
+                ), width=(width + 10) as usize)),
+            );
 
             if command.last_run.is_some() {
-                write!(
-                    screen,
-                    "{}",
-                    cursor::Goto(
-                        width - 9,
-                        (command_line_index as i16 + result_top_index as i16) as u16
-                    )
-                )
-                .unwrap();
-
                 let duration = &format_duration(
                     Duration::minutes(
                         Utc::now()
@@ -291,32 +257,21 @@ impl<'a> Interface<'a> {
                 .collect::<Vec<String>>()
                 .join(" ");
 
-                let highlight = if self.settings.lightmode {
-                    color::Fg(color::Blue).to_string()
-                } else {
-                    color::Fg(color::LightBlue).to_string()
-                };
-
-                write!(screen, "{}", highlight).unwrap();
-                write!(screen, "{:>9}", duration).unwrap();
+                let _ = queue!(screen, cursor::MoveTo(width - 9, (command_line_index as i16 + self.result_top_index() as i16) as u16));
+                let _ = queue!(screen, SetForegroundColor(timing_color));
+                let _ = queue!(screen, Print(&format!("{:>9}", duration)));
+                let _ = queue!(screen, SetForegroundColor(fg));
             }
-
-            write!(screen, "{}", color::Bg(color::Reset)).unwrap();
-            write!(screen, "{}", color::Fg(color::Reset)).unwrap();
         }
         screen.flush().unwrap();
     }
 
     #[allow(unused)]
     fn debug<W: Write, S: Into<String>>(&self, screen: &mut W, s: S) {
-        write!(
-            screen,
-            "{}{}{}",
-            cursor::Goto(1, 2),
-            clear::CurrentLine,
-            s.into()
-        )
-        .unwrap();
+        let _ = queue!(screen, cursor::MoveTo(0, 0));
+        let _ = queue!(screen, Clear(ClearType::CurrentLine));
+        let _ = queue!(screen, Print(s.into()));
+
         screen.flush().unwrap();
     }
 
@@ -384,42 +339,60 @@ impl<'a> Interface<'a> {
     }
 
     fn select(&mut self) {
-        let stdin = stdin();
-        let mut screen = AlternateScreen::from(stdout().into_raw_mode().unwrap());
-        //        let mut screen = stdout().into_raw_mode().unwrap();
-        write!(screen, "{}", clear::All).unwrap();
+        let _ = terminal::enable_raw_mode();
+
+        let mut screen = stdout();
+
+        let _ = queue!(screen, EnterAlternateScreen);
+        let _ = queue!(screen, Clear(ClearType::All));
 
         self.refresh_matches();
         self.results(&mut screen);
         self.menubar(&mut screen);
         self.prompt(&mut screen);
 
-        for c in stdin.keys() {
-            self.debug_cursor(&mut screen);
+        loop {
+            let event =
+                read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
 
             if self.menu_mode != MenuMode::Normal {
-                match c.unwrap() {
-                    Key::Ctrl('c')
-                    | Key::Ctrl('d')
-                    | Key::Ctrl('g')
-                    | Key::Ctrl('z')
-                    | Key::Ctrl('r') => {
+                match event {
+                    Event::Key(KeyEvent {
+                        modifiers: KeyModifiers::CONTROL,
+                        code:
+                            KeyCode::Char('c')
+                            | KeyCode::Char('d')
+                            | KeyCode::Char('g')
+                            | KeyCode::Char('z')
+                            | KeyCode::Char('r'),
+                    }) => {
                         self.run = false;
                         self.input.clear();
                         break;
                     }
-                    Key::Char('y') | Key::Char('Y') => {
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('y'),
+                        ..
+                    }) => {
                         self.confirm(true);
                     }
-                    Key::Char('n') | Key::Char('N') | Key::Esc => {
+                    Event::Key(
+                        KeyEvent {
+                            code: KeyCode::Char('n'),
+                            ..
+                        }
+                        | KeyEvent {
+                            code: KeyCode::Esc, ..
+                        },
+                    ) => {
                         self.confirm(false);
                     }
                     _ => {}
-                }
+                };
             } else {
                 let early_out = match self.settings.key_scheme {
-                    KeyScheme::Emacs => self.select_with_emacs_key_scheme(c.unwrap()),
-                    KeyScheme::Vim => self.select_with_vim_key_scheme(c.unwrap()),
+                    KeyScheme::Emacs => self.select_with_emacs_key_scheme(event),
+                    KeyScheme::Vim => self.select_with_vim_key_scheme(event),
                 };
 
                 if early_out {
@@ -432,70 +405,144 @@ impl<'a> Interface<'a> {
             self.prompt(&mut screen);
         }
 
-        write!(screen, "{}{}", clear::All, cursor::Show).unwrap();
+        let _ = queue!(screen, Clear(ClearType::All));
+        let _ = queue!(screen, cursor::Show);
+        let _ = queue!(screen, LeaveAlternateScreen);
+
+        let _ = terminal::disable_raw_mode();
     }
 
-    fn select_with_emacs_key_scheme(&mut self, k: Key) -> bool {
-        match k {
-            Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
-                self.run = true;
-                self.accept_selection();
-                return true;
-            }
-            Key::Char('\t') => {
-                self.run = false;
-                self.accept_selection();
-                return true;
-            }
-            Key::Ctrl('c') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Esc | Key::Ctrl('r') => {
+    fn select_with_emacs_key_scheme(&mut self, event: Event) -> bool {
+        match event {
+            Event::Key(
+                KeyEvent {
+                    modifiers: KeyModifiers::CONTROL,
+                    code:
+                        KeyCode::Char('c')
+                        | KeyCode::Char('g')
+                        | KeyCode::Char('z')
+                        | KeyCode::Char('r'),
+                }
+                | KeyEvent {
+                    code: KeyCode::Esc, ..
+                },
+            ) => {
                 self.run = false;
                 self.input.clear();
                 return true;
             }
-            Key::Ctrl('b') => self.input.move_cursor(Move::Backward),
-            Key::Ctrl('f') => self.input.move_cursor(Move::Forward),
-            Key::Ctrl('a') => self.input.move_cursor(Move::BOL),
-            Key::Ctrl('e') => self.input.move_cursor(Move::EOL),
-            Key::Ctrl('w') | Key::Alt('\x08') | Key::Alt('\x7f') => {
+
+            Event::Key(KeyEvent {
+                code: KeyCode::Tab, ..
+            }) => {
+                self.run = false;
+                self.accept_selection();
+                return true;
+            }
+
+            Event::Key(
+                KeyEvent {
+                    code: KeyCode::Enter,
+                    ..
+                }
+                | KeyEvent {
+                    modifiers: KeyModifiers::CONTROL,
+                    code: KeyCode::Char('j'),
+                },
+            ) => {
+                self.run = true;
+                self.accept_selection();
+                return true;
+            }
+
+            Event::Key(
+                KeyEvent {
+                    modifiers: KeyModifiers::CONTROL,
+                    code: KeyCode::Char('w'),
+                }
+                | KeyEvent {
+                    modifiers: KeyModifiers::ALT,
+                    code: KeyCode::Char('\x08') | KeyCode::Char('\x7f'),
+                },
+            ) => {
                 self.input.delete(Move::BackwardWord);
                 self.refresh_matches();
             }
-            Key::Alt('d') => {
-                self.input.delete(Move::ForwardWord);
-                self.refresh_matches();
-            }
-            Key::Ctrl('v') => {
-                self.debug = !self.debug;
-            }
-            Key::Alt('b') => self.input.move_cursor(Move::BackwardWord),
-            Key::Alt('f') => self.input.move_cursor(Move::ForwardWord),
-            Key::Left => self.input.move_cursor(Move::Backward),
-            Key::Right => self.input.move_cursor(Move::Forward),
-            Key::Up | Key::PageUp | Key::Ctrl('p') => self.move_selection(MoveSelection::Up),
-            Key::Down | Key::PageDown | Key::Ctrl('n') => self.move_selection(MoveSelection::Down),
-            Key::Ctrl('k') => {
-                self.input.delete(Move::EOL);
-                self.refresh_matches();
-            }
-            Key::Ctrl('u') => {
-                self.input.delete(Move::BOL);
-                self.refresh_matches();
-            }
-            Key::Backspace | Key::Ctrl('h') => {
+
+            Event::Key(KeyEvent {
+                code: KeyCode::Left,
+                ..
+            }) => self.input.move_cursor(Move::Backward),
+            Event::Key(KeyEvent {
+                code: KeyCode::Right,
+                ..
+            }) => self.input.move_cursor(Move::Forward),
+
+            Event::Key(
+                KeyEvent {
+                    code: KeyCode::Up | KeyCode::PageUp,
+                    ..
+                }
+                | KeyEvent {
+                    modifiers: KeyModifiers::CONTROL,
+                    code: KeyCode::Char('p'),
+                },
+            ) => self.move_selection(MoveSelection::Up),
+
+            Event::Key(
+                KeyEvent {
+                    code: KeyCode::Down | KeyCode::PageDown,
+                    ..
+                }
+                | KeyEvent {
+                    modifiers: KeyModifiers::CONTROL,
+                    code: KeyCode::Char('n'),
+                },
+            ) => self.move_selection(MoveSelection::Down),
+
+            Event::Key(
+                KeyEvent {
+                    code: KeyCode::Backspace,
+                    ..
+                }
+                | KeyEvent {
+                    modifiers: KeyModifiers::CONTROL,
+                    code: KeyCode::Char('h'),
+                },
+            ) => {
                 self.input.delete(Move::Backward);
                 self.refresh_matches();
             }
-            Key::Delete | Key::Ctrl('d') => {
+            Event::Key(KeyEvent {
+                code: KeyCode::Delete,
+                ..
+            }
+            | KeyEvent {
+                modifiers: KeyModifiers::CONTROL,
+                code: KeyCode::Char('d')
+            }) => {
                 self.input.delete(Move::Forward);
                 self.refresh_matches();
             }
-            Key::Home => self.input.move_cursor(Move::BOL),
-            Key::End => self.input.move_cursor(Move::EOL),
-            Key::Char(c) => {
+
+            Event::Key(KeyEvent {
+                code: KeyCode::Home,
+                ..
+            }) => self.input.move_cursor(Move::BOL),
+            Event::Key(KeyEvent {
+                code: KeyCode::End, ..
+            }) => self.input.move_cursor(Move::EOL),
+            Event::Key(KeyEvent {
+                code: KeyCode::Char(c),
+                ..
+            }) => {
                 self.input.insert(c);
                 self.refresh_matches();
             }
-            Key::F(2) => {
+            Event::Key(KeyEvent {
+                code: KeyCode::F(2),
+                ..
+            }) => {
                 if !self.matches.is_empty() {
                     if self.settings.delete_without_confirm {
                         self.delete_selection();
@@ -504,54 +551,151 @@ impl<'a> Interface<'a> {
                     }
                 }
             }
+
+            Event::Key(KeyEvent {
+                modifiers: KeyModifiers::CONTROL,
+                code,
+            }) => match code {
+                KeyCode::Char('v') => self.debug = !self.debug,
+                KeyCode::Char('b') => self.input.move_cursor(Move::Backward),
+                KeyCode::Char('f') => self.input.move_cursor(Move::Forward),
+                KeyCode::Char('a') => self.input.move_cursor(Move::BOL),
+                KeyCode::Char('e') => self.input.move_cursor(Move::EOL),
+                KeyCode::Char('k') => {
+                    self.input.delete(Move::EOL);
+                    self.refresh_matches();
+                }
+                KeyCode::Char('u') => {
+                    self.input.delete(Move::BOL);
+                    self.refresh_matches();
+                }
+                _ => {}
+            },
+
+            Event::Key(KeyEvent {
+                modifiers: KeyModifiers::ALT,
+                code,
+            }) => match code {
+                KeyCode::Char('b') => self.input.move_cursor(Move::BackwardWord),
+                KeyCode::Char('f') => self.input.move_cursor(Move::ForwardWord),
+                KeyCode::Char('d') => {
+                    self.input.delete(Move::ForwardWord);
+                    self.refresh_matches();
+                }
+                _ => {}
+            },
+
             _ => {}
         }
 
         false
     }
 
-    fn select_with_vim_key_scheme(&mut self, k: Key) -> bool {
+    fn select_with_vim_key_scheme(&mut self, event: Event) -> bool {
         if self.in_vim_insert_mode {
-            match k {
-                Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
+            match event {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Tab, ..
+                }) => {
+                    self.run = false;
+                    self.accept_selection();
+                    return true;
+                }
+
+                Event::Key(
+                    KeyEvent {
+                        code: KeyCode::Enter,
+                        ..
+                    }
+                    | KeyEvent {
+                        modifiers: KeyModifiers::CONTROL,
+                        code: KeyCode::Char('j'),
+                    },
+                ) => {
                     self.run = true;
                     self.accept_selection();
                     return true;
                 }
-                Key::Char('\t') => {
-                    self.run = false;
-                    self.accept_selection();
-                    return true;
-                }
-                Key::Ctrl('c') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Ctrl('r') => {
+
+                Event::Key(KeyEvent {
+                    modifiers: KeyModifiers::CONTROL,
+                    code:
+                        KeyCode::Char('c')
+                        | KeyCode::Char('g')
+                        | KeyCode::Char('z')
+                        | KeyCode::Char('r'),
+                }) => {
                     self.run = false;
                     self.input.clear();
                     return true;
                 }
-                Key::Left => self.input.move_cursor(Move::Backward),
-                Key::Right => self.input.move_cursor(Move::Forward),
-                Key::Up | Key::PageUp | Key::Ctrl('u') | Key::Ctrl('p') => {
-                    self.move_selection(MoveSelection::Up)
-                }
-                Key::Down | Key::PageDown | Key::Ctrl('d') | Key::Ctrl('n') => {
-                    self.move_selection(MoveSelection::Down)
-                }
-                Key::Esc => self.in_vim_insert_mode = false,
-                Key::Backspace => {
+
+                Event::Key(KeyEvent {
+                    code: KeyCode::Left,
+                    ..
+                }) => self.input.move_cursor(Move::Backward),
+                Event::Key(KeyEvent {
+                    code: KeyCode::Right,
+                    ..
+                }) => self.input.move_cursor(Move::Forward),
+
+                Event::Key(
+                    KeyEvent {
+                        code: KeyCode::Up | KeyCode::PageUp,
+                        ..
+                    }
+                    | KeyEvent {
+                        modifiers: KeyModifiers::CONTROL,
+                        code: KeyCode::Char('u') | KeyCode::Char('p'),
+                    },
+                ) => self.move_selection(MoveSelection::Up),
+
+                Event::Key(
+                    KeyEvent {
+                        code: KeyCode::Down | KeyCode::PageDown,
+                        ..
+                    }
+                    | KeyEvent {
+                        modifiers: KeyModifiers::CONTROL,
+                        code: KeyCode::Char('d') | KeyCode::Char('n'),
+                    },
+                ) => self.move_selection(MoveSelection::Down),
+
+                Event::Key(KeyEvent {
+                    code: KeyCode::Esc, ..
+                }) => self.in_vim_insert_mode = false,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Backspace,
+                    ..
+                }) => {
                     self.input.delete(Move::Backward);
                     self.refresh_matches();
                 }
-                Key::Delete => {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Delete,
+                    ..
+                }) => {
                     self.input.delete(Move::Forward);
                     self.refresh_matches();
                 }
-                Key::Home => self.input.move_cursor(Move::BOL),
-                Key::End => self.input.move_cursor(Move::EOL),
-                Key::Char(c) => {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Home,
+                    ..
+                }) => self.input.move_cursor(Move::BOL),
+                Event::Key(KeyEvent {
+                    code: KeyCode::End, ..
+                }) => self.input.move_cursor(Move::EOL),
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char(c),
+                    ..
+                }) => {
                     self.input.insert(c);
                     self.refresh_matches();
                 }
-                Key::F(2) => {
+                Event::Key(KeyEvent {
+                    code: KeyCode::F(2),
+                    ..
+                }) => {
                     if !self.matches.is_empty() {
                         if self.settings.delete_without_confirm {
                             self.delete_selection();
@@ -563,51 +707,127 @@ impl<'a> Interface<'a> {
                 _ => {}
             }
         } else {
-            match k {
-                Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
+            match event {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Tab, ..
+                }) => {
+                    self.run = false;
+                    self.accept_selection();
+                    return true;
+                }
+
+                Event::Key(
+                    KeyEvent {
+                        code: KeyCode::Enter,
+                        ..
+                    }
+                    | KeyEvent {
+                        modifiers: KeyModifiers::CONTROL,
+                        code: KeyCode::Char('j'),
+                    },
+                ) => {
                     self.run = true;
                     self.accept_selection();
                     return true;
                 }
-                Key::Char('\t') => {
-                    self.run = false;
-                    self.accept_selection();
-                    return true;
-                }
-                Key::Ctrl('c')
-                | Key::Ctrl('g')
-                | Key::Ctrl('z')
-                | Key::Esc
-                | Key::Char('q')
-                // TODO add ZZ as shortcut
-                | Key::Ctrl('r') => {
+
+                Event::Key(
+                    KeyEvent {
+                        modifiers: KeyModifiers::CONTROL,
+                        code:
+                            KeyCode::Char('c')
+                            | KeyCode::Char('g')
+                            | KeyCode::Char('z')
+                            | KeyCode::Char('r'), // TODO add ZZ as shortcut
+                    }
+                    | KeyEvent {
+                        code: KeyCode::Esc, ..
+                    },
+                ) => {
                     self.run = false;
                     self.input.clear();
                     return true;
                 }
-                Key::Left | Key::Char('h') => self.input.move_cursor(Move::Backward),
-                Key::Right | Key::Char('l') => self.input.move_cursor(Move::Forward),
-                Key::Up | Key::PageUp | Key::Char('k') | Key::Ctrl('u') => self.move_selection(MoveSelection::Up),
-                Key::Down | Key::PageDown | Key::Char('j') | Key::Ctrl('d') => self.move_selection(MoveSelection::Down),
-                Key::Char('b') | Key::Char('e') => self.input.move_cursor(Move::BackwardWord),
-                Key::Char('w') => self.input.move_cursor(Move::ForwardWord),
-                Key::Char('0') | Key::Char('^') => self.input.move_cursor(Move::BOL),
-                Key::Char('$') => self.input.move_cursor(Move::EOL),
-                Key::Char('i') | Key::Char('a') => self.in_vim_insert_mode = true,
-                Key::Backspace => {
+
+                Event::Key(KeyEvent {
+                    code: KeyCode::Left | KeyCode::Char('h'),
+                    ..
+                }) => self.input.move_cursor(Move::Backward),
+                Event::Key(KeyEvent {
+                    code: KeyCode::Right | KeyCode::Char('l'),
+                    ..
+                }) => self.input.move_cursor(Move::Forward),
+
+                Event::Key(
+                    KeyEvent {
+                        code: KeyCode::Up | KeyCode::PageUp | KeyCode::Char('k'),
+                        ..
+                    }
+                    | KeyEvent {
+                        modifiers: KeyModifiers::CONTROL,
+                        code: KeyCode::Char('u'),
+                    },
+                ) => self.move_selection(MoveSelection::Up),
+
+                Event::Key(
+                    KeyEvent {
+                        code: KeyCode::Down | KeyCode::PageDown | KeyCode::Char('j'),
+                        ..
+                    }
+                    | KeyEvent {
+                        modifiers: KeyModifiers::CONTROL,
+                        code: KeyCode::Char('d'),
+                    },
+                ) => self.move_selection(MoveSelection::Down),
+
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('b') | KeyCode::Char('e'),
+                    ..
+                }) => self.input.move_cursor(Move::BackwardWord),
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('w'),
+                    ..
+                }) => self.input.move_cursor(Move::ForwardWord),
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('0') | KeyCode::Char('^'),
+                    ..
+                }) => self.input.move_cursor(Move::BOL),
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('$'),
+                    ..
+                }) => self.input.move_cursor(Move::EOL),
+
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('i') | KeyCode::Char('a'),
+                    ..
+                }) => self.in_vim_insert_mode = true,
+
+                Event::Key(KeyEvent {
+                    code: KeyCode::Backspace,
+                    ..
+                }) => {
                     self.input.delete(Move::Backward);
                     self.refresh_matches();
                 }
-                Key::Delete | Key::Char('x') => {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Delete | KeyCode::Char('x'),
+                    ..
+                }) => {
                     self.input.delete(Move::Forward);
                     self.refresh_matches();
                 }
-                Key::Home => self.input.move_cursor(Move::BOL),
-                Key::End => self.input.move_cursor(Move::EOL),
-                Key::Char(_c) => {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Home,
+                    ..
+                }) => self.input.move_cursor(Move::BOL),
+                Event::Key(KeyEvent {
+                    code: KeyCode::End, ..
+                }) => self.input.move_cursor(Move::EOL),
 
-                }
-                Key::F(2) => {
+                Event::Key(KeyEvent {
+                    code: KeyCode::F(2),
+                    ..
+                }) => {
                     if !self.matches.is_empty() {
                         if self.settings.delete_without_confirm {
                             self.delete_selection();
@@ -627,8 +847,8 @@ impl<'a> Interface<'a> {
         command: &Command,
         search: &str,
         width: u16,
-        highlight_color: String,
-        base_color: String,
+        highlight_color: Color,
+        base_color: Color,
         debug: bool,
     ) -> String {
         let mut prev: usize = 0;
@@ -646,9 +866,9 @@ impl<'a> Interface<'a> {
                     out.push_grapheme_str(&command.cmd[prev..*start]);
                 }
 
-                out.push_str(&highlight_color);
+                out.push_str(&format!("{}", SetForegroundColor(highlight_color)));
                 out.push_grapheme_str(&command.cmd[*start..*end]);
-                out.push_str(&base_color);
+                out.push_str(&format!("{}", SetForegroundColor(base_color)));
                 prev = *end;
             }
         }
@@ -660,7 +880,7 @@ impl<'a> Interface<'a> {
         if debug {
             out.max_grapheme_length += debug_space;
             out.push_grapheme_str("  ");
-            out.push_str(&format!("{}", color::Fg(color::LightBlue)));
+            out.push_str(&format!("{}", SetForegroundColor(Color::Blue)));
             out.push_grapheme_str(format!("rnk: {:.*} ", 2, command.rank));
             out.push_grapheme_str(format!("age: {:.*} ", 2, command.features.age_factor));
             out.push_grapheme_str(format!("lng: {:.*} ", 2, command.features.length_factor));
@@ -687,14 +907,15 @@ impl<'a> Interface<'a> {
                 "s_occ: {:.*} ",
                 2, command.features.selected_occurrences_factor
             ));
-            out.push_str(&base_color);
+
+            out.push_str(&format!("{}", SetForegroundColor(base_color)));
         }
 
         out.string
     }
 
     fn result_top_index(&self) -> u16 {
-        let (_width, height): (u16, u16) = terminal_size().unwrap();
+        let (_width, height): (u16, u16) = terminal::size().unwrap();
 
         if self.is_screen_view_bottom() {
             return height - RESULTS_TOP_INDEX;
@@ -703,7 +924,7 @@ impl<'a> Interface<'a> {
     }
 
     fn prompt_line_index(&self) -> u16 {
-        let (_width, height): (u16, u16) = terminal_size().unwrap();
+        let (_width, height): (u16, u16) = terminal::size().unwrap();
         if self.is_screen_view_bottom() {
             return height - PROMPT_LINE_INDEX;
         }
@@ -711,7 +932,7 @@ impl<'a> Interface<'a> {
     }
 
     fn info_line_index(&self) -> u16 {
-        let (_width, height): (u16, u16) = terminal_size().unwrap();
+        let (_width, height): (u16, u16) = terminal::size().unwrap();
         if self.is_screen_view_bottom() {
             return height;
         }
@@ -744,3 +965,5 @@ impl<'a> Interface<'a> {
 // Ctrl('q') | Ctrl('v') => quoted insert
 // Ctrl('y') => yank
 // Ctrl('_') => undo
+
+
