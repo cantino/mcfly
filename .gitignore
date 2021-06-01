@@ -5,3 +5,4 @@ update.sh
 .zsh_history
 .zshrc
 /.fish
+.vscode/**/*

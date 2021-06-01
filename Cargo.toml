@@ -24,6 +24,7 @@ debug = true
 chrono = "0.4"
 clap = "2"
 csv = "1"
+crossterm = "0.18"
 humantime = "2.1"
 directories-next = "2.0"
 itertools = "0.10"
@@ -32,7 +33,6 @@ rand = "0.8"
 regex = "1"
 relative-path = "1.7"
 shellexpand = "2.1"
-termion = "1.5"
 unicode-segmentation = "1.9"
 
 [dependencies.rusqlite]
