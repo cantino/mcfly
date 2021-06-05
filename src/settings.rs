@@ -282,7 +282,26 @@ impl Settings {
             )
             .get_matches();
 
-        let mut settings: Settings = Figment::from(Serialized::defaults(Settings::default()))
+        let mut default_settings = Settings::default();
+
+        if env::var("MCFLY_LIGHT").is_ok() {
+            default_settings.colors = Colors {
+                menu_bg: "Blue".to_string(),
+                menu_fg: "White".to_string(),
+                menu_deleting_bg: "Red".to_string(),
+                menu_deleting_fg: "Cyan".to_string(),
+                bg: "White".to_string(),
+                fg: "Black".to_string(),
+                prompt_fg: "Black".to_string(),
+                highlight: "Blue".to_string(),
+                timing: "Blue".to_string(),
+                cursor_bg: "Dark_Grey".to_string(),
+                cursor_fg: "White".to_string(),
+                cursor_highlight: "White".to_string(),
+            };
+        }
+
+        let mut settings: Settings = Figment::from(Serialized::defaults(default_settings))
             .merge(Toml::file(Settings::mcfly_config_path()))
             .extract()
             .unwrap();
