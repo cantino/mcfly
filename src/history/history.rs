@@ -37,6 +37,7 @@ pub struct Command {
     pub session_id: String,
     pub rank: f64,
     pub when_run: Option<i64>,
+    pub last_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub selected: bool,
     pub dir: Option<String>,
@@ -245,12 +246,12 @@ impl History {
         like_query.push_str("%");
 
         let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
-                                  age_factor, length_factor, exit_factor, recent_failure_factor,
-                                  selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
-                                  selected_occurrences_factor, occurrences_factor
-                           FROM contextual_commands
-                           WHERE cmd LIKE (:like)
-                           ORDER BY rank DESC LIMIT :limit";
+                              age_factor, length_factor, exit_factor, recent_failure_factor,
+                              selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
+                              selected_occurrences_factor, occurrences_factor, last_run
+                      FROM contextual_commands
+                      WHERE cmd LIKE (:like)
+                      ORDER BY rank DESC LIMIT :limit";
         let mut statement = self
             .connection
             .prepare(query)
@@ -359,6 +360,9 @@ impl History {
                             panic!("McFly error: occurrences_factor to be readable ({})", err)
                         }),
                     },
+                    last_run: row.get_checked(19).unwrap_or_else(|err| {
+                        panic!("McFly error: last_run to be readable ({})", err)
+                    }),
                 }
             })
             .unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));
@@ -481,7 +485,7 @@ impl History {
 
         self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
-                  id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir,
+                  id, cmd, cmd_tpl, session_id, when_run, MAX(when_run) AS last_run, exit_code, selected, dir,
 
                   /* to be filled in later */
                   0.0 AS rank,
@@ -519,7 +523,10 @@ impl History {
                   /* percentage of time this command is run relative to the most common command (1: this is the most common command, 0: this is the least common command) */
                   COUNT(*) / :max_occurrences AS occurrences_factor
 
-                  FROM commands c WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC;",
+                  FROM commands c
+                  WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time
+                  GROUP BY cmd
+                  ORDER BY id DESC;",
             &[
                 (":when_run_max", &when_run_max),
                 (":history_duration", &(when_run_max - when_run_min)),
