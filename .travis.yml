@@ -34,6 +34,8 @@ matrix:
 #      os: osx
     - env: TARGET=x86_64-apple-darwin
       os: osx
+    - env: TARGET=aarch64-apple-darwin
+      os: osx
 
     # *BSD
 #    - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
@@ -55,6 +57,9 @@ matrix:
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: nightly
     - env: TARGET=x86_64-apple-darwin
+      os: osx
+      rust: nightly
+    - env: TARGET=aarch64-apple-darwin
       os: osx
       rust: nightly
 
