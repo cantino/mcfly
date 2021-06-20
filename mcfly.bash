@@ -21,8 +21,7 @@ MCFLY_SESSION_ID="$(command dd if=/dev/urandom bs=256 count=1 2> /dev/null | LC_
 export MCFLY_SESSION_ID
 
 # Find the binary
-MCFLY_PATH=${MCFLY_PATH:-$(which mcfly)}
-if [ -z "$MCFLY_PATH" ]; then
+if [ -z "$(which mcfly)" ]; then
   echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.bash."
   return 1
 fi
@@ -44,15 +43,11 @@ function mcfly_prompt_command {
     command tail -n100 "${HISTFILE}" >| "${MCFLY_HISTORY}"
   fi
 
-  history -a "${MCFLY_HISTORY}" # Append history to $MCFLY_HISTORY.
-  # Run mcfly with the saved code. It will:
-  # * append commands to $HISTFILE, (~/.bash_history by default)
-  #   for backwards compatibility and to load in new terminal sessions;
-  # * find the text of the last command in $MCFLY_HISTORY and save it to the database.
-  $MCFLY_PATH add --exit ${exit_code} --append-to-histfile
-  # Clear the in-memory history and reload it from $MCFLY_HISTORY
-  # (to remove instances of '#mcfly: ' from the local session history).
-  history -cr "${MCFLY_HISTORY}"
+  # Run mcfly with the last history entry on stdin. It will:
+  # * Append the command to $HISTFILE, (~/.bash_history by default)
+  # * Parse out the command and and save it to the database.
+  HISTTIMEFORMAT="%s:" history 1 | mcfly add --exit $exit_code --command-from-stdin
+
   return ${exit_code} # Restore the original exit code by returning it.
 }
 

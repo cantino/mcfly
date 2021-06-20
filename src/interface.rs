@@ -203,6 +203,7 @@ impl<'a> Interface<'a> {
             self.selection = self.matches.len() - 1;
         }
 
+        let mut line_offset = 0;
         for (index, command) in self.matches.iter().enumerate() {
             let mut fg = if self.settings.lightmode {
                 color::Fg(color::Black).to_string()
@@ -231,26 +232,31 @@ impl<'a> Interface<'a> {
             }
 
             write!(screen, "{}{}", fg, bg).unwrap();
+            
+            let command_display = Interface::truncate_for_display(
+                command,
+                &self.input.command,
+                width,
+                highlight,
+                fg,
+                self.debug
+            );
 
-            let command_line_index = self.command_line_index(index as i16);
+            let mut lines_count = 0;
 
-            write!(
-                screen,
-                "{}{}",
-                cursor::Goto(
-                    1,
-                    (command_line_index as i16 + result_top_index as i16) as u16
-                ),
-                Interface::truncate_for_display(
-                    command,
-                    &self.input.command,
-                    width,
-                    highlight,
-                    fg,
-                    self.debug
+            for line in command_display.lines() {
+                write!(
+                    screen,
+                    "{}{}",
+                    cursor::Goto(
+                        1,
+                        (line_offset as i16 + lines_count as i16 + result_top_index as i16) as u16
+                    ),
+                    line
                 )
-            )
-            .unwrap();
+                .unwrap();
+                lines_count += 1;
+            }
 
             if command.last_run.is_some() {
                 write!(
@@ -258,7 +264,7 @@ impl<'a> Interface<'a> {
                     "{}",
                     cursor::Goto(
                         width - 9,
-                        (command_line_index as i16 + result_top_index as i16) as u16
+                        (line_offset as i16 + result_top_index as i16) as u16
                     )
                 )
                 .unwrap();
@@ -303,6 +309,8 @@ impl<'a> Interface<'a> {
 
             write!(screen, "{}", color::Bg(color::Reset)).unwrap();
             write!(screen, "{}", color::Fg(color::Reset)).unwrap();
+
+            line_offset += lines_count;
         }
         screen.flush().unwrap();
     }
