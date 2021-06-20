@@ -113,6 +113,32 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
+### Installing using our install script
+
+1. `curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly`
+
+2. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
+
+   Bash:
+
+   ```bash
+   eval "$(mcfly init bash)"
+   ```
+
+   Zsh:
+
+   ```bash
+   eval "$(mcfly init zsh)"
+   ```
+
+   Fish:
+
+   ```bash
+   mcfly init fish | source
+   ```
+
+3. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
+
 ### Installing manually from GitHub
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
