@@ -418,7 +418,6 @@ impl<'a> Interface<'a> {
                 return true;
             }
             Key::Ctrl('c')
-            | Key::Ctrl('d')
             | Key::Ctrl('g')
             | Key::Ctrl('z')
             | Key::Esc
@@ -460,7 +459,7 @@ impl<'a> Interface<'a> {
                 self.input.delete(Move::Backward);
                 self.refresh_matches();
             }
-            Key::Delete => {
+            Key::Delete | Key::Ctrl('d') => {
                 self.input.delete(Move::Forward);
                 self.refresh_matches();
             }
