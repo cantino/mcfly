@@ -431,7 +431,7 @@ impl<'a> Interface<'a> {
                 if !self.matches.is_empty() {
                     if self.settings.delete_without_confirm {
                         self.delete_selection();
-                    }else{
+                    } else {
                         self.menu_mode = MenuMode::ConfirmDelete;
                     }
                 }
@@ -485,7 +485,7 @@ impl<'a> Interface<'a> {
                     if !self.matches.is_empty() {
                         if self.settings.delete_without_confirm {
                             self.delete_selection();
-                        }else{
+                        } else {
                             self.menu_mode = MenuMode::ConfirmDelete;
                         }
                     }

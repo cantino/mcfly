@@ -372,8 +372,9 @@ impl Settings {
                 settings.fuzzy =
                     search_matches.is_present("fuzzy") || env::var("MCFLY_FUZZY").is_ok();
 
-                settings.delete_without_confirm= 
-                    search_matches.is_present("delete_without_confirm") || env::var("MCFLY_DELETE_WITHOUT_CONFIRM").is_ok();
+                settings.delete_without_confirm = search_matches
+                    .is_present("delete_without_confirm")
+                    || env::var("MCFLY_DELETE_WITHOUT_CONFIRM").is_ok();
                 settings.output_selection = search_matches
                     .value_of("output_selection")
                     .map(|s| s.to_owned());
