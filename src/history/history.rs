@@ -130,7 +130,7 @@ impl History {
         self.connection.execute_named("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, old_dir) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :selected, :dir, :old_dir)",
                                       &[
                                           (":cmd", &command.to_owned()),
-                                          (":cmd_tpl", &simplified_command.result.to_owned()),
+                                          (":cmd_tpl", &simplified_command.result),
                                           (":session_id", &session_id.to_owned()),
                                           (":when_run", &when_run.to_owned()),
                                           (":exit_code", &exit_code.to_owned()),
@@ -243,7 +243,7 @@ impl History {
             like_query.push_str(cmd);
         }
 
-        like_query.push_str("%");
+        like_query.push('%');
 
         let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
                               age_factor, length_factor, exit_factor, recent_failure_factor,
@@ -277,7 +277,7 @@ impl History {
                                     return true;
                                 }
 
-                                return false;
+                                false
                             })
                             .map(|m| m.0);
 
@@ -391,7 +391,7 @@ impl History {
                     let b_mod = 1.0 - b_len as f64 / (a_len + b_len) as f64;
 
                     PartialOrd::partial_cmp(&(b.rank + b_mod), &(a.rank + a_mod))
-                        .unwrap_or_else(|| Ordering::Equal)
+                        .unwrap_or(Ordering::Equal)
                 })
                 .collect()
         }
