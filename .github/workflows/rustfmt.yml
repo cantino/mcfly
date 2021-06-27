@@ -1,0 +1,18 @@
+# When pushed to master, run `cargo +nightly fmt --all` and open a PR.
+name: rustfmt
+on: [push, pull_request]
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain with rustfmt available
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt
+
+      - run: rustfmt --edition 2018 **/*.rs --check
