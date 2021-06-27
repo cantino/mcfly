@@ -95,7 +95,7 @@ impl fmt::Display for HistoryCommand {
 pub fn full_history(path: &PathBuf, history_format: HistoryFormat) -> Vec<HistoryCommand> {
     match history_format {
         HistoryFormat::Bash | HistoryFormat::Zsh { .. } => {
-            let history_contents = read_ignoring_utf_errors(&path);
+            let history_contents = read_ignoring_utf_errors(path);
             let zsh_timestamp_and_duration_regex = Regex::new(r"^: \d+:\d+;").unwrap();
             let when = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -114,7 +114,7 @@ pub fn full_history(path: &PathBuf, history_format: HistoryFormat) -> Vec<Histor
             // newlines) and timestamps, ignoring the 'paths' field.
             let mut commands = Vec::new();
 
-            let history_contents = read_ignoring_utf_errors(&path);
+            let history_contents = read_ignoring_utf_errors(path);
 
             // Store command strings, and add them as HistoryCommand when we see the timestamp.
             let mut command = None;

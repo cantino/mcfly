@@ -41,13 +41,11 @@ impl SimplifiedCommand {
                 "\"" => {
                     if escaped {
                         escaped = false;
-                    } else {
-                        if in_double_quote {
-                            in_double_quote = false;
-                            self.result.push_str("QUOTED");
-                        } else if !in_single_quote {
-                            in_double_quote = true;
-                        }
+                    } else if in_double_quote {
+                        in_double_quote = false;
+                        self.result.push_str("QUOTED");
+                    } else if !in_single_quote {
+                        in_double_quote = true;
                     }
                 }
                 "\'" => {

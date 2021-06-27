@@ -245,7 +245,12 @@ impl<'a> Interface<'a> {
             .unwrap();
 
             if command.last_run.is_some() {
-                write!(screen, "{}", cursor::Goto(width - 9, index as u16 + RESULTS_TOP_INDEX)).unwrap();
+                write!(
+                    screen,
+                    "{}",
+                    cursor::Goto(width - 9, index as u16 + RESULTS_TOP_INDEX)
+                )
+                .unwrap();
 
                 let duration = &format_duration(
                     Duration::minutes(
@@ -257,7 +262,7 @@ impl<'a> Interface<'a> {
                     .unwrap(),
                 )
                 .to_string()
-                .split(" ")
+                .split(' ')
                 .take(2)
                 .map(|s| {
                     s.replace("years", "y")
@@ -417,11 +422,7 @@ impl<'a> Interface<'a> {
                 self.accept_selection();
                 return true;
             }
-            Key::Ctrl('c')
-            | Key::Ctrl('g')
-            | Key::Ctrl('z')
-            | Key::Esc
-            | Key::Ctrl('r') => {
+            Key::Ctrl('c') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Esc | Key::Ctrl('r') => {
                 self.run = false;
                 self.input.clear();
                 return true;
