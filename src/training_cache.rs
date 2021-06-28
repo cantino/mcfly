@@ -2,9 +2,9 @@ use crate::history::Features;
 use csv::Reader;
 use csv::Writer;
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::Path;
 
-pub fn write(data_set: &[(Features, bool)], cache_path: &PathBuf) {
+pub fn write(data_set: &[(Features, bool)], cache_path: &Path) {
     let mut writer = Writer::from_path(cache_path)
         .unwrap_or_else(|err| panic!("McFly error: Expected to be able to write a CSV ({})", err));
     output_header(&mut writer);
@@ -14,7 +14,7 @@ pub fn write(data_set: &[(Features, bool)], cache_path: &PathBuf) {
     }
 }
 
-pub fn read(cache_path: &PathBuf) -> Vec<(Features, bool)> {
+pub fn read(cache_path: &Path) -> Vec<(Features, bool)> {
     let mut data_set: Vec<(Features, bool)> = Vec::new();
 
     let mut reader = Reader::from_path(cache_path).unwrap_or_else(|err| {

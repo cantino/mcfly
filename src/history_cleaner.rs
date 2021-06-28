@@ -3,7 +3,7 @@ use crate::settings::{HistoryFormat, Settings};
 use crate::shell_history;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub fn clean(settings: &Settings, history: &History, command: &str) {
     // Clean up the database.
@@ -29,8 +29,8 @@ pub fn clean(settings: &Settings, history: &History, command: &str) {
     }
 }
 
-fn clean_temporary_files(mcfly_history: &PathBuf, history_format: HistoryFormat, command: &str) {
-    let path = mcfly_history.as_path();
+fn clean_temporary_files(mcfly_history: &Path, history_format: HistoryFormat, command: &str) {
+    let path = mcfly_history;
     if let Some(directory) = path.parent() {
         let expanded_path = fs::canonicalize(directory).unwrap_or_else(|err| {
             panic!(
@@ -40,13 +40,11 @@ fn clean_temporary_files(mcfly_history: &PathBuf, history_format: HistoryFormat,
         });
         let paths = fs::read_dir(&expanded_path).unwrap();
 
-        for path in paths {
-            if let Ok(entry) = path {
-                if let Some(file_name) = entry.path().file_name() {
-                    if let Some(valid_unicode_str) = file_name.to_str() {
-                        if valid_unicode_str.starts_with("mcfly.") {
-                            shell_history::delete_lines(&entry.path(), history_format, command);
-                        }
+        for entry in paths.flatten() {
+            if let Some(file_name) = entry.path().file_name() {
+                if let Some(valid_unicode_str) = file_name.to_str() {
+                    if valid_unicode_str.starts_with("mcfly.") {
+                        shell_history::delete_lines(&entry.path(), history_format, command);
                     }
                 }
             }
