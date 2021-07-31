@@ -246,6 +246,21 @@ fish:
 set -gx MCFLY_RESULTS 50
 ```
 
+### Results Sorting
+To change the sorting of results shown, set `MCFLY_RESULTS_SORT` (default: RANK).
+Possible values `RANK` and `LAST_RUN`
+
+bash / zsh:
+```bash
+export MCFLY_RESULTS=LAST_RUN
+```
+
+fish:
+```bash
+set -gx MCFLY_RESULTS LAST_RUN
+```
+
+
 ### Slow startup
 
 If you have a very large history database and you notice that McFly launches slowly, you can set `MCFLY_HISTORY_LIMIT` to something like 10000 to limit how many records are considered when searching. In this example, McFly would search only the latest 10,000 entries.
