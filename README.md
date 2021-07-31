@@ -246,18 +246,18 @@ fish:
 set -gx MCFLY_RESULTS 50
 ```
 
-### Results Sorting
+### Results sorting
 To change the sorting of results shown, set `MCFLY_RESULTS_SORT` (default: RANK).
 Possible values `RANK` and `LAST_RUN`
 
 bash / zsh:
 ```bash
-export MCFLY_RESULTS=LAST_RUN
+export MCFLY_RESULTS_SORT=LAST_RUN
 ```
 
 fish:
 ```bash
-set -gx MCFLY_RESULTS LAST_RUN
+set -gx MCFLY_RESULTS_SORT LAST_RUN
 ```
 
 
