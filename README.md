@@ -247,7 +247,7 @@ set -gx MCFLY_RESULTS 50
 ```
 
 ### Interface view
-To change screen view, set `MCFLY_INTERFACE_VIEW` (default: `TOP`).
+To change interface view, set `MCFLY_INTERFACE_VIEW` (default: `TOP`).
 Available options: `TOP` and `BOTTOM`
 
 bash / zsh:
