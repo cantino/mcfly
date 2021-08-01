@@ -4,8 +4,8 @@ use crate::history::History;
 use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
 use crate::history::Command;
 use crate::history_cleaner;
-use crate::settings::KeyScheme;
 use crate::settings::Settings;
+use crate::settings::{InterfaceView, KeyScheme};
 use chrono::{Duration, TimeZone, Utc};
 use humantime::format_duration;
 use std::io::{stdin, stdout, Write};
@@ -140,7 +140,7 @@ impl<'a> Interface<'a> {
             hide = cursor::Hide,
             fg = color::Fg(color::LightWhite).to_string(),
             bg = self.menu_mode.bg(),
-            cursor = cursor::Goto(1, INFO_LINE_INDEX),
+            cursor = cursor::Goto(1, self.info_line_index()),
             clear = clear::CurrentLine,
             text = self.menu_mode.text(self),
             reset_bg = color::Bg(color::Reset).to_string(),
@@ -151,6 +151,7 @@ impl<'a> Interface<'a> {
     }
 
     fn prompt<W: Write>(&self, screen: &mut W) {
+        let prompt_line_index = self.prompt_line_index();
         write!(
             screen,
             "{}{}{}$ {}",
@@ -159,7 +160,7 @@ impl<'a> Interface<'a> {
             } else {
                 color::Fg(color::LightWhite).to_string()
             },
-            cursor::Goto(1, PROMPT_LINE_INDEX),
+            cursor::Goto(1, self.prompt_line_index()),
             clear::CurrentLine,
             self.input
         )
@@ -167,7 +168,7 @@ impl<'a> Interface<'a> {
         write!(
             screen,
             "{}{}",
-            cursor::Goto(self.input.cursor as u16 + 3, PROMPT_LINE_INDEX),
+            cursor::Goto(self.input.cursor as u16 + 3, prompt_line_index),
             cursor::Show
         )
         .unwrap();
@@ -175,22 +176,24 @@ impl<'a> Interface<'a> {
     }
 
     fn debug_cursor<W: Write>(&self, screen: &mut W) {
+        let result_top_index = self.result_top_index();
         write!(
             screen,
             "{}{}",
             cursor::Hide,
-            cursor::Goto(0, RESULTS_TOP_INDEX + self.settings.results + 1)
+            cursor::Goto(0, result_top_index + self.settings.results + 1)
         )
         .unwrap();
         screen.flush().unwrap();
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {
+        let result_top_index = self.result_top_index();
         write!(
             screen,
             "{}{}{}",
             cursor::Hide,
-            cursor::Goto(1, RESULTS_TOP_INDEX),
+            cursor::Goto(1, result_top_index),
             clear::All
         )
         .unwrap();
@@ -229,10 +232,15 @@ impl<'a> Interface<'a> {
 
             write!(screen, "{}{}", fg, bg).unwrap();
 
+            let command_line_index = self.command_line_index(index as i16);
+
             write!(
                 screen,
                 "{}{}",
-                cursor::Goto(1, index as u16 + RESULTS_TOP_INDEX),
+                cursor::Goto(
+                    1,
+                    (command_line_index as i16 + result_top_index as i16) as u16
+                ),
                 Interface::truncate_for_display(
                     command,
                     &self.input.command,
@@ -248,7 +256,10 @@ impl<'a> Interface<'a> {
                 write!(
                     screen,
                     "{}",
-                    cursor::Goto(width - 9, index as u16 + RESULTS_TOP_INDEX)
+                    cursor::Goto(
+                        width - 9,
+                        (command_line_index as i16 + result_top_index as i16) as u16
+                    )
                 )
                 .unwrap();
 
@@ -310,14 +321,27 @@ impl<'a> Interface<'a> {
     }
 
     fn move_selection(&mut self, direction: MoveSelection) {
-        match direction {
-            MoveSelection::Up => {
-                if self.selection > 0 {
-                    self.selection -= 1;
+        if self.is_screen_view_bottom() {
+            match direction {
+                MoveSelection::Up => {
+                    self.selection += 1;
+                }
+                MoveSelection::Down => {
+                    if self.selection > 0 {
+                        self.selection -= 1;
+                    }
                 }
             }
-            MoveSelection::Down => {
-                self.selection += 1;
+        } else {
+            match direction {
+                MoveSelection::Up => {
+                    if self.selection > 0 {
+                        self.selection -= 1;
+                    }
+                }
+                MoveSelection::Down => {
+                    self.selection += 1;
+                }
             }
         }
     }
@@ -653,6 +677,42 @@ impl<'a> Interface<'a> {
         }
 
         out.string
+    }
+
+    fn result_top_index(&self) -> u16 {
+        let (_width, height): (u16, u16) = terminal_size().unwrap();
+
+        if self.is_screen_view_bottom() {
+            return height - RESULTS_TOP_INDEX;
+        }
+        RESULTS_TOP_INDEX
+    }
+
+    fn prompt_line_index(&self) -> u16 {
+        let (_width, height): (u16, u16) = terminal_size().unwrap();
+        if self.is_screen_view_bottom() {
+            return height - PROMPT_LINE_INDEX;
+        }
+        PROMPT_LINE_INDEX
+    }
+
+    fn info_line_index(&self) -> u16 {
+        let (_width, height): (u16, u16) = terminal_size().unwrap();
+        if self.is_screen_view_bottom() {
+            return height;
+        }
+        INFO_LINE_INDEX
+    }
+
+    fn command_line_index(&self, index: i16) -> i16 {
+        if self.is_screen_view_bottom() {
+            return -index;
+        }
+        index
+    }
+
+    fn is_screen_view_bottom(&self) -> bool {
+        self.settings.interface_view == InterfaceView::Bottom
     }
 }
 
