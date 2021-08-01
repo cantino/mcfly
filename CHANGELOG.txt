@@ -1,3 +1,7 @@
+0.5.8 - Aug 1, 2021
+ - Option to place interface at bottom of screen (thanks @agrism)
+ - Option to sort by recency (thanks @agrism)
+ - Option to skip prompting on command deletion (thanks @goddade)
 0.5.7 - Jun 27, 2021
  - Document MCFLY_RESULTS config value
  - Initialize database inside a transaction for speed (thanks @SafariMonkey!)
