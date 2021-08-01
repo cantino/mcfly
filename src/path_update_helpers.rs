@@ -119,10 +119,7 @@ mod tests {
 
     #[test]
     fn normalize_path_works_with_tilda() {
-        assert_eq!(
-            normalize_path("~/"),
-            String::from(env::var("HOME").unwrap())
-        );
+        assert_eq!(normalize_path("~/"), env::var("HOME").unwrap());
         assert_eq!(
             normalize_path("~/foo"),
             PathBuf::from(env::var("HOME").unwrap())
@@ -143,10 +140,7 @@ mod tests {
                 .join("foo/baz")
                 .to_string_lossy()
         );
-        assert_eq!(
-            normalize_path("~/foo/bar/../.."),
-            String::from(env::var("HOME").unwrap())
-        );
+        assert_eq!(normalize_path("~/foo/bar/../.."), env::var("HOME").unwrap());
     }
 
     #[test]

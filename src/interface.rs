@@ -4,8 +4,10 @@ use crate::history::History;
 use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
 use crate::history::Command;
 use crate::history_cleaner;
-use crate::settings::KeyScheme;
 use crate::settings::Settings;
+use crate::settings::{InterfaceView, KeyScheme};
+use chrono::{Duration, TimeZone, Utc};
+use humantime::format_duration;
 use std::io::{stdin, stdout, Write};
 use termion::color;
 use termion::event::Key;
@@ -138,7 +140,7 @@ impl<'a> Interface<'a> {
             hide = cursor::Hide,
             fg = color::Fg(color::LightWhite).to_string(),
             bg = self.menu_mode.bg(),
-            cursor = cursor::Goto(1, INFO_LINE_INDEX),
+            cursor = cursor::Goto(1, self.info_line_index()),
             clear = clear::CurrentLine,
             text = self.menu_mode.text(self),
             reset_bg = color::Bg(color::Reset).to_string(),
@@ -149,6 +151,7 @@ impl<'a> Interface<'a> {
     }
 
     fn prompt<W: Write>(&self, screen: &mut W) {
+        let prompt_line_index = self.prompt_line_index();
         write!(
             screen,
             "{}{}{}$ {}",
@@ -157,7 +160,7 @@ impl<'a> Interface<'a> {
             } else {
                 color::Fg(color::LightWhite).to_string()
             },
-            cursor::Goto(1, PROMPT_LINE_INDEX),
+            cursor::Goto(1, self.prompt_line_index()),
             clear::CurrentLine,
             self.input
         )
@@ -165,7 +168,7 @@ impl<'a> Interface<'a> {
         write!(
             screen,
             "{}{}",
-            cursor::Goto(self.input.cursor as u16 + 3, PROMPT_LINE_INDEX),
+            cursor::Goto(self.input.cursor as u16 + 3, prompt_line_index),
             cursor::Show
         )
         .unwrap();
@@ -173,22 +176,24 @@ impl<'a> Interface<'a> {
     }
 
     fn debug_cursor<W: Write>(&self, screen: &mut W) {
+        let result_top_index = self.result_top_index();
         write!(
             screen,
             "{}{}",
             cursor::Hide,
-            cursor::Goto(0, RESULTS_TOP_INDEX + self.settings.results + 1)
+            cursor::Goto(0, result_top_index + self.settings.results + 1)
         )
         .unwrap();
         screen.flush().unwrap();
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {
+        let result_top_index = self.result_top_index();
         write!(
             screen,
             "{}{}{}",
             cursor::Hide,
-            cursor::Goto(1, RESULTS_TOP_INDEX),
+            cursor::Goto(1, result_top_index),
             clear::All
         )
         .unwrap();
@@ -227,10 +232,15 @@ impl<'a> Interface<'a> {
 
             write!(screen, "{}{}", fg, bg).unwrap();
 
+            let command_line_index = self.command_line_index(index as i16);
+
             write!(
                 screen,
                 "{}{}",
-                cursor::Goto(1, index as u16 + RESULTS_TOP_INDEX),
+                cursor::Goto(
+                    1,
+                    (command_line_index as i16 + result_top_index as i16) as u16
+                ),
                 Interface::truncate_for_display(
                     command,
                     &self.input.command,
@@ -241,6 +251,55 @@ impl<'a> Interface<'a> {
                 )
             )
             .unwrap();
+
+            if command.last_run.is_some() {
+                write!(
+                    screen,
+                    "{}",
+                    cursor::Goto(
+                        width - 9,
+                        (command_line_index as i16 + result_top_index as i16) as u16
+                    )
+                )
+                .unwrap();
+
+                let duration = &format_duration(
+                    Duration::minutes(
+                        Utc::now()
+                            .signed_duration_since(Utc.timestamp(command.last_run.unwrap(), 0))
+                            .num_minutes(),
+                    )
+                    .to_std()
+                    .unwrap(),
+                )
+                .to_string()
+                .split(' ')
+                .take(2)
+                .map(|s| {
+                    s.replace("years", "y")
+                        .replace("year", "y")
+                        .replace("months", "mo")
+                        .replace("month", "mo")
+                        .replace("days", "d")
+                        .replace("day", "d")
+                        .replace("hours", "h")
+                        .replace("hour", "h")
+                        .replace("minutes", "m")
+                        .replace("minute", "m")
+                        .replace("0s", "< 1m")
+                })
+                .collect::<Vec<String>>()
+                .join(" ");
+
+                let highlight = if self.settings.lightmode {
+                    color::Fg(color::Blue).to_string()
+                } else {
+                    color::Fg(color::LightBlue).to_string()
+                };
+
+                write!(screen, "{}", highlight).unwrap();
+                write!(screen, "{:>9}", duration).unwrap();
+            }
 
             write!(screen, "{}", color::Bg(color::Reset)).unwrap();
             write!(screen, "{}", color::Fg(color::Reset)).unwrap();
@@ -262,14 +321,27 @@ impl<'a> Interface<'a> {
     }
 
     fn move_selection(&mut self, direction: MoveSelection) {
-        match direction {
-            MoveSelection::Up => {
-                if self.selection > 0 {
-                    self.selection -= 1;
+        if self.is_screen_view_bottom() {
+            match direction {
+                MoveSelection::Up => {
+                    self.selection += 1;
+                }
+                MoveSelection::Down => {
+                    if self.selection > 0 {
+                        self.selection -= 1;
+                    }
                 }
             }
-            MoveSelection::Down => {
-                self.selection += 1;
+        } else {
+            match direction {
+                MoveSelection::Up => {
+                    if self.selection > 0 {
+                        self.selection -= 1;
+                    }
+                }
+                MoveSelection::Down => {
+                    self.selection += 1;
+                }
             }
         }
     }
@@ -307,6 +379,7 @@ impl<'a> Interface<'a> {
             &self.input.command,
             self.settings.results as i16,
             self.settings.fuzzy,
+            &self.settings.result_sort,
         );
     }
 
@@ -374,12 +447,7 @@ impl<'a> Interface<'a> {
                 self.accept_selection();
                 return true;
             }
-            Key::Ctrl('c')
-            | Key::Ctrl('d')
-            | Key::Ctrl('g')
-            | Key::Ctrl('z')
-            | Key::Esc
-            | Key::Ctrl('r') => {
+            Key::Ctrl('c') | Key::Ctrl('g') | Key::Ctrl('z') | Key::Esc | Key::Ctrl('r') => {
                 self.run = false;
                 self.input.clear();
                 return true;
@@ -417,7 +485,7 @@ impl<'a> Interface<'a> {
                 self.input.delete(Move::Backward);
                 self.refresh_matches();
             }
-            Key::Delete => {
+            Key::Delete | Key::Ctrl('d') => {
                 self.input.delete(Move::Forward);
                 self.refresh_matches();
             }
@@ -564,9 +632,9 @@ impl<'a> Interface<'a> {
         let mut prev: usize = 0;
         let debug_space = if debug { 90 } else { 0 };
         let max_grapheme_length = if width > debug_space {
-            width - debug_space
+            width - debug_space - 9
         } else {
-            2
+            11
         };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
@@ -621,6 +689,42 @@ impl<'a> Interface<'a> {
         }
 
         out.string
+    }
+
+    fn result_top_index(&self) -> u16 {
+        let (_width, height): (u16, u16) = terminal_size().unwrap();
+
+        if self.is_screen_view_bottom() {
+            return height - RESULTS_TOP_INDEX;
+        }
+        RESULTS_TOP_INDEX
+    }
+
+    fn prompt_line_index(&self) -> u16 {
+        let (_width, height): (u16, u16) = terminal_size().unwrap();
+        if self.is_screen_view_bottom() {
+            return height - PROMPT_LINE_INDEX;
+        }
+        PROMPT_LINE_INDEX
+    }
+
+    fn info_line_index(&self) -> u16 {
+        let (_width, height): (u16, u16) = terminal_size().unwrap();
+        if self.is_screen_view_bottom() {
+            return height;
+        }
+        INFO_LINE_INDEX
+    }
+
+    fn command_line_index(&self, index: i16) -> i16 {
+        if self.is_screen_view_bottom() {
+            return -index;
+        }
+        index
+    }
+
+    fn is_screen_view_bottom(&self) -> bool {
+        self.settings.interface_view == InterfaceView::Bottom
     }
 }
 

@@ -9,7 +9,7 @@ use std::{fmt, fs, io};
 use crate::history::{db_extensions, schema};
 use crate::network::Network;
 use crate::path_update_helpers;
-use crate::settings::{HistoryFormat, Settings};
+use crate::settings::{HistoryFormat, ResultSort, Settings};
 use crate::simplified_command::SimplifiedCommand;
 use itertools::Itertools;
 use rusqlite::types::ToSql;
@@ -37,6 +37,7 @@ pub struct Command {
     pub session_id: String,
     pub rank: f64,
     pub when_run: Option<i64>,
+    pub last_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub selected: bool,
     pub dir: Option<String>,
@@ -129,7 +130,7 @@ impl History {
         self.connection.execute_named("INSERT INTO commands (cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, old_dir) VALUES (:cmd, :cmd_tpl, :session_id, :when_run, :exit_code, :selected, :dir, :old_dir)",
                                       &[
                                           (":cmd", &command.to_owned()),
-                                          (":cmd_tpl", &simplified_command.result.to_owned()),
+                                          (":cmd_tpl", &simplified_command.result),
                                           (":session_id", &session_id.to_owned()),
                                           (":when_run", &when_run.to_owned()),
                                           (":exit_code", &exit_code.to_owned()),
@@ -233,7 +234,13 @@ impl History {
         }
     }
 
-    pub fn find_matches(&self, cmd: &str, num: i16, fuzzy: bool) -> Vec<Command> {
+    pub fn find_matches(
+        &self,
+        cmd: &str,
+        num: i16,
+        fuzzy: bool,
+        result_sort: &ResultSort,
+    ) -> Vec<Command> {
         let mut like_query = "%".to_string();
 
         if fuzzy {
@@ -242,15 +249,26 @@ impl History {
             like_query.push_str(cmd);
         }
 
-        like_query.push_str("%");
+        like_query.push('%');
 
-        let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
-                                  age_factor, length_factor, exit_factor, recent_failure_factor,
-                                  selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
-                                  selected_occurrences_factor, occurrences_factor
-                           FROM contextual_commands
-                           WHERE cmd LIKE (:like)
-                           ORDER BY rank DESC LIMIT :limit";
+        let order_by_column: &str = match &result_sort {
+            ResultSort::LastRun => "last_run",
+            _ => "rank",
+        };
+
+        let query: &str = &format!(
+            "{} {} {} {}",
+            "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
+                age_factor, length_factor, exit_factor, recent_failure_factor,
+                selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
+                selected_occurrences_factor, occurrences_factor, last_run
+            FROM contextual_commands
+            WHERE cmd LIKE (:like)",
+            "ORDER BY",
+            order_by_column,
+            "DESC LIMIT :limit"
+        )[..];
+
         let mut statement = self
             .connection
             .prepare(query)
@@ -276,7 +294,7 @@ impl History {
                                     return true;
                                 }
 
-                                return false;
+                                false
                             })
                             .map(|m| m.0);
 
@@ -359,6 +377,9 @@ impl History {
                             panic!("McFly error: occurrences_factor to be readable ({})", err)
                         }),
                     },
+                    last_run: row.get_checked(19).unwrap_or_else(|err| {
+                        panic!("McFly error: last_run to be readable ({})", err)
+                    }),
                 }
             })
             .unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));
@@ -387,7 +408,7 @@ impl History {
                     let b_mod = 1.0 - b_len as f64 / (a_len + b_len) as f64;
 
                     PartialOrd::partial_cmp(&(b.rank + b_mod), &(a.rank + a_mod))
-                        .unwrap_or_else(|| Ordering::Equal)
+                        .unwrap_or(Ordering::Equal)
                 })
                 .collect()
         }
@@ -481,7 +502,7 @@ impl History {
 
         self.connection.execute_named(
             "CREATE TEMP TABLE contextual_commands AS SELECT
-                  id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir,
+                  id, cmd, cmd_tpl, session_id, when_run, MAX(when_run) AS last_run, exit_code, selected, dir,
 
                   /* to be filled in later */
                   0.0 AS rank,
@@ -519,7 +540,10 @@ impl History {
                   /* percentage of time this command is run relative to the most common command (1: this is the most common command, 0: this is the least common command) */
                   COUNT(*) / :max_occurrences AS occurrences_factor
 
-                  FROM commands c WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time GROUP BY cmd ORDER BY id DESC;",
+                  FROM commands c
+                  WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time
+                  GROUP BY cmd
+                  ORDER BY id DESC;",
             &[
                 (":when_run_max", &when_run_max),
                 (":history_duration", &(when_run_max - when_run_min)),
@@ -612,10 +636,8 @@ impl History {
             .unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));
 
         let mut vec = Vec::new();
-        for result in command_iter {
-            if let Ok(command) = result {
-                vec.push(command);
-            }
+        for command in command_iter.flatten() {
+            vec.push(command);
         }
 
         vec

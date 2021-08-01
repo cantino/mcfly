@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # Ensure stdin is a tty
-[[ -t 0 ]] || return
+[[ ! -o interactive ]] && return 0
 
 # Avoid loading this file more than once
 if [[ "$__MCFLY_LOADED" == "loaded" ]]; then

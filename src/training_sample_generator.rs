@@ -63,12 +63,16 @@ impl<'a> TrainingSampleGenerator<'a> {
             );
 
             // Load the entire match set.
-            let results = history.find_matches(&String::new(), -1, false);
+            let results = history.find_matches(
+                &String::new(),
+                -1,
+                false,
+                &crate::settings::ResultSort::Rank,
+            );
 
             // Get the features for this command at the time it was logged.
             if positive_examples <= negative_examples {
-                if let Some(our_command_index) =
-                    results.iter().position(|ref c| c.cmd.eq(&command.cmd))
+                if let Some(our_command_index) = results.iter().position(|c| c.cmd.eq(&command.cmd))
                 {
                     let what_should_have_been_first = &results[our_command_index];
                     data_set.push((what_should_have_been_first.features.clone(), true));

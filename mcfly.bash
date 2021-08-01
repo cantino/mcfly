@@ -56,8 +56,13 @@ function mcfly_prompt_command {
   return ${exit_code} # Restore the original exit code by returning it.
 }
 
-# Set $PROMPT_COMMAND run mcfly_prompt_command and then any existing $PROMPT_COMMAND.
-PROMPT_COMMAND="mcfly_prompt_command;$PROMPT_COMMAND"
+# Set $PROMPT_COMMAND run mcfly_prompt_command, preserving any existing $PROMPT_COMMAND.
+if [ -z "$PROMPT_COMMAND" ]
+then
+  PROMPT_COMMAND="mcfly_prompt_command"
+else
+  PROMPT_COMMAND="mcfly_prompt_command;${PROMPT_COMMAND#;}"
+fi
 
 # If this is an interactive shell, take ownership of ctrl-r.
 if [[ $- =~ .*i.* ]]; then

@@ -113,6 +113,32 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
+### Installing using our install script
+
+1. `curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly`
+
+2. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
+
+   Bash:
+
+   ```bash
+   eval "$(mcfly init bash)"
+   ```
+
+   Zsh:
+
+   ```bash
+   eval "$(mcfly init zsh)"
+   ```
+
+   Fish:
+
+   ```bash
+   mcfly init fish | source
+   ```
+
+3. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
+
 ### Installing manually from GitHub
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
@@ -220,6 +246,34 @@ fish:
 set -gx MCFLY_RESULTS 50
 ```
 
+### Interface view
+To change interface view, set `MCFLY_INTERFACE_VIEW` (default: `TOP`).
+Available options: `TOP` and `BOTTOM`
+
+bash / zsh:
+```bash
+export MCFLY_INTERFACE_VIEW=BOTTOM
+```
+
+fish:
+```bash
+set -gx MCFLY_INTERFACE_VIEW BOTTOM
+```
+
+### Results sorting
+To change the sorting of results shown, set `MCFLY_RESULTS_SORT` (default: RANK).
+Possible values `RANK` and `LAST_RUN`
+
+bash / zsh:
+```bash
+export MCFLY_RESULTS_SORT=LAST_RUN
+```
+
+fish:
+```bash
+set -gx MCFLY_RESULTS_SORT LAST_RUN
+```
+
 ### Slow startup
 
 If you have a very large history database and you notice that McFly launches slowly, you can set `MCFLY_HISTORY_LIMIT` to something like 10000 to limit how many records are considered when searching. In this example, McFly would search only the latest 10,000 entries.
@@ -253,5 +307,6 @@ If you have a very large history database and you notice that McFly launches slo
 1. Edit `pkg/brew/mcfly.rb` and update the version and SHAs. (`shasum -a 256 ...`)
 1. Edit `../homebrew-mcfly/pkg/brew/mcfly.rb` too.
 1. Compare with `diff ../homebrew-mcfly/pkg/brew/mcfly.rb ../mcfly/pkg/brew/mcfly.rb ; diff ../homebrew-mcfly/HomebrewFormula/mcfly.rb ../mcfly/HomebrewFormula/mcfly.rb`
-1. `git push`
+1. `git add -p && git ci -m 'Update homebrew' && git push`
+1. `cd ../homebrew-mcfly && git add -p && git ci -m 'Update homebrew' && git push && cd ../mcfly`
 1. `cargo publish`

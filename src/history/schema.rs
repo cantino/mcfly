@@ -127,10 +127,8 @@ fn cmd_strings(connection: &Connection) -> Vec<(i64, String)> {
         .unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));
 
     let mut vec = Vec::new();
-    for result in command_iter {
-        if let Ok(command) = result {
-            vec.push(command);
-        }
+    for command in command_iter.flatten() {
+        vec.push(command);
     }
 
     vec

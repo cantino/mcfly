@@ -31,6 +31,18 @@ pub enum InitMode {
     Fish,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum InterfaceView {
+    Top,
+    Bottom,
+}
+
+#[derive(Debug)]
+pub enum ResultSort {
+    Rank,
+    LastRun,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum HistoryFormat {
     /// bash format - commands in plain text, one per line, with multi-line commands joined.
@@ -72,6 +84,8 @@ pub struct Settings {
     pub skip_environment_check: bool,
     pub init_mode: InitMode,
     pub delete_without_confirm: bool,
+    pub interface_view: InterfaceView,
+    pub result_sort: ResultSort,
 }
 
 impl Default for Settings {
@@ -98,6 +112,8 @@ impl Default for Settings {
             skip_environment_check: false,
             init_mode: InitMode::Bash,
             delete_without_confirm: false,
+            interface_view: InterfaceView::Top,
+            result_sort: ResultSort::Rank,
         }
     }
 }
@@ -240,6 +256,25 @@ impl Settings {
         settings.limit = env::var("MCFLY_HISTORY_LIMIT")
             .ok()
             .and_then(|o| o.parse::<i64>().ok());
+
+        settings.interface_view = match env::var("MCFLY_INTERFACE_VIEW") {
+            Ok(val) => match val.as_str() {
+                "TOP" => InterfaceView::Top,
+                "BOTTOM" => InterfaceView::Bottom,
+                _ => InterfaceView::Top,
+            },
+            _ => InterfaceView::Top,
+        };
+
+        settings.result_sort = match env::var("MCFLY_RESULTS_SORT") {
+            Ok(val) => match val.as_str() {
+                "RANK" => ResultSort::Rank,
+                "LAST_RUN" => ResultSort::LastRun,
+                _ => ResultSort::Rank,
+            },
+            _ => ResultSort::Rank,
+        };
+
         settings.session_id = matches
             .value_of("session_id")
             .map(|s| s.to_string())
