@@ -246,6 +246,20 @@ fish:
 set -gx MCFLY_RESULTS 50
 ```
 
+### Interface view
+To change screen view, set `MCFLY_INTERFACE_VIEW` (default: `TOP`).
+Available options: `TOP` and `BOTTOM`
+
+bash / zsh:
+```bash
+export MCFLY_INTERFACE_VIEW=BOTTOM
+```
+
+fish:
+```bash
+set -gx MCFLY_INTERFACE_VIEW BOTTOM
+```
+
 ### Slow startup
 
 If you have a very large history database and you notice that McFly launches slowly, you can set `MCFLY_HISTORY_LIMIT` to something like 10000 to limit how many records are considered when searching. In this example, McFly would search only the latest 10,000 entries.

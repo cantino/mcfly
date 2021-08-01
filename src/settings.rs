@@ -31,6 +31,12 @@ pub enum InitMode {
     Fish,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum InterfaceView {
+    Top,
+    Bottom,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum HistoryFormat {
     /// bash format - commands in plain text, one per line, with multi-line commands joined.
@@ -71,6 +77,7 @@ pub struct Settings {
     pub limit: Option<i64>,
     pub skip_environment_check: bool,
     pub init_mode: InitMode,
+    pub interface_view: InterfaceView,
 }
 
 impl Default for Settings {
@@ -96,6 +103,7 @@ impl Default for Settings {
             limit: None,
             skip_environment_check: false,
             init_mode: InitMode::Bash,
+            interface_view: InterfaceView::Top,
         }
     }
 }
@@ -235,6 +243,14 @@ impl Settings {
         settings.limit = env::var("MCFLY_HISTORY_LIMIT")
             .ok()
             .and_then(|o| o.parse::<i64>().ok());
+        settings.interface_view = match env::var("MCFLY_INTERFACE_VIEW") {
+            Ok(val) => match val.as_str() {
+                "TOP" => InterfaceView::Top,
+                "BOTTOM" => InterfaceView::Bottom,
+                _ => InterfaceView::Top,
+            },
+            _ => InterfaceView::Top,
+        };
         settings.session_id = matches
             .value_of("session_id")
             .map(|s| s.to_string())
