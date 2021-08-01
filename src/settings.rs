@@ -31,6 +31,12 @@ pub enum InitMode {
     Fish,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum InterfaceView {
+    Top,
+    Bottom,
+}
+
 #[derive(Debug)]
 pub enum ResultSort {
     Rank,
@@ -77,6 +83,7 @@ pub struct Settings {
     pub limit: Option<i64>,
     pub skip_environment_check: bool,
     pub init_mode: InitMode,
+    pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
 }
 
@@ -103,6 +110,7 @@ impl Default for Settings {
             limit: None,
             skip_environment_check: false,
             init_mode: InitMode::Bash,
+            interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
         }
     }
@@ -243,6 +251,15 @@ impl Settings {
         settings.limit = env::var("MCFLY_HISTORY_LIMIT")
             .ok()
             .and_then(|o| o.parse::<i64>().ok());
+
+        settings.interface_view = match env::var("MCFLY_INTERFACE_VIEW") {
+            Ok(val) => match val.as_str() {
+                "TOP" => InterfaceView::Top,
+                "BOTTOM" => InterfaceView::Bottom,
+                _ => InterfaceView::Top,
+            },
+            _ => InterfaceView::Top,
+        };
 
         settings.result_sort = match env::var("MCFLY_RESULTS_SORT") {
             Ok(val) => match val.as_str() {

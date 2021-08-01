@@ -246,6 +246,20 @@ fish:
 set -gx MCFLY_RESULTS 50
 ```
 
+### Interface view
+To change interface view, set `MCFLY_INTERFACE_VIEW` (default: `TOP`).
+Available options: `TOP` and `BOTTOM`
+
+bash / zsh:
+```bash
+export MCFLY_INTERFACE_VIEW=BOTTOM
+```
+
+fish:
+```bash
+set -gx MCFLY_INTERFACE_VIEW BOTTOM
+```
+
 ### Results sorting
 To change the sorting of results shown, set `MCFLY_RESULTS_SORT` (default: RANK).
 Possible values `RANK` and `LAST_RUN`
@@ -259,7 +273,6 @@ fish:
 ```bash
 set -gx MCFLY_RESULTS_SORT LAST_RUN
 ```
-
 
 ### Slow startup
 
