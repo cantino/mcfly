@@ -355,6 +355,7 @@ impl<'a> Interface<'a> {
             &self.input.command,
             self.settings.results as i16,
             self.settings.fuzzy,
+            &self.settings.result_sort,
         );
     }
 
