@@ -63,7 +63,12 @@ impl<'a> TrainingSampleGenerator<'a> {
             );
 
             // Load the entire match set.
-            let results = history.find_matches(&String::new(), -1, false);
+            let results = history.find_matches(
+                &String::new(),
+                -1,
+                false,
+                &crate::settings::ResultSort::Rank,
+            );
 
             // Get the features for this command at the time it was logged.
             if positive_examples <= negative_examples {

@@ -9,7 +9,7 @@ use std::{fmt, fs, io};
 use crate::history::{db_extensions, schema};
 use crate::network::Network;
 use crate::path_update_helpers;
-use crate::settings::{HistoryFormat, Settings};
+use crate::settings::{HistoryFormat, ResultSort, Settings};
 use crate::simplified_command::SimplifiedCommand;
 use itertools::Itertools;
 use rusqlite::types::ToSql;
@@ -234,7 +234,13 @@ impl History {
         }
     }
 
-    pub fn find_matches(&self, cmd: &str, num: i16, fuzzy: bool) -> Vec<Command> {
+    pub fn find_matches(
+        &self,
+        cmd: &str,
+        num: i16,
+        fuzzy: bool,
+        result_sort: &ResultSort,
+    ) -> Vec<Command> {
         let mut like_query = "%".to_string();
 
         if fuzzy {
@@ -245,13 +251,24 @@ impl History {
 
         like_query.push('%');
 
-        let query = "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
-                              age_factor, length_factor, exit_factor, recent_failure_factor,
-                              selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
-                              selected_occurrences_factor, occurrences_factor, last_run
-                      FROM contextual_commands
-                      WHERE cmd LIKE (:like)
-                      ORDER BY rank DESC LIMIT :limit";
+        let order_by_column: &str = match &result_sort {
+            ResultSort::LastRun => "last_run",
+            _ => "rank",
+        };
+
+        let query: &str = &format!(
+            "{} {} {} {}",
+            "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
+                age_factor, length_factor, exit_factor, recent_failure_factor,
+                selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
+                selected_occurrences_factor, occurrences_factor, last_run
+            FROM contextual_commands
+            WHERE cmd LIKE (:like)",
+            "ORDER BY",
+            order_by_column,
+            "DESC LIMIT :limit"
+        )[..];
+
         let mut statement = self
             .connection
             .prepare(query)
