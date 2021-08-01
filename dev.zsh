@@ -10,12 +10,12 @@ touch $this_dir/.zsh_history
 echo "source ./mcfly.zsh" > $this_dir/.zshrc
 
 rm -f target/debug/mcfly
-rm -rf target/debug/deps/mcfly-*
 cargo build
 # For some reason, to get line numbers in backtraces, we have to run the binary directly.
 HISTFILE=$HOME/.zsh_history \
-  MCFLY_PATH=$(find target/debug/deps/mcfly-* -maxdepth 1 -type f | grep -v '\.d') \
+  MCFLY_PATH=target/debug/mcfly \
   RUST_BACKTRACE=full \
   MCFLY_DEBUG=1 \
   ZDOTDIR="$this_dir" \
+  PATH=target/debug/:$PATH \
   /bin/zsh -i
