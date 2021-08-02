@@ -84,7 +84,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
-          draft: true
+          draft: false
           prerelease: false
 
       - uses: actions/upload-release-asset@v1
@@ -129,7 +129,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
-          draft: true
+          draft: false
           prerelease: false
       - name: Upload Release Asset
         id: upload-release-asset
