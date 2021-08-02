@@ -306,7 +306,8 @@ If you have a very large history database and you notice that McFly launches slo
 1. Edit the new Release on Github.
 1. Edit `pkg/brew/mcfly.rb` and update the version and SHAs. (`shasum -a 256 ...`)
 1. Edit `../homebrew-mcfly/pkg/brew/mcfly.rb` too.
-1. Compare with `diff ../homebrew-mcfly/pkg/brew/mcfly.rb ../mcfly/pkg/brew/mcfly.rb ; diff ../homebrew-mcfly/HomebrewFormula/mcfly.rb ../mcfly/HomebrewFormula/mcfly.rb`
+  1. `cp pkg/brew/mcfly.rb ../homebrew-mcfly/pkg/brew/mcfly.rb`
+  1. Compare with `diff ../homebrew-mcfly/pkg/brew/mcfly.rb ../mcfly/pkg/brew/mcfly.rb ; diff ../homebrew-mcfly/HomebrewFormula/mcfly.rb ../mcfly/HomebrewFormula/mcfly.rb`
 1. `git add -p && git ci -m 'Update homebrew' && git push`
 1. `cd ../homebrew-mcfly && git add -p && git ci -m 'Update homebrew' && git push && cd ../mcfly`
 1. `cargo publish`
