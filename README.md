@@ -289,6 +289,10 @@ If you have a very large history database and you notice that McFly launches slo
 
 ## Development
 
+### Contributing
+
+Contributions and bug fixes are encouraged! However, we may not merge PRs that increase complexity significantly beyond what is already required to maintain the project. If you're in doubt, feel free to open an issue and ask.
+
 ### Running tests
 
 `cargo test`

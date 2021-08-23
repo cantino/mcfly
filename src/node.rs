@@ -54,3 +54,40 @@ impl Node {
         self.dot(features).tanh()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dot() {
+        let node = Node {
+            offset: 0.0,
+            age: 0.0,
+            length: 0.0,
+            exit: 0.0,
+            recent_failure: 0.0,
+            selected_dir: 0.0,
+            dir: 0.0,
+            overlap: 0.0,
+            immediate_overlap: 0.0,
+            selected_occurrences: 0.0,
+            occurrences: 0.0,
+        };
+
+        let features = Features {
+            age_factor: 1.0,
+            length_factor: 1.0,
+            exit_factor: 1.0,
+            recent_failure_factor: 1.0,
+            selected_dir_factor: 1.0,
+            dir_factor: 1.0,
+            overlap_factor: 1.0,
+            immediate_overlap_factor: 1.0,
+            selected_occurrences_factor: 1.0,
+            occurrences_factor: 1.0,
+        };
+
+        assert_eq!(node.dot(&features), 0.0);
+    }
+}
