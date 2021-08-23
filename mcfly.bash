@@ -17,7 +17,7 @@ if [[ ! -r "${HISTFILE}" ]]; then
 fi
 
 # MCFLY_SESSION_ID is used by McFly internally to keep track of the commands from a particular terminal session.
-MCFLY_SESSION_ID="$(dd if=/dev/urandom bs=256 count=1 2> /dev/null | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)"
+MCFLY_SESSION_ID="$(command dd if=/dev/urandom bs=256 count=1 2> /dev/null | LC_ALL=C command tr -dc 'a-zA-Z0-9' | command head -c 24)"
 export MCFLY_SESSION_ID
 
 # Find the binary
@@ -41,7 +41,7 @@ function mcfly_prompt_command {
   if [[ ! -f "${MCFLY_HISTORY}" ]]; then
     MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
     export MCFLY_HISTORY
-    tail -n100 "${HISTFILE}" >| "${MCFLY_HISTORY}"
+    command tail -n100 "${HISTFILE}" >| "${MCFLY_HISTORY}"
   fi
 
   history -a "${MCFLY_HISTORY}" # Append history to $MCFLY_HISTORY.

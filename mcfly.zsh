@@ -17,7 +17,7 @@ if [[ ! -r "${HISTFILE}" ]]; then
 fi
 
 # MCFLY_SESSION_ID is used by McFly internally to keep track of the commands from a particular terminal session.
-export MCFLY_SESSION_ID=$(dd if=/dev/urandom bs=256 count=1 2> /dev/null | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
+export MCFLY_SESSION_ID=$(command dd if=/dev/urandom bs=256 count=1 2> /dev/null | LC_ALL=C command tr -dc 'a-zA-Z0-9' | command head -c 24)
 
 # Find the binary
 MCFLY_PATH=${MCFLY_PATH:-$(which mcfly)}
@@ -31,7 +31,7 @@ setopt interactive_comments   # allow comments in interactive shells (like Bash 
 
 # McFly's temporary, per-session history file.
 if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-  export MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
+  export MCFLY_HISTORY=$(command mktemp -t mcfly.XXXXXXXX)
 fi
 
 # Setup a function to be used by $PROMPT_COMMAND.
@@ -40,8 +40,8 @@ function mcfly_prompt_command {
 
   # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
   if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-    export MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
-    tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
+    export MCFLY_HISTORY=$(command mktemp -t mcfly.XXXXXXXX)
+    command tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
   fi
 
   # Write history to $MCFLY_HISTORY.
@@ -57,7 +57,7 @@ precmd_functions+=(mcfly_prompt_command)
 # Cleanup $MCFLY_HISTORY tmp files on exit.
 exit_logger() {
   [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Exiting and removing $MCFLY_HISTORY"
-  rm -f $MCFLY_HISTORY
+  command rm -f $MCFLY_HISTORY
 }
 zshexit_functions+=(exit_logger)
 
@@ -76,7 +76,7 @@ if [[ $- =~ .*i.* ]]; then
         if [[ "$key" = "mode" ]]; then local mode="$val"; fi
         if [[ "$key" = "commandline" ]]; then local commandline="$val"; fi
       done < "${mcfly_output}"
-      rm -f $mcfly_output
+      command rm -f $mcfly_output
 
       if [[ -n $commandline ]]; then
         RBUFFER=""
