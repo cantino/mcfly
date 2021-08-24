@@ -237,10 +237,4 @@ mod tests {
         assert_eq!(false, has_leading_timestamp("1234567890"));
         assert_eq!(false, has_leading_timestamp("hello 1234567890"));
     }
-
-    #[test]
-    fn history_file_path_returns_path_to_history_file() {
-        let path = super::history_file_path();
-        assert!(path.is_file());
-    }
 }
