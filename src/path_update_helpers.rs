@@ -4,8 +4,7 @@ use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;
 
 pub fn normalize_path(incoming_path: &str) -> String {
-    let expanded_path = shellexpand::full(incoming_path)
-        .unwrap_or_else(|err| panic!("McFly error: Unable to expand command path ({})", err));
+    let expanded_path = shellexpand::tilde(incoming_path);
 
     let current_dir = env::var("PWD").unwrap_or_else(|err| {
         panic!(
