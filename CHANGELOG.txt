@@ -1,3 +1,7 @@
+0.5.9 - Aug 29, 2021
+ - Prefer unaliased commands in bash/zsh (thanks @Mic92!)
+ - Fix zsh source message (thanks @hlascelles!)
+ - Prevent potentially unsafe variable substitution in paths (thanks @CreativeCactus!)
 0.5.8 - Aug 1, 2021
  - Option to place interface at bottom of screen (thanks @agrism)
  - Option to sort by recency (thanks @agrism)
