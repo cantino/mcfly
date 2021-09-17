@@ -21,6 +21,22 @@ fn read_ignoring_utf_errors(path: &Path) -> String {
     String::from_utf8_lossy(&buffer).to_string()
 }
 
+// Zsh uses a meta char (0x83) to signify that the previous character should be ^ 32.
+fn read_and_unmetafy(path: &Path) -> String {
+    let mut f =
+        File::open(path).unwrap_or_else(|_| panic!("McFly error: {:?} file not found", &path));
+    let mut buffer = Vec::new();
+    f.read_to_end(&mut buffer)
+        .unwrap_or_else(|_| panic!("McFly error: Unable to read from {:?}", &path));
+    for index in (0..buffer.len()).rev() {
+        if buffer[index] == 0x83 {
+            buffer.remove(index);
+            buffer[index] ^= 32;
+        }
+    }
+    String::from_utf8_lossy(&buffer).to_string()
+}
+
 #[allow(clippy::if_same_then_else)]
 fn has_leading_timestamp(line: &str) -> bool {
     let mut matched_chars = 0;
@@ -95,8 +111,22 @@ impl fmt::Display for HistoryCommand {
 
 pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCommand> {
     match history_format {
-        HistoryFormat::Bash | HistoryFormat::Zsh { .. } => {
+        HistoryFormat::Bash => {
             let history_contents = read_ignoring_utf_errors(path);
+            let zsh_timestamp_and_duration_regex = Regex::new(r"^: \d+:\d+;").unwrap();
+            let when = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({})", err))
+                .as_secs() as i64;
+            history_contents
+                .split('\n')
+                .filter(|line| !has_leading_timestamp(line) && !line.is_empty())
+                .map(|line| zsh_timestamp_and_duration_regex.replace(line, ""))
+                .map(|line| HistoryCommand::new(line, when, history_format))
+                .collect()
+        }
+        HistoryFormat::Zsh { .. } => {
+            let history_contents = read_and_unmetafy(path);
             let zsh_timestamp_and_duration_regex = Regex::new(r"^: \d+:\d+;").unwrap();
             let when = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
