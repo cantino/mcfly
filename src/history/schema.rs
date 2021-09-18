@@ -49,7 +49,13 @@ pub fn migrate(connection: &Connection) {
             let simplified_command = SimplifiedCommand::new(cmd.as_str(), true);
             statement
                 .execute_named(&[(":cmd_tpl", &simplified_command.result), (":id", &id)])
-                .unwrap_or_else(|err| { println!("McFly error: Insert failed on {} ({})", &simplified_command.result, err); 0 });
+                .unwrap_or_else(|err| {
+                    println!(
+                        "McFly error: Insert failed on {} ({})",
+                        &simplified_command.result, err
+                    );
+                    0
+                });
         }
     }
 
@@ -82,7 +88,9 @@ pub fn migrate(connection: &Connection) {
             ALTER TABLE commands ADD COLUMN selected INTEGER; \
             UPDATE commands SET selected = 0;",
             )
-            .unwrap_or_else(|err| println!("McFly error: Unable to add selected_commands ({})", err));
+            .unwrap_or_else(|err| {
+                println!("McFly error: Unable to add selected_commands ({})", err)
+            });
     }
 
     if current_version < CURRENT_SCHEMA_VERSION {
