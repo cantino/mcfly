@@ -191,6 +191,10 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 
 <img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
 
+## Wildcards
+
+You can type `%` to match any number of characters when searching.
+
 ## Settings
 A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
