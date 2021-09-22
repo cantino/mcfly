@@ -20,6 +20,7 @@ TL;DR: an upgraded `ctrl-r` where history results make sense for what you're wor
 * Includes a simple action to scrub any history item from the McFly database and your shell history files.
 * Designed to be extensible for other shells in the future.
 * Written in Rust, so it's fast and safe.
+* You can type `%` to match any number of characters when searching.
 
 ## Prioritization
 
@@ -190,10 +191,6 @@ When suggesting a command, McFly takes into consideration:
 To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this option is unchecked:
 
 <img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
-
-## Wildcards
-
-You can type `%` to match any number of characters when searching.
 
 ## Settings
 A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
