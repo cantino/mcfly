@@ -56,9 +56,9 @@ impl MenuMode {
                 KeyScheme::Emacs => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
                 KeyScheme::Vim => {
                     if interface.in_vim_insert_mode {
-                        "McFly (Vim-INSERT) | ESC - Norm | ⏎ - Run | TAB - Edit | F2 - Delete"
+                        "McFly (Ins) | ESC - Cmd  | ⏎ - Run | TAB - Edit | F2 - Delete"
                     } else {
-                        "McFly (Vim-NORMAL) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
+                        "McFly (Cmd) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
                     }
                 }
             },
