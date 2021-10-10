@@ -56,9 +56,9 @@ impl MenuMode {
                 KeyScheme::Emacs => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
                 KeyScheme::Vim => {
                     if interface.in_vim_insert_mode {
-                        "McFly (Vim) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete        -- INSERT --"
+                        "McFly (Ins) | ESC - Cmd  | ⏎ - Run | TAB - Edit | F2 - Delete"
                     } else {
-                        "McFly (Vim) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
+                        "McFly (Cmd) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
                     }
                 }
             },
@@ -530,8 +530,10 @@ impl<'a> Interface<'a> {
                 }
                 Key::Left => self.input.move_cursor(Move::Backward),
                 Key::Right => self.input.move_cursor(Move::Forward),
-                Key::Up | Key::PageUp | Key::Ctrl('u') => self.move_selection(MoveSelection::Up),
-                Key::Down | Key::PageDown | Key::Ctrl('d') => {
+                Key::Up | Key::PageUp | Key::Ctrl('u') | Key::Ctrl('p') => {
+                    self.move_selection(MoveSelection::Up)
+                }
+                Key::Down | Key::PageDown | Key::Ctrl('d') | Key::Ctrl('n') => {
                     self.move_selection(MoveSelection::Down)
                 }
                 Key::Esc => self.in_vim_insert_mode = false,
