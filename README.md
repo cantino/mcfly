@@ -48,7 +48,7 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     brew install mcfly
     ```
-1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, as appropriate, changing `/usr/local` to your `brew --prefix` if needed:
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file:
 
     Bash:
     ```bash
