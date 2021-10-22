@@ -371,8 +371,8 @@ impl Settings {
                 if let Some(commands) = add_matches.values_of("command") {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
                 } else if add_matches.is_present("command_from_stdin") {
-                    let bash_history = shell_history::read_from_bash_stdin()
-                        .expect("Could not read from stdin");
+                    let bash_history =
+                        shell_history::read_from_bash_stdin().expect("Could not read from stdin");
                     //ignore the other values for now
                     settings.command = bash_history.command;
                 } else {

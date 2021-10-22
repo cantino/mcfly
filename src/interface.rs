@@ -232,14 +232,14 @@ impl<'a> Interface<'a> {
             }
 
             write!(screen, "{}{}", fg, bg).unwrap();
-            
+
             let command_display = Interface::truncate_for_display(
                 command,
                 &self.input.command,
                 width,
                 highlight,
                 fg,
-                self.debug
+                self.debug,
             );
 
             let mut lines_count = 0;
@@ -724,13 +724,6 @@ impl<'a> Interface<'a> {
             return height;
         }
         INFO_LINE_INDEX
-    }
-
-    fn command_line_index(&self, index: i16) -> i16 {
-        if self.is_screen_view_bottom() {
-            return -index;
-        }
-        index
     }
 
     fn is_screen_view_bottom(&self) -> bool {

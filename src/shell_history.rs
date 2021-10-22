@@ -239,14 +239,18 @@ pub fn read_from_bash_stdin() -> io::Result<BashHistoryLine> {
     // then the timestamp in HISTTIMEFORMAT, which should be "%s:"
     // then the command
     // then a newline
-    let bash_history_regex = RegexBuilder::new(r"^\s*(?P<idx>\d+)(?P<edit>[\* ]) (?P<timestamp>\d+):(?P<command>.*)\n$")
-        .case_insensitive(false)
-        .dot_matches_new_line(true)
-        .build().unwrap();
+    let bash_history_regex =
+        RegexBuilder::new(r"^\s*(?P<idx>\d+)(?P<edit>[\* ]) (?P<timestamp>\d+):(?P<command>.*)\n$")
+            .case_insensitive(false)
+            .dot_matches_new_line(true)
+            .build()
+            .unwrap();
     let mut full = String::new();
     io::stdin().read_to_string(&mut full)?;
-    let matches = bash_history_regex.captures(&full).expect("History line did not match expected format");
-    Ok(BashHistoryLine{
+    let matches = bash_history_regex
+        .captures(&full)
+        .expect("History line did not match expected format");
+    Ok(BashHistoryLine {
         idx: matches.name("idx").unwrap().as_str().parse().unwrap(),
         edited: matches.name("edit").unwrap().as_str() == "*",
         timestamp: matches.name("timestamp").unwrap().as_str().parse().unwrap(),
