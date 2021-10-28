@@ -8,7 +8,7 @@
 McFly replaces your default `ctrl-r` shell history search with an intelligent search engine that takes into account
 your working directory and the context of recently executed commands. McFly's suggestions are prioritized
 in real time with a small neural network.
- 
+
 TL;DR: an upgraded `ctrl-r` where history results make sense for what you're working on right now.
 
 ## Features
@@ -222,16 +222,16 @@ set -gx MCFLY_KEY_SCHEME vim
 ```
 
 ### Fuzzy Searching
-To enable fuzzy searching, set `MCFLY_FUZZY`.
+To enable fuzzy searching, set `MCFLY_FUZZY` to an integer. 0 is off; higher numbers weight toward shorter matches. Try a few values and [report what works best for you](https://github.com/cantino/mcfly/issues/183)!
 
 bash / zsh:
 ```bash
-export MCFLY_FUZZY=true
+export MCFLY_FUZZY=10
 ```
 
 fish:
 ```bash
-set -gx MCFLY_FUZZY true
+set -gx MCFLY_FUZZY 10
 ```
 
 ### Results Count

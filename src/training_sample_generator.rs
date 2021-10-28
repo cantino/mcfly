@@ -66,7 +66,7 @@ impl<'a> TrainingSampleGenerator<'a> {
             let results = history.find_matches(
                 &String::new(),
                 -1,
-                false,
+                0,
                 &crate::settings::ResultSort::Rank,
             );
 

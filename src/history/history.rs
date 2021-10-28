@@ -238,12 +238,12 @@ impl History {
         &self,
         cmd: &str,
         num: i16,
-        fuzzy: bool,
+        fuzzy: i16,
         result_sort: &ResultSort,
     ) -> Vec<Command> {
         let mut like_query = "%".to_string();
 
-        if fuzzy {
+        if fuzzy > 0 {
             like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join("%"));
         } else {
             like_query.push_str(cmd);
@@ -282,7 +282,11 @@ impl History {
                 let lowercase_cmd = cmd.to_lowercase();
 
                 let bounds = match fuzzy {
-                    true => {
+                    0 => lowercase_text
+                        .match_indices(&lowercase_cmd)
+                        .map(|(index, _)| (index, index + cmd.len()))
+                        .collect::<Vec<_>>(),
+                    _ => {
                         let mut search_iter = lowercase_cmd.chars().peekable();
                         let mut matches = lowercase_text
                             .match_indices(|c| {
@@ -303,10 +307,6 @@ impl History {
 
                         vec![(start, end)]
                     }
-                    false => lowercase_text
-                        .match_indices(&lowercase_cmd)
-                        .map(|(index, _)| (index, index + cmd.len()))
-                        .collect::<Vec<_>>(),
                 };
 
                 Command {
@@ -391,7 +391,7 @@ impl History {
             }));
         }
 
-        if fuzzy {
+        if fuzzy > 0 {
             names = names
                 .into_iter()
                 .sorted_by(|a, b| {
@@ -404,8 +404,11 @@ impl History {
 
                     let a_len = a.match_bounds[0].1 - a.match_bounds[0].0;
                     let b_len = b.match_bounds[0].1 - b.match_bounds[0].0;
-                    let a_mod = 1.0 - a_len as f64 / (a_len + b_len) as f64;
-                    let b_mod = 1.0 - b_len as f64 / (a_len + b_len) as f64;
+                    let mut a_mod = 1.0 - a_len as f64 / (a_len + b_len) as f64;
+                    let mut b_mod = 1.0 - b_len as f64 / (a_len + b_len) as f64;
+
+                    if a_len > b_len { b_mod *= fuzzy as f64; }
+                    if b_len > a_len { a_mod *= fuzzy as f64; }
 
                     PartialOrd::partial_cmp(&(b.rank + b_mod), &(a.rank + a_mod))
                         .unwrap_or(Ordering::Equal)
