@@ -16,9 +16,16 @@ pub fn clean(settings: &Settings, history: &History, command: &str) {
             clean_temporary_files(&settings.mcfly_history, settings.history_format, command);
 
             // Clean up HISTFILE/MCFLY_HISTFILE.
-            let histfile = PathBuf::from(env::var("HISTFILE").or(env::var("MCFLY_HISTFILE")).unwrap_or_else(|err| {
-                panic!("McFly error: Please ensure that HISTFILE/MCFLY_HISTFILE is set ({})", err)
-            }));
+            let histfile = PathBuf::from(
+                env::var("HISTFILE")
+                    .or_else(|_| env::var("MCFLY_HISTFILE"))
+                    .unwrap_or_else(|err| {
+                        panic!(
+                            "McFly error: Please ensure that HISTFILE/MCFLY_HISTFILE is set ({})",
+                            err
+                        )
+                    }),
+            );
             shell_history::delete_lines(&histfile, settings.history_format, command)
         }
         // Fish integration does not use a MCFLY_HISTORY file because we can get the last command
