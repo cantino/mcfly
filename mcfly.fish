@@ -8,11 +8,11 @@ set -g __MCFLY_LOADED "loaded"
 
 # Note: we only use the history file for the session when this file was sourced.
 # Would have to reset this before calling mcfly if you want commands from another session later.
-if not set -q HISTFILE
-  set -gx HISTFILE (set -q XDG_DATA_HOME; and echo $XDG_DATA_HOME; or echo $HOME/.local/share)/fish/(set -q fish_history; and echo $fish_history; or echo fish)_history
+if not set -q MCFLY_HISTFILE
+  set -gx MCFLY_HISTFILE (set -q XDG_DATA_HOME; and echo $XDG_DATA_HOME; or echo $HOME/.local/share)/fish/(set -q fish_history; and echo $fish_history; or echo fish)_history
 end
-if not test -r "$HISTFILE"
-  echo "McFly: $HISTFILE does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly." >&2
+if not test -r "$MCFLY_HISTFILE"
+  echo "McFly: $MCFLY_HISTFILE does not exist or is not readable. Please fix this or set MCFLY_HISTFILE to something else before using McFly." >&2
   exit 1
 end
 

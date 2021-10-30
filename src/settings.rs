@@ -155,7 +155,7 @@ impl Settings {
                     .takes_value(true))
                 .arg(Arg::with_name("append_to_histfile")
                     .long("append-to-histfile")
-                    .help("Also append new history to $HISTFILE (e.q., .bash_history)"))
+                    .help("Also append new history to $HISTFILE/$MCFLY_HISTFILE (e.q., .bash_history)"))
                 .arg(Arg::with_name("zsh_extended_history")
                     .long("zsh-extended-history")
                     .help("If appending, use zsh's EXTENDED_HISTORY format"))
