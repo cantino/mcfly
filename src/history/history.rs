@@ -420,13 +420,16 @@ impl History {
                     let a_len = a.match_bounds[0].1 - a_start;
                     let b_len = b.match_bounds[0].1 - b_start;
 
-                    let a_mod = 1.0 - (a_start + a_len) as f64 / (a_start + b_start + a_len + b_len) as f64;
-                    let b_mod = 1.0 - (b_start + b_len) as f64 / (a_start + b_start + a_len + b_len) as f64;
+                    let a_mod =
+                        1.0 - (a_start + a_len) as f64 / (a_start + b_start + a_len + b_len) as f64;
+                    let b_mod =
+                        1.0 - (b_start + b_len) as f64 / (a_start + b_start + a_len + b_len) as f64;
 
                     PartialOrd::partial_cmp(
                         &(b.rank + b_mod * fuzzy as f64),
-                        &(a.rank + a_mod * fuzzy as f64))
-                        .unwrap_or(Ordering::Equal)
+                        &(a.rank + a_mod * fuzzy as f64),
+                    )
+                    .unwrap_or(Ordering::Equal)
                 })
                 .collect()
         }

@@ -201,7 +201,7 @@ impl Settings {
                 .arg(Arg::with_name("fuzzy")
                     .short("f")
                     .long("fuzzy")
-                    .help("Fuzzy-find results. 0 is off, higher numbers weight toward shorter matches"))
+                    .help("Fuzzy-find results. 0 is off; higher numbers weight shorter/earlier matches more. Try 2"))
                 .arg(Arg::with_name("delete_without_confirm")
                     .long("delete_without_confirm")
                     .help("Delete entry without confirm"))
@@ -407,10 +407,14 @@ impl Settings {
                 if let Ok(fuzzy) = env::var("MCFLY_FUZZY") {
                     if let Ok(fuzzy) = i16::from_str(&fuzzy) {
                         settings.fuzzy = fuzzy;
+                    } else {
+                        settings.fuzzy = 2;
                     }
                 }
                 if let Ok(fuzzy) = value_t!(search_matches.value_of("fuzzy"), i16) {
                     settings.fuzzy = fuzzy;
+                } else if search_matches.is_present("fuzzy") {
+                    settings.fuzzy = 2;
                 }
 
                 settings.delete_without_confirm = search_matches
