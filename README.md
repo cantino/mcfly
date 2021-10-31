@@ -222,7 +222,7 @@ set -gx MCFLY_KEY_SCHEME vim
 ```
 
 ### Fuzzy Searching
-To enable fuzzy searching, set `MCFLY_FUZZY` to an integer. 0 is off; higher numbers weight toward shorter matches. Try a few values and [report what works best for you](https://github.com/cantino/mcfly/issues/183)!
+To enable fuzzy searching, set `MCFLY_FUZZY` to an integer. 0 is off; higher numbers weight toward shorter matches. Values in the 2-5 range get good results so far; try a few and [report what works best for you](https://github.com/cantino/mcfly/issues/183)!
 
 bash / zsh:
 ```bash
