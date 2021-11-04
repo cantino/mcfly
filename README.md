@@ -226,12 +226,12 @@ To enable fuzzy searching, set `MCFLY_FUZZY` to an integer. 0 is off; higher num
 
 bash / zsh:
 ```bash
-export MCFLY_FUZZY=10
+export MCFLY_FUZZY=2
 ```
 
 fish:
 ```bash
-set -gx MCFLY_FUZZY 10
+set -gx MCFLY_FUZZY 2
 ```
 
 ### Results Count
