@@ -65,7 +65,7 @@ pub enum HistoryFormat {
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
-    pub fuzzy: bool,
+    pub fuzzy: i16,
     pub session_id: String,
     pub mcfly_history: PathBuf,
     pub output_selection: Option<String>,
@@ -104,7 +104,7 @@ impl Default for Settings {
             refresh_training_cache: false,
             append_to_histfile: false,
             debug: false,
-            fuzzy: false,
+            fuzzy: 0,
             lightmode: false,
             key_scheme: KeyScheme::Emacs,
             history_format: HistoryFormat::Bash,
@@ -201,7 +201,7 @@ impl Settings {
                 .arg(Arg::with_name("fuzzy")
                     .short("f")
                     .long("fuzzy")
-                    .help("Fuzzy-find results instead of searching for contiguous strings"))
+                    .help("Fuzzy-find results. 0 is off; higher numbers weight shorter/earlier matches more. Try 2"))
                 .arg(Arg::with_name("delete_without_confirm")
                     .long("delete_without_confirm")
                     .help("Delete entry without confirm"))
@@ -404,8 +404,18 @@ impl Settings {
                     settings.results = results;
                 }
 
-                settings.fuzzy =
-                    search_matches.is_present("fuzzy") || env::var("MCFLY_FUZZY").is_ok();
+                if let Ok(fuzzy) = env::var("MCFLY_FUZZY") {
+                    if let Ok(fuzzy) = i16::from_str(&fuzzy) {
+                        settings.fuzzy = fuzzy;
+                    } else if fuzzy.to_lowercase() != "false" {
+                        settings.fuzzy = 2;
+                    }
+                }
+                if let Ok(fuzzy) = value_t!(search_matches.value_of("fuzzy"), i16) {
+                    settings.fuzzy = fuzzy;
+                } else if search_matches.is_present("fuzzy") {
+                    settings.fuzzy = 2;
+                }
 
                 settings.delete_without_confirm = search_matches
                     .is_present("delete_without_confirm")
