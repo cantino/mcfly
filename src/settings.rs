@@ -407,7 +407,7 @@ impl Settings {
                 if let Ok(fuzzy) = env::var("MCFLY_FUZZY") {
                     if let Ok(fuzzy) = i16::from_str(&fuzzy) {
                         settings.fuzzy = fuzzy;
-                    } else {
+                    } else if fuzzy.to_lowercase() != "false" {
                         settings.fuzzy = 2;
                     }
                 }
