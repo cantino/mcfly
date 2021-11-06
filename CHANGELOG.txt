@@ -1,3 +1,8 @@
+0.5.10 - Nov 6, 2021
+ - Fix zsh utf-8 history encoding (thanks @onriv!)
+ - Support Ctrl-p and Ctrl-n in vim mode (thanks @otherJL0!)
+ - Make MCFLY_FUZZY a tuneable int (thanks @dmfay!)
+ - Prevent errors when running bash inside of fish (thanks @btglr!)
 0.5.9 - Aug 29, 2021
  - Prefer unaliased commands in bash/zsh (thanks @Mic92!)
  - Fix zsh source message (thanks @hlascelles!)
