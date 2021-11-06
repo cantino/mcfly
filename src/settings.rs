@@ -177,6 +177,10 @@ impl Settings {
                     .value_name("PATH")
                     .help("The previous directory the user was in before running the command (default $OLDPWD)")
                     .takes_value(true))
+                .arg(Arg::with_name("command_from_stdin")
+                    .long("command-from-stdin")
+                    .help("Read the command from `history` (must have HISTTIMEFORMAT=\"%s:\") command piped in.")
+                    .conflicts_with("command"))
                 .arg(Arg::with_name("command")
                     .help("The command that was run (default last line of $MCFLY_HISTORY file)")
                     .value_name("COMMAND")
@@ -349,6 +353,7 @@ impl Settings {
                 if let Some(dir) = add_matches.value_of("directory") {
                     settings.dir = dir.to_string();
                 } else {
+                    // XXX: Why not just use std::env::current_dir here?
                     settings.dir = env::var("PWD").unwrap_or_else(|err| {
                         panic!(
                             "McFly error: Unable to determine current directory ({})",
@@ -365,6 +370,11 @@ impl Settings {
 
                 if let Some(commands) = add_matches.values_of("command") {
                     settings.command = commands.collect::<Vec<_>>().join(" ");
+                } else if add_matches.is_present("command_from_stdin") {
+                    let bash_history =
+                        shell_history::read_from_bash_stdin().expect("Could not read from stdin");
+                    //ignore the other values for now
+                    settings.command = bash_history.command;
                 } else {
                     settings.command = shell_history::last_history_line(
                         &settings.mcfly_history,

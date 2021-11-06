@@ -1,10 +1,12 @@
 use crate::settings::HistoryFormat;
 use regex::Regex;
+use regex::RegexBuilder;
 use std::env;
 use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
+use std::io;
 use std::io::Read;
 use std::io::Write;
 use std::path::Path;
@@ -259,6 +261,40 @@ pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) 
     if let Err(e) = writeln!(file, "{}", command) {
         eprintln!("Couldn't append to file '{}': {}", path.display(), e);
     }
+}
+
+pub struct BashHistoryLine {
+    pub idx: u32,
+    pub edited: bool,
+    pub timestamp: u64,
+    pub command: String,
+}
+
+pub fn read_from_bash_stdin() -> io::Result<BashHistoryLine> {
+    // See https://github.com/bminor/bash/blob/ce23728687ce9e584333367075c9deef413553fa/builtins/history.def#L386
+    // First is the history index left-padded with space
+    // then either ' ' or '*' depending if the entry has been edited
+    // then a space ''
+    // then the timestamp in HISTTIMEFORMAT, which should be "%s:"
+    // then the command
+    // then a newline
+    let bash_history_regex =
+        RegexBuilder::new(r"^\s*(?P<idx>\d+)(?P<edit>[\* ]) (?P<timestamp>\d+):(?P<command>.*)\n$")
+            .case_insensitive(false)
+            .dot_matches_new_line(true)
+            .build()
+            .unwrap();
+    let mut full = String::new();
+    io::stdin().read_to_string(&mut full)?;
+    let matches = bash_history_regex
+        .captures(&full)
+        .expect("History line did not match expected format");
+    Ok(BashHistoryLine {
+        idx: matches.name("idx").unwrap().as_str().parse().unwrap(),
+        edited: matches.name("edit").unwrap().as_str() == "*",
+        timestamp: matches.name("timestamp").unwrap().as_str().parse().unwrap(),
+        command: matches.name("command").unwrap().as_str().to_string(),
+    })
 }
 
 #[cfg(test)]
