@@ -242,15 +242,16 @@ impl<'a> Interface<'a> {
                 self.debug,
             );
 
+            let lines:Vec<&str> = command_display.lines().collect();
             let mut lines_count = 0;
 
-            for line in command_display.lines() {
+            for line in self.reverse_if_bottom(lines.iter()) {
                 write!(
                     screen,
                     "{}{}",
                     cursor::Goto(
                         1,
-                        (line_offset as i16 + lines_count as i16 + result_top_index as i16) as u16
+                        (self.command_line_index(line_offset as i16 + lines_count as i16) + result_top_index as i16) as u16
                     ),
                     line
                 )
@@ -264,7 +265,7 @@ impl<'a> Interface<'a> {
                     "{}",
                     cursor::Goto(
                         width - 9,
-                        (line_offset as i16 + result_top_index as i16) as u16
+                        (self.command_line_index(line_offset as i16) + result_top_index as i16) as u16
                     )
                 )
                 .unwrap();
@@ -724,6 +725,21 @@ impl<'a> Interface<'a> {
             return height;
         }
         INFO_LINE_INDEX
+    }
+
+    fn command_line_index(&self, index: i16) -> i16 {
+        if self.is_screen_view_bottom() {
+            return -index;
+        }
+        index
+    }
+
+    fn reverse_if_bottom<I: std::iter::DoubleEndedIterator>(&self, iter: I) -> itertools::Either<I, std::iter::Rev<I>> {
+        if self.is_screen_view_bottom() {
+            itertools::Either::Right(iter.rev())
+        } else {
+            itertools::Either::Left(iter)
+        }
     }
 
     fn is_screen_view_bottom(&self) -> bool {
