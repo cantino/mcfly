@@ -6,14 +6,12 @@ use crate::training_cache;
 use rand::seq::IteratorRandom;
 
 #[derive(Debug)]
-pub struct TrainingSampleGenerator<'a> {
-    settings: &'a Settings,
-    history: &'a History,
+pub struct TrainingSampleGenerator {
     data_set: Vec<(Features, bool)>,
 }
 
-impl<'a> TrainingSampleGenerator<'a> {
-    pub fn new(settings: &'a Settings, history: &'a History) -> TrainingSampleGenerator<'a> {
+impl TrainingSampleGenerator {
+    pub fn new(settings: &Settings, history: &History) -> TrainingSampleGenerator {
         let cache_path = Settings::mcfly_training_cache_path();
         let data_set = if settings.refresh_training_cache || !cache_path.exists() {
             let ds = TrainingSampleGenerator::generate_data_set(history);
@@ -23,11 +21,7 @@ impl<'a> TrainingSampleGenerator<'a> {
             training_cache::read(&cache_path)
         };
 
-        TrainingSampleGenerator {
-            settings,
-            history,
-            data_set,
-        }
+        TrainingSampleGenerator { data_set }
     }
 
     pub fn generate_data_set(history: &History) -> Vec<(Features, bool)> {

@@ -302,6 +302,7 @@ Contributions and bug fixes are encouraged! However, we may not merge PRs that i
 
 1. Edit `Cargo.toml` and bump the version.
 1. Edit CHANGELOG.txt
+1. Run `cargo clippy` and `cargo fmt`.
 1. Recompile (`cargo build`).
 1. `git add -p`
 1. `git ci -m 'Bumping to vx.x.x'`
