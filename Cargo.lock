@@ -278,7 +278,7 @@ dependencies = [
 
 [[package]]
 name = "mcfly"
-version = "0.5.10"
+version = "0.5.11"
 dependencies = [
  "chrono",
  "clap",
