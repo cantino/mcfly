@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cantino/mcfly.svg?branch=master)](https://travis-ci.org/cantino/mcfly)
+![Build Status](https://github.com/cantino/mcfly/actions/workflows/mean_bean_ci.yml/badge.svg)
 [![](https://img.shields.io/crates/v/mcfly.svg)](https://crates.io/crates/mcfly)
 
 # McFly - fly through your shell history
