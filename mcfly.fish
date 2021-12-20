@@ -20,7 +20,7 @@ end
 set -gx MCFLY_SESSION_ID (dd if=/dev/urandom bs=256 count=1 2>/dev/null | env LC_ALL=C tr -dc 'a-zA-Z0-9' | head -c 24)
 
 # Find the binary
-set -q MCFLY_PATH; or set -l MCFLY_PATH (command which mcfly)
+set -q MCFLY_PATH; or set -l MCFLY_PATH (command -v mcfly)
 if test -z "$MCFLY_PATH"; or test "$MCFLY_PATH" = "mcfly not found"
   echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.fish"
   exit 1
