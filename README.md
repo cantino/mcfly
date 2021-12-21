@@ -186,6 +186,17 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
+### Install by [Zinit](https://github.com/zdharma-continuum/zinit)
+
+* Add below code to your zshrc.
+
+    ```zsh
+    zinit ice lucid wait"0a" from"gh-r" as"program" atload'eval "$(mcfly init zsh)"' 
+    zinit light cantino/mcfly 
+    ```
+* It will download mcfly and install for you.
+* `$(mcfly init zsh)` will be executed after prompt
+
 ## iTerm2
 
 To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this option is unchecked:
