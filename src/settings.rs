@@ -312,7 +312,7 @@ impl Settings {
                 extended_history: false,
             },
             Some("zsh-extended") => HistoryFormat::Zsh {
-                extended_history: true
+                extended_history: true,
             },
             Some("fish") => HistoryFormat::Fish,
             Some(format) => panic!("McFly error: unknown history format '{}'", format),
