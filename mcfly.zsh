@@ -34,6 +34,13 @@ if [[ ! -f "${MCFLY_HISTORY}" ]]; then
   export MCFLY_HISTORY=$(command mktemp -t mcfly.XXXXXXXX)
 fi
 
+# Check if we need to use extended history
+if [[ -o extendedhistory ]]; then
+  export MCFLY_HISTORY_FORMAT="zsh-extended"
+else
+  export MCFLY_HISTORY_FORMAT="zsh"
+fi
+
 # Setup a function to be used by $PROMPT_COMMAND.
 function mcfly_prompt_command {
   local exit_code=$? # Record exit status of previous command.
@@ -49,7 +56,7 @@ function mcfly_prompt_command {
 
   # Run mcfly with the saved code. It fill find the text of the last command in $MCFLY_HISTORY and save it to the database.
   [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Run mcfly add --exit ${exit_code}"
-  $MCFLY_PATH --history_format zsh add --exit ${exit_code}
+  $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT add --exit ${exit_code}
   return ${exit_code} # Restore the original exit code by returning it.
 }
 precmd_functions+=(mcfly_prompt_command)
@@ -68,7 +75,7 @@ if [[ $- =~ .*i.* ]]; then
       echoti rmkx
       exec </dev/tty
       local mcfly_output=$(mktemp -t mcfly.output.XXXXXXXX)
-      $MCFLY_PATH --history_format zsh search -o "${mcfly_output}" "${LBUFFER}"
+      $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT search -o "${mcfly_output}" "${LBUFFER}"
       echoti smkx
 
       # Interpret commandline/run requests from McFly

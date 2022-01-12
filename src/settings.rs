@@ -141,7 +141,7 @@ impl Settings {
                 .takes_value(true))
             .arg(Arg::with_name("history_format")
                 .long("history_format")
-                .help("Shell history file format, 'bash', 'zsh', or 'fish' (defaults to 'bash')")
+                .help("Shell history file format, 'bash', 'zsh', 'zsh-extended' or 'fish' (defaults to 'bash')")
                 .value_name("FORMAT")
                 .takes_value(true))
             .subcommand(SubCommand::with_name("add")
@@ -156,9 +156,6 @@ impl Settings {
                 .arg(Arg::with_name("append_to_histfile")
                     .long("append-to-histfile")
                     .help("Also append new history to $HISTFILE/$MCFLY_HISTFILE (e.q., .bash_history)"))
-                .arg(Arg::with_name("zsh_extended_history")
-                    .long("zsh-extended-history")
-                    .help("If appending, use zsh's EXTENDED_HISTORY format"))
                 .arg(Arg::with_name("when")
                     .short("w")
                     .long("when")
@@ -314,6 +311,9 @@ impl Settings {
             Some("zsh") => HistoryFormat::Zsh {
                 extended_history: false,
             },
+            Some("zsh-extended") => HistoryFormat::Zsh {
+                extended_history: true,
+            },
             Some("fish") => HistoryFormat::Fish,
             Some(format) => panic!("McFly error: unknown history format '{}'", format),
         };
@@ -334,12 +334,6 @@ impl Settings {
                 );
 
                 settings.append_to_histfile = add_matches.is_present("append_to_histfile");
-                if add_matches.is_present("zsh_extended_history") {
-                    match settings.history_format {
-                        HistoryFormat::Zsh { .. } => settings.history_format = HistoryFormat::Zsh { extended_history: true },
-                        HistoryFormat::Bash | HistoryFormat::Fish => panic!("McFly error: cannot specify zsh extended history with non-zsh history format"),
-                    }
-                }
 
                 if add_matches.value_of("exit").is_some() {
                     settings.exit_code =
