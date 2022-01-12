@@ -219,6 +219,16 @@ fish:
 set -gx MCFLY_LIGHT TRUE
 ```
 
+Tip: on macOS you can use the following snippet for color scheme to be configured based on system-wide settings:
+
+bash / zsh:
+```bash
+if [[ "$(defaults read -g AppleInterfaceStyle 2&>/dev/null)" != "Dark" ]]; then
+    export MCFLY_LIGHT=TRUE
+fi
+```
+
+
 ### VIM Key Scheme
 By default Mcfly uses an `emacs` inspired key scheme. If you would like to switch to the `vim` inspired key scheme, set the environment variable `MCFLY_KEY_SCHEME`.
 
