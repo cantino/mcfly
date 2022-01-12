@@ -1,3 +1,5 @@
+0.5.12 - Jan 12, 2022
+ - Automatically detect if Zsh extended history is used (thanks @vmax!)
 0.5.11 - Dec 12, 2021
  - Avoid using builtins to fix WSL bug
 0.5.10 - Nov 6, 2021
