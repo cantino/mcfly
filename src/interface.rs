@@ -138,12 +138,12 @@ impl<'a> Interface<'a> {
             screen,
             "{hide}{cursor}{clear}{fg}{bg}{text:width$}{reset_bg}",
             hide = cursor::Hide,
-            fg = color::Fg(color::LightWhite).to_string(),
+            fg = color::Fg(color::LightWhite),
             bg = self.menu_mode.bg(),
             cursor = cursor::Goto(1, self.info_line_index()),
             clear = clear::CurrentLine,
             text = self.menu_mode.text(self),
-            reset_bg = color::Bg(color::Reset).to_string(),
+            reset_bg = color::Bg(color::Reset),
             width = width as usize
         )
         .unwrap();
