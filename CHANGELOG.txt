@@ -1,3 +1,5 @@
+0.5.13 - Jan 24, 2022
+ - Fix 'illegal byte sequence' due to incorrect TIOCSTI cast (thanks @arunpersaud!)
 0.5.12 - Jan 12, 2022
  - Automatically detect if Zsh extended history is used (thanks @vmax!)
 0.5.11 - Dec 12, 2021
