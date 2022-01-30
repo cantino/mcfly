@@ -48,8 +48,6 @@ jobs:
       - run: ci/set_rust_version.bash ${{ matrix.channel }} ${{ matrix.target }}
       - name: Test
         uses: actions-rs/cargo@v1
-        env:
-          SDKROOT: /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
         with:
           command: test
           args: --target ${{ matrix.target }}

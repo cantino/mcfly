@@ -70,8 +70,6 @@ jobs:
 
       - name: Build | Build
         uses: actions-rs/cargo@v1
-        env:
-          SDKROOT: /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
         with:
           command: build
           args: --release --target ${{ matrix.target }}
