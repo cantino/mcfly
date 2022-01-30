@@ -148,7 +148,7 @@ impl<'a> Interface<'a> {
                 width = width as usize
             )
             .unwrap();
-            screen.flush().unwrap();   
+            screen.flush().unwrap();
         }
     }
 
