@@ -86,6 +86,7 @@ pub struct Settings {
     pub delete_without_confirm: bool,
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
+    pub disable_menu: bool,
 }
 
 impl Default for Settings {
@@ -114,6 +115,7 @@ impl Default for Settings {
             delete_without_confirm: false,
             interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
+            disable_menu: false,
         }
     }
 }
@@ -480,6 +482,12 @@ impl Settings {
             Some(_val) => true,
             None => false,
         };
+
+        settings.disable_menu = match env::var_os("MCFLY_DISABLE_MENU") {
+            Some(_val) => true,
+            None => false,
+        };
+
         settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
             Ok("vim") => KeyScheme::Vim,
             _ => KeyScheme::Emacs,
