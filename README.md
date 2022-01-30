@@ -282,6 +282,19 @@ fish:
 set -gx MCFLY_INTERFACE_VIEW BOTTOM
 ```
 
+### Disable menu interface
+To disable the menu interface, set the environment variable `MCFLY_DISABLE_MENU`.
+
+bash / zsh:
+```bash
+export MCFLY_DISABLE_MENU=TRUE
+```
+
+fish:
+```bash
+set -gx MCFLY_DISABLE_MENU TRUE
+```
+
 ### Results sorting
 To change the sorting of results shown, set `MCFLY_RESULTS_SORT` (default: RANK).
 Possible values `RANK` and `LAST_RUN`
