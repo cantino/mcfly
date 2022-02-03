@@ -58,12 +58,14 @@ impl MenuMode {
     fn text(&self, interface: &Interface) -> &str {
         match *self {
             MenuMode::Normal => match interface.settings.key_scheme {
-                KeyScheme::Emacs => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
+                KeyScheme::Emacs => {
+                    "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete | Ctrl+y - Copy"
+                }
                 KeyScheme::Vim => {
                     if interface.in_vim_insert_mode {
-                        "McFly (Ins) | ESC - Cmd  | ⏎ - Run | TAB - Edit | F2 - Delete"
+                        "McFly (Ins) | ESC - Cmd  | ⏎ - Run | TAB - Edit | F2 - Delete | Ctrl+y - Copy"
                     } else {
-                        "McFly (Cmd) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
+                        "McFly (Cmd) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete | Ctrl+y - Copy"
                     }
                 }
             },
