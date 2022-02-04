@@ -59,13 +59,13 @@ impl MenuMode {
         match *self {
             MenuMode::Normal => match interface.settings.key_scheme {
                 KeyScheme::Emacs => {
-                    "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete | Ctrl+y - Copy"
+                    "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete | F3 - Copy"
                 }
                 KeyScheme::Vim => {
                     if interface.in_vim_insert_mode {
-                        "McFly (Ins) | ESC - Cmd  | ⏎ - Run | TAB - Edit | F2 - Delete | Ctrl+y - Copy"
+                        "McFly (Ins) | ESC - Cmd  | ⏎ - Run | TAB - Edit | F2 - Delete | F3 - Copy"
                     } else {
-                        "McFly (Cmd) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete | Ctrl+y - Copy"
+                        "McFly (Cmd) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete | F3 - Copy"
                     }
                 }
             },
@@ -523,7 +523,7 @@ impl<'a> Interface<'a> {
                     }
                 }
             }
-            Key::Ctrl('y') => self.copy_selection(),
+            Key::F(3) => self.copy_selection(),
             _ => {}
         }
 
@@ -580,7 +580,7 @@ impl<'a> Interface<'a> {
                         }
                     }
                 }
-                Key::Ctrl('y') => self.copy_selection(),
+                Key::F(3) => self.copy_selection(),
                 _ => {}
             }
         } else {
@@ -637,7 +637,7 @@ impl<'a> Interface<'a> {
                         }
                     }
                 }
-                Key::Ctrl('y') => self.copy_selection(),
+                Key::F(3) => self.copy_selection(),
                 _ => {}
             }
         }
