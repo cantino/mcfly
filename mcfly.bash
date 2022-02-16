@@ -60,7 +60,8 @@ function mcfly_prompt_command {
 if [ -z "$PROMPT_COMMAND" ]
 then
   PROMPT_COMMAND="mcfly_prompt_command"
-else
+elif [[ ! "$PROMPT_COMMAND" =~ "mcfly_prompt_command" ]]
+then
   PROMPT_COMMAND="mcfly_prompt_command;${PROMPT_COMMAND#;}"
 fi
 
