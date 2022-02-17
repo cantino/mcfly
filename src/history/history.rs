@@ -814,7 +814,10 @@ impl History {
                             (":exit_code", &0),
                             (":selected", &0),
                         ]) {
-                            println!("McFly error: Insert did not work ({})", e);
+                            println!(
+                                "Insert did not work due to '{}'. Command was '{}'",
+                                e, &command.command
+                            );
                         }
                     }
                 }
