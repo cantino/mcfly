@@ -806,16 +806,16 @@ impl History {
                 if !IGNORED_COMMANDS.contains(&command.command.as_str()) {
                     let simplified_command = SimplifiedCommand::new(&command.command, true);
                     if !command.command.is_empty() && !simplified_command.result.is_empty() {
-                        statement
-                            .execute_named(&[
-                                (":cmd", &command.command),
-                                (":cmd_tpl", &simplified_command.result.to_owned()),
-                                (":session_id", &"IMPORTED"),
-                                (":when_run", &command.when),
-                                (":exit_code", &0),
-                                (":selected", &0),
-                            ])
-                            .unwrap_or_else(|err| panic!("McFly error: Insert to work ({})", err));
+                        if let Err(e) = statement.execute_named(&[
+                            (":cmd", &command.command),
+                            (":cmd_tpl", &simplified_command.result.to_owned()),
+                            (":session_id", &"IMPORTED"),
+                            (":when_run", &command.when),
+                            (":exit_code", &0),
+                            (":selected", &0),
+                        ]) {
+                            println!("McFly error: Insert did not work ({})", e);
+                        }
                     }
                 }
             }
