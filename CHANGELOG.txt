@@ -1,5 +1,7 @@
 0.5.14 - not yet released
  - Allow disabling of menu (thanks @michaelnavs!)
+ - Prevent subshells from having multiple mcfly PROMPT_COMMAND hooks in bash (thanks @nfultz!)
+ - Errors during history import do not prevent other lines from importing (thanks @qouoq!)
 0.5.13 - Jan 24, 2022
  - Fix 'illegal byte sequence' due to incorrect TIOCSTI cast (thanks @arunpersaud!)
 0.5.12 - Jan 12, 2022
