@@ -1,3 +1,5 @@
+extern crate clipboard;
+
 use crate::command_input::{CommandInput, Move};
 use crate::history::History;
 
@@ -7,6 +9,8 @@ use crate::history_cleaner;
 use crate::settings::Settings;
 use crate::settings::{InterfaceView, KeyScheme};
 use chrono::{Duration, TimeZone, Utc};
+use clipboard::ClipboardContext;
+use clipboard::ClipboardProvider;
 use humantime::format_duration;
 use std::io::{stdin, stdout, Write};
 use termion::color;
@@ -27,6 +31,7 @@ pub struct Interface<'a> {
     delete_requests: Vec<String>,
     menu_mode: MenuMode,
     in_vim_insert_mode: bool,
+    clipboard_context: ClipboardContext,
 }
 
 pub struct SelectionResult {
@@ -53,12 +58,14 @@ impl MenuMode {
     fn text(&self, interface: &Interface) -> &str {
         match *self {
             MenuMode::Normal => match interface.settings.key_scheme {
-                KeyScheme::Emacs => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
+                KeyScheme::Emacs => {
+                    "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete | F3 - Copy"
+                }
                 KeyScheme::Vim => {
                     if interface.in_vim_insert_mode {
-                        "McFly (Ins) | ESC - Cmd  | ⏎ - Run | TAB - Edit | F2 - Delete"
+                        "McFly (Ins) | ESC - Cmd  | ⏎ - Run | TAB - Edit | F2 - Delete | F3 - Copy"
                     } else {
-                        "McFly (Cmd) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
+                        "McFly (Cmd) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete | F3 - Copy"
                     }
                 }
             },
@@ -91,6 +98,7 @@ impl<'a> Interface<'a> {
             delete_requests: Vec::new(),
             menu_mode: MenuMode::Normal,
             in_vim_insert_mode: true,
+            clipboard_context: ClipboardProvider::new().unwrap(),
         }
     }
 
@@ -354,6 +362,15 @@ impl<'a> Interface<'a> {
         }
     }
 
+    fn copy_selection(&mut self) {
+        if !self.matches.is_empty() {
+            let selection_text = &self.matches[self.selection].cmd.to_string();
+            self.clipboard_context
+                .set_contents(selection_text.to_owned())
+                .unwrap();
+        }
+    }
+
     fn confirm(&mut self, confirmation: bool) {
         if confirmation {
             if let MenuMode::ConfirmDelete = self.menu_mode {
@@ -506,6 +523,7 @@ impl<'a> Interface<'a> {
                     }
                 }
             }
+            Key::F(3) => self.copy_selection(),
             _ => {}
         }
 
@@ -562,6 +580,7 @@ impl<'a> Interface<'a> {
                         }
                     }
                 }
+                Key::F(3) => self.copy_selection(),
                 _ => {}
             }
         } else {
@@ -618,6 +637,7 @@ impl<'a> Interface<'a> {
                         }
                     }
                 }
+                Key::F(3) => self.copy_selection(),
                 _ => {}
             }
         }
