@@ -815,7 +815,7 @@ impl History {
                             (":selected", &0),
                         ]) {
                             println!(
-                                "Insert did not work due to '{}'. Command was '{}'",
+                                "A single history line could not be saved due to '{}' (command was '{}'), but other inserts should be fine.",
                                 e, &command.command
                             );
                         }
