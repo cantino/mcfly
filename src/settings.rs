@@ -2,7 +2,7 @@ use crate::shell_history;
 use clap::AppSettings;
 use clap::{crate_authors, crate_version, value_t};
 use clap::{App, Arg, SubCommand};
-use dirs::home_dir;
+use directories_next::{ProjectDirs, UserDirs};
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -496,17 +496,38 @@ impl Settings {
         settings
     }
 
+    // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_CACHE_DIR
     pub fn mcfly_training_cache_path() -> PathBuf {
-        Settings::storage_dir_path().join(PathBuf::from("training-cache.v1.csv"))
+        let cache_dir = Settings::mcfly_xdg_dir().cache_dir().to_path_buf();
+
+        Settings::mcfly_base_path(cache_dir).join(PathBuf::from("training-cache.v1.csv"))
     }
 
-    pub fn storage_dir_path() -> PathBuf {
-        home_dir()
-            .unwrap_or_else(|| panic!("McFly error: Unable to access home directory"))
-            .join(PathBuf::from(".mcfly"))
-    }
-
+    // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_DATA_DIR
     pub fn mcfly_db_path() -> PathBuf {
-        Settings::storage_dir_path().join(PathBuf::from("history.db"))
+        let data_dir = Settings::mcfly_xdg_dir().data_dir().to_path_buf();
+
+        Settings::mcfly_base_path(data_dir).join(PathBuf::from("history.db"))
+    }
+
+    fn mcfly_xdg_dir() -> ProjectDirs {
+        ProjectDirs::from("", "", "McFly").unwrap()
+    }
+
+    fn mcfly_base_path(base_dir: PathBuf) -> PathBuf {
+        let (home_exists, mcfly_path) = Settings::home_mcfly_exists();
+
+        if home_exists {
+            mcfly_path
+        } else {
+            base_dir
+        }
+    }
+
+    fn home_mcfly_exists() -> (bool, PathBuf) {
+        let user_dirs = UserDirs::new().unwrap();
+        let user_dirs_file = user_dirs.home_dir().join(PathBuf::from(".mcfly"));
+
+        (user_dirs_file.exists(), user_dirs_file)
     }
 }

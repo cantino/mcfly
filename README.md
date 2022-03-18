@@ -309,6 +309,10 @@ fish:
 set -gx MCFLY_RESULTS_SORT LAST_RUN
 ```
 
+### Database Location
+
+McFly stores its SQLite database in the standard location for the OS. On OS X, this is in `~/Library/Application Support/McFly` and on Linux it is in `$XDG_DATA_DIR/McFly/history.db`. For legacy support, if `~/.mcfly/` exists, it is used instead.
+
 ### Slow startup
 
 If you have a very large history database and you notice that McFly launches slowly, you can set `MCFLY_HISTORY_LIMIT` to something like 10000 to limit how many records are considered when searching. In this example, McFly would search only the latest 10,000 entries.
