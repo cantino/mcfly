@@ -104,7 +104,7 @@ impl TrainingSampleGenerator {
     {
         let mut positive_examples = 0;
         let mut negative_examples = 0;
-        let records = records.unwrap_or_else(|| self.data_set.len());
+        let records = records.unwrap_or(self.data_set.len());
         let mut rng = rand::thread_rng();
 
         loop {

@@ -83,7 +83,7 @@ fn handle_search(settings: &Settings) {
             fake_typer::use_tiocsti(&cmd);
 
             if result.run {
-                fake_typer::use_tiocsti(&"\n".to_string());
+                fake_typer::use_tiocsti("\n");
             }
         }
     }

@@ -366,7 +366,7 @@ impl Settings {
                         &settings.mcfly_history,
                         settings.history_format,
                     )
-                    .unwrap_or_else(String::new);
+                    .unwrap_or_default();
                 }
 
                 // CD shows PWD as the resulting directory, but we want it from the source directory.
@@ -427,7 +427,7 @@ impl Settings {
                         &settings.mcfly_history,
                         settings.history_format,
                     )
-                    .unwrap_or_else(String::new)
+                    .unwrap_or_default()
                     .trim_start_matches("#mcfly: ")
                     .trim_start_matches("#mcfly:")
                     .to_string();
