@@ -311,7 +311,7 @@ set -gx MCFLY_RESULTS_SORT LAST_RUN
 
 ### Database Location
 
-McFly stores its SQLite database in the standard location for the OS. On OS X, this is in `~/Library/Application Support/McFly` and on Linux it is in `$XDG_DATA_DIR/McFly/history.db`. For legacy support, if `~/.mcfly/` exists, it is used instead.
+McFly stores its SQLite database in the standard location for the OS. On OS X, this is in `~/Library/Application Support/McFly` and on Linux it is in `$XDG_DATA_DIR/mcfly/history.db` (default would be `~/.local/share/mcfly/history.db`). For legacy support, if `~/.mcfly/` exists, it is used instead.
 
 ### Slow startup
 
