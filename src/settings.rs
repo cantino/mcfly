@@ -515,19 +515,19 @@ impl Settings {
     }
 
     fn mcfly_base_path(base_dir: PathBuf) -> PathBuf {
-        let (home_exists, mcfly_path) = Settings::home_mcfly_exists();
-
-        if home_exists {
-            mcfly_path
-        } else {
-            base_dir
-        }
+        Settings::mcfly_dir_in_home().unwrap_or(base_dir)
     }
 
-    fn home_mcfly_exists() -> (bool, PathBuf) {
-        let user_dirs = UserDirs::new().unwrap();
-        let user_dirs_file = user_dirs.home_dir().join(PathBuf::from(".mcfly"));
+    fn mcfly_dir_in_home() -> Option<PathBuf> {
+        let user_dirs_file = UserDirs::new()
+            .unwrap()
+            .home_dir()
+            .join(PathBuf::from(".mcfly"));
 
-        (user_dirs_file.exists(), user_dirs_file)
+        if user_dirs_file.exists() {
+            Some(user_dirs_file)
+        } else {
+            None
+        }
     }
 }
