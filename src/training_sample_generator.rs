@@ -4,6 +4,7 @@ use crate::history::History;
 use crate::settings::Settings;
 use crate::training_cache;
 use rand::seq::IteratorRandom;
+use std::fs;
 
 #[derive(Debug)]
 pub struct TrainingSampleGenerator {
@@ -15,6 +16,11 @@ impl TrainingSampleGenerator {
         let cache_path = Settings::mcfly_training_cache_path();
         let data_set = if settings.refresh_training_cache || !cache_path.exists() {
             let ds = TrainingSampleGenerator::generate_data_set(history);
+            let mcfly_cache_dir = cache_path.parent().unwrap();
+
+            fs::create_dir_all(mcfly_cache_dir)
+                .unwrap_or_else(|_| panic!("Unable to create {:?}", mcfly_cache_dir));
+
             training_cache::write(&ds, &cache_path);
             ds
         } else {
@@ -98,7 +104,7 @@ impl TrainingSampleGenerator {
     {
         let mut positive_examples = 0;
         let mut negative_examples = 0;
-        let records = records.unwrap_or_else(|| self.data_set.len());
+        let records = records.unwrap_or(self.data_set.len());
         let mut rng = rand::thread_rng();
 
         loop {

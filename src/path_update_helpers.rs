@@ -1,6 +1,6 @@
 use relative_path::RelativePath;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use unicode_segmentation::UnicodeSegmentation;
 
 pub fn normalize_path(incoming_path: &str) -> String {
@@ -15,9 +15,7 @@ pub fn normalize_path(incoming_path: &str) -> String {
     let current_dir_path = Path::new(&current_dir);
 
     let path_buf = if expanded_path.starts_with('/') {
-        RelativePath::new(&expanded_path.into_owned())
-            .normalize()
-            .to_path("/")
+        PathBuf::from("/").join(RelativePath::new(&expanded_path).normalize().to_path(""))
     } else {
         let to_current_dir = RelativePath::new(&expanded_path).to_path(current_dir_path);
         RelativePath::new(to_current_dir.to_str().unwrap())
