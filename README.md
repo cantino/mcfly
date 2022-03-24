@@ -46,7 +46,7 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Install `mcfly`:
     ```bash
-    brew install mcfly
+    brew install cantino/mcfly/mcfly
     ```
 1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file:
 
