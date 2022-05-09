@@ -81,6 +81,7 @@ need install
 need mkdir
 need mktemp
 need tar
+need jq
 
 # Optional dependencies
 if [ -z "$crate" ] || [ -z "$tag" ] || [ -z "$target" ]; then
@@ -121,7 +122,7 @@ fi
 url="$url/releases"
 
 if [ -z "$tag" ]; then
-    tag=$(curl -s "$url/latest" | cut -d'"' -f2 | rev | cut -d'/' -f1 | rev)
+    tag=$(curl "https://api.github.com/repos/$git/releases/latest" | jq --raw-output .name)
     say_err "Tag: latest ($tag)"
 else
     say_err "Tag: $tag"
