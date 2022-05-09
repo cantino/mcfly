@@ -100,7 +100,7 @@ fn handle_move(settings: &Settings) {
 }
 
 fn handle_init(settings: &Settings) {
-    Init::new(&settings.init_mode);
+    Init::new(&settings.init_mode, settings.print_full_init);
 }
 
 fn main() {

@@ -87,6 +87,7 @@ pub struct Settings {
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
     pub disable_menu: bool,
+    pub print_full_init: bool,
 }
 
 impl Default for Settings {
@@ -116,6 +117,7 @@ impl Default for Settings {
             interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
             disable_menu: false,
+            print_full_init: false,
         }
     }
 }
@@ -243,6 +245,9 @@ impl Settings {
                     .help("Shell to init — one of bash, zsh, or fish")
                     .possible_values(&["bash", "zsh", "fish"])
                     .required(true))
+                .arg(Arg::with_name("print_full_init")
+                    .long("print_full_init")
+                    .help("Output full init code as opposed to just `source <(...)`"))
             )
             .get_matches();
 
@@ -460,6 +465,7 @@ impl Settings {
 
             ("init", Some(init_matches)) => {
                 settings.mode = Mode::Init;
+                settings.print_full_init = init_matches.is_present("print_full_init");
                 match init_matches.value_of("shell").unwrap() {
                     "bash" => {
                         settings.init_mode = InitMode::Bash;
