@@ -49,7 +49,7 @@ jobs:
         with:
           command: test
           args: --target ${{ matrix.target }}
-          use-cross: false
+          use-cross: true
 
   linux:
     runs-on: ubuntu-latest
