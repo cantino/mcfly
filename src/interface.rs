@@ -596,6 +596,10 @@ impl<'a> Interface<'a> {
                 Key::Char('0') | Key::Char('^') => self.input.move_cursor(Move::BOL),
                 Key::Char('$') => self.input.move_cursor(Move::EOL),
                 Key::Char('i') => self.in_vim_insert_mode = true,
+                Key::Char('I') => {
+                    self.input.move_cursor(Move::BOL);
+                    self.in_vim_insert_mode = true;
+                }
                 Key::Char('a') => {
                     self.input.move_cursor(Move::Forward);
                     self.in_vim_insert_mode = true;
