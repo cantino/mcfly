@@ -595,7 +595,15 @@ impl<'a> Interface<'a> {
                 Key::Char('w') => self.input.move_cursor(Move::ForwardWord),
                 Key::Char('0') | Key::Char('^') => self.input.move_cursor(Move::BOL),
                 Key::Char('$') => self.input.move_cursor(Move::EOL),
-                Key::Char('i') | Key::Char('a') => self.in_vim_insert_mode = true,
+                Key::Char('i') => self.in_vim_insert_mode = true,
+                Key::Char('a') => {
+                    self.input.move_cursor(Move::Forward);
+                    self.in_vim_insert_mode = true;
+                }
+                Key::Char('A') => {
+                    self.input.move_cursor(Move::EOL);
+                    self.in_vim_insert_mode = true;
+                }
                 Key::Backspace => {
                     self.input.delete(Move::Backward);
                     self.refresh_matches();
