@@ -1,3 +1,6 @@
+> **Seeking co-maintainers**:
+> I don't have much time to maintain this project these days. If someone would like to jump in and become a co-maintainer, it would be appreciated!
+
 ![Build Status](https://github.com/cantino/mcfly/actions/workflows/mean_bean_ci.yml/badge.svg)
 [![](https://img.shields.io/crates/v/mcfly.svg)](https://crates.io/crates/mcfly)
 
