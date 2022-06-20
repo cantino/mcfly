@@ -522,7 +522,7 @@ impl<'a> Interface<'a> {
             Key::F(1) => {
                 self.switch_result_sort();
                 self.refresh_matches();
-            },
+            }
             Key::F(2) => {
                 if !self.matches.is_empty() {
                     if self.settings.delete_without_confirm {
@@ -582,7 +582,7 @@ impl<'a> Interface<'a> {
                 Key::F(1) => {
                     self.switch_result_sort();
                     self.refresh_matches();
-                },
+                }
                 Key::F(2) => {
                     if !self.matches.is_empty() {
                         if self.settings.delete_without_confirm {
