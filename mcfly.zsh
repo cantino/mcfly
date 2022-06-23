@@ -68,7 +68,7 @@ exit_logger() {
 }
 zshexit_functions+=(exit_logger)
 
-# If this is an interactive shell, take ownership of ctrl-r.
+# If this is an interactive shell, take ownership of ctrl-r and set terminal color.
 if [[ $- =~ .*i.* ]]; then
   mcfly-history-widget() {
     () {
@@ -97,4 +97,10 @@ if [[ $- =~ .*i.* ]]; then
   }
   zle -N mcfly-history-widget
   bindkey '^R' mcfly-history-widget
+
+  if [[ "$COLORFGBG" =~ \;15$ ]]; then
+    export MCFLY_LIGHT=TRUE
+  elif [[ "$TERM_PROGRAM" == "Apple_Terminal" && $(defaults read -g AppleInterfaceStyle 2> /dev/null) != 'Dark' ]]; then
+    export MCFLY_LIGHT=TRUE
+  fi
 fi
