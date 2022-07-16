@@ -72,8 +72,8 @@ impl MenuMode {
         menu_text.push_str("⏎ - Run | TAB - Edit | ");
 
         match interface.result_sort {
-            ResultSort::Rank => menu_text.push_str("F1 - Sort (Time) | "),
-            ResultSort::LastRun => menu_text.push_str("F1 - Sort (Rank) | "),
+            ResultSort::Rank => menu_text.push_str("F1 - Switch Sort to Time | "),
+            ResultSort::LastRun => menu_text.push_str("F1 - Switch Sort to Rank | "),
         }
 
         menu_text.push_str("F2 - Delete");

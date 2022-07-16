@@ -1,5 +1,5 @@
 use crate::simplified_command::SimplifiedCommand;
-use rusqlite::{Connection, NO_PARAMS};
+use rusqlite::{named_params, Connection};
 use std::io;
 use std::io::Write;
 
@@ -16,7 +16,7 @@ pub fn migrate(connection: &Connection) {
     let current_version: u16 = connection
         .query_row::<Option<u16>, _, _>(
             "select max(version) FROM schema_versions ORDER BY version DESC LIMIT 1",
-            NO_PARAMS,
+            [],
             |row| row.get(0),
         )
         .unwrap_or_else(|err| panic!("McFly error: Query to work ({})", err))
@@ -48,7 +48,7 @@ pub fn migrate(connection: &Connection) {
         for (id, cmd) in cmd_strings(connection) {
             let simplified_command = SimplifiedCommand::new(cmd.as_str(), true);
             statement
-                .execute_named(&[(":cmd_tpl", &simplified_command.result), (":id", &id)])
+                .execute(named_params! { ":cmd_tpl": &simplified_command.result, ":id": &id })
                 .unwrap_or_else(|err| panic!("McFly error: Insert to work ({})", err));
         }
     }
@@ -123,7 +123,7 @@ fn cmd_strings(connection: &Connection) -> Vec<(i64, String)> {
     let query = "SELECT id, cmd FROM commands ORDER BY id DESC";
     let mut statement = connection.prepare(query).unwrap();
     let command_iter = statement
-        .query_map(NO_PARAMS, |row| (row.get(0), row.get(1)))
+        .query_map([], |row| Ok((row.get_unwrap(0), row.get_unwrap(1))))
         .unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));
 
     let mut vec = Vec::new();

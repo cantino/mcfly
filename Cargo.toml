@@ -20,20 +20,20 @@ lto = true
 debug = true
 
 [dependencies]
-chrono = "0.4.19"
-clap = "2.33"
+chrono = "0.4"
+clap = "2"
 csv = "1"
-humantime = "2.1.0"
+humantime = "2.1"
 directories-next = "2.0"
-itertools = "0.9.0"
+itertools = "0.10"
 libc = "0.2"
-rand = "0.7"
+rand = "0.8"
 regex = "1"
-relative-path = "1.6.1"
+relative-path = "1.7"
 shellexpand = "2.1"
-termion = "1.5.5"
-unicode-segmentation = "1.6"
+termion = "1.5"
+unicode-segmentation = "1.9"
 
 [dependencies.rusqlite]
-version = "0.15.0"
+version = "0.28"
 features = ["bundled", "functions", "unlock_notify"]
