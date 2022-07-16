@@ -1,3 +1,8 @@
+0.6.1 - Jul 16, 2022
+ - Avoid return 0 to prevent re-sourcing .zshrc from erroring
+ - Vim mode improvement (thanks @fabiogibson!)
+ - Allow switching between rank and time-based sorting with F1 (thanks @navazjm!)
+ - Dependency security updates
 0.6.0 - Mar 22, 2022
  - Allow disabling of menu (thanks @michaelnavs!)
  - Prevent subshells from having multiple mcfly PROMPT_COMMAND hooks in bash (thanks @nfultz!)
