@@ -7,16 +7,16 @@
 #   brew untap cantino/mcfly
 
 class Mcfly < Formula
-  version 'v0.6.0'
+  version 'v0.6.1'
   desc "McFly"
   homepage "https://github.com/cantino/mcfly"
 
   if OS.mac?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-apple-darwin.tar.gz"
-    sha256 "cd2124630a432690f51ca09dc10c95b5dbb5efeb65762ef02b8af0d218e51e6b"
+    sha256 "6649f1356215c8193853d0e4fd00f1686c0d74380a2754fa1ffb60faf34bebed"
   elsif OS.linux?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-unknown-linux-musl.tar.gz"
-    sha256 "542f2a4874cf1efe06810aa46bc0d3999a656af19aeebfa7594ac56e6b25df96"
+    sha256 "f1353005b20d1b2a4884075635e3c9bfa679b6dd54cc5969864576129adf4fdc"
   end
 
   def install
