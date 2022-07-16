@@ -44,7 +44,7 @@ fn has_leading_timestamp(line: &str) -> bool {
     for (index, c) in line.chars().enumerate() {
         if index == 0 && c == '#' {
             matched_chars += 1;
-        } else if index > 0 && index < 11 && (c.is_digit(10)) {
+        } else if index > 0 && index < 11 && (c.is_ascii_digit()) {
             matched_chars += 1;
         } else if index > 11 {
             break;
