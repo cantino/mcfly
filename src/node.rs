@@ -22,17 +22,17 @@ impl Node {
         let mut rng = rand::thread_rng();
 
         Node {
-            offset: rng.gen_range(-1.0, 1.0),
-            age: rng.gen_range(-1.0, 1.0),
-            length: rng.gen_range(-1.0, 1.0),
-            exit: rng.gen_range(-1.0, 1.0),
-            recent_failure: rng.gen_range(-1.0, 1.0),
-            selected_dir: rng.gen_range(-1.0, 1.0),
-            dir: rng.gen_range(-1.0, 1.0),
-            overlap: rng.gen_range(-1.0, 1.0),
-            immediate_overlap: rng.gen_range(-1.0, 1.0),
-            selected_occurrences: rng.gen_range(-1.0, 1.0),
-            occurrences: rng.gen_range(-1.0, 1.0),
+            offset: rng.gen_range(-1.0..1.0),
+            age: rng.gen_range(-1.0..1.0),
+            length: rng.gen_range(-1.0..1.0),
+            exit: rng.gen_range(-1.0..1.0),
+            recent_failure: rng.gen_range(-1.0..1.0),
+            selected_dir: rng.gen_range(-1.0..1.0),
+            dir: rng.gen_range(-1.0..1.0),
+            overlap: rng.gen_range(-1.0..1.0),
+            immediate_overlap: rng.gen_range(-1.0..1.0),
+            selected_occurrences: rng.gen_range(-1.0..1.0),
+            occurrences: rng.gen_range(-1.0..1.0),
         }
     }
 

@@ -74,11 +74,11 @@ impl Network {
         let mut rng = rand::thread_rng();
 
         Network {
-            final_bias: rng.gen_range(-1.0, 1.0),
+            final_bias: rng.gen_range(-1.0..1.0),
             final_weights: [
-                rng.gen_range(-1.0, 1.0),
-                rng.gen_range(-1.0, 1.0),
-                rng.gen_range(-1.0, 1.0),
+                rng.gen_range(-1.0..1.0),
+                rng.gen_range(-1.0..1.0),
+                rng.gen_range(-1.0..1.0),
             ],
             hidden_nodes: [Node::random(), Node::random(), Node::random()],
             hidden_node_sums: [0.0, 0.0, 0.0],
