@@ -44,7 +44,7 @@ if test "$__MCFLY_LOADED" != "loaded"
   if status is-interactive
     function __mcfly-history-widget -d "Search command history with McFly"
       set -l mcfly_output (mktemp -t mcfly.output.XXXXXXXX)
-      eval $__MCFLY_CMD search -o '$mcfly_output' -- (commandline)
+      eval $__MCFLY_CMD search -o '$mcfly_output' -- (commandline | string escape)
 
       # Interpret commandline/run requests from McFly
       set -l mode; set -l commandline
