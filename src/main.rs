@@ -50,6 +50,41 @@ fn handle_addition(settings: &Settings) {
 
 fn handle_search(settings: &Settings) {
     let history = History::load(settings.history_format);
+
+    if settings.no_ui {
+        history.build_cache_table(
+            &settings.dir.to_owned(),
+            &Some(settings.session_id.to_owned()),
+            None,
+            None,
+            None,
+            settings.limit.to_owned(),
+        );
+        let matches = history.find_matches(
+            &settings.command,
+            settings.results as i16,
+            settings.fuzzy,
+            &mcfly::settings::ResultSort::Rank,
+        );
+
+        let cmd = match matches.first() {
+            Some(cmd) => cmd.cmd.to_owned(),
+            None => settings.command.to_owned(),
+        };
+        let cmd_t = cmd.trim();
+        if cmd_t.is_empty() {
+            return;
+        }
+
+        let out = format!("mode display\ncommandline {}\n", cmd_t);
+        if let Some(path) = &settings.output_selection {
+            fs::write(path, out)
+                .unwrap_or_else(|err| panic!("McFly error: unable to write to {}: {}", path, err));
+        }
+        
+        return;
+    }
+
     let result = Interface::new(settings, &history).display();
     if let Some(cmd) = result.selection {
         if let Some(path) = &settings.output_selection {
