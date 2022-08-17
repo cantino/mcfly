@@ -44,7 +44,7 @@ pub enum MoveSelection {
     Down,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum MenuMode {
     Normal,
     ConfirmDelete,
