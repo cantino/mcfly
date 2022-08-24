@@ -18,6 +18,9 @@ use std::str::FromStr;
 use chrono::{Duration, TimeZone, Utc};
 use humantime::format_duration;
 
+
+
+
 pub struct Interface<'a> {
     history: &'a History,
     settings: &'a Settings,
@@ -216,17 +219,20 @@ impl<'a> Interface<'a> {
             let _ = queue!(screen, cursor::MoveTo(0, (command_line_index as i16 + self.result_top_index() as i16) as u16));
             let _ = queue!(screen, SetBackgroundColor(bg));
             let _ = queue!(screen, SetForegroundColor(fg));
-            let _ = queue!(
-                screen,
-                Print(&format!("{:<width$}", Interface::truncate_for_display(
-                    command,
-                    &self.input.command,
-                    width,
-                    highlight,
-                    fg,
-                    self.debug
-                ), width=(width + 10) as usize)),
-            );
+            Interface::truncate_for_display(screen, command, &self.input.command, width, highlight, fg, self.debug);
+            // let _ = queue!(screen, Print(command));
+            // let tmp_str = format!("{:width$}", Interface::truncate_for_display(
+            //         command,
+            //         &self.input.command,
+            //         width,
+            //         highlight,
+            //         fg,
+            //         self.debug
+            //     ), width=(width + 10) as usize);
+            // let _ = queue!(
+            //     screen,
+            //     Print(&tmp_str),
+            // );
 
             if command.last_run.is_some() {
                 let duration = &format_duration(
@@ -259,7 +265,8 @@ impl<'a> Interface<'a> {
 
                 let _ = queue!(screen, cursor::MoveTo(width - 9, (command_line_index as i16 + self.result_top_index() as i16) as u16));
                 let _ = queue!(screen, SetForegroundColor(timing_color));
-                let _ = queue!(screen, Print(&format!("{:>9}", duration)));
+                let tmp_str = format!("{:>9}", duration);
+                let _ = queue!(screen, Print(&tmp_str));
                 let _ = queue!(screen, SetForegroundColor(fg));
             }
         }
@@ -844,74 +851,76 @@ impl<'a> Interface<'a> {
     }
 
     fn truncate_for_display(
+        screen: &mut Write,
         command: &Command,
         search: &str,
         width: u16,
-        highlight_color: Color,
-        base_color: Color,
+        highlighted_text_color: Color,
+        text_color: Color,
         debug: bool,
     ) -> String {
         let mut prev: usize = 0;
         let debug_space = if debug { 90 } else { 0 };
-        let max_grapheme_length = if width > debug_space {
-            width - debug_space - 9
-        } else {
-            11
-        };
-        let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
+        // let max_grapheme_length = if width > debug_space {
+        //     width - debug_space - 9
+        // } else {
+        //     11
+        // };
+        // let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
         if !search.is_empty() {
             for (start, end) in &command.match_bounds {
                 if prev != *start {
-                    out.push_grapheme_str(&command.cmd[prev..*start]);
+                    let _ = queue!(screen, Print(&command.cmd[prev..*start]));
                 }
 
-                out.push_str(&format!("{}", SetForegroundColor(highlight_color)));
-                out.push_grapheme_str(&command.cmd[*start..*end]);
-                out.push_str(&format!("{}", SetForegroundColor(base_color)));
+                let _ = queue!(screen, SetForegroundColor(highlighted_text_color));
+                let _ = queue!(screen, Print(&command.cmd[*start..*end]));
+                let _ = queue!(screen, SetForegroundColor(text_color));
                 prev = *end;
             }
         }
 
         if prev != command.cmd.len() {
-            out.push_grapheme_str(&command.cmd[prev..]);
+            let _ = queue!(screen, Print(&command.cmd[prev..]));
         }
 
         if debug {
-            out.max_grapheme_length += debug_space;
-            out.push_grapheme_str("  ");
-            out.push_str(&format!("{}", SetForegroundColor(Color::Blue)));
-            out.push_grapheme_str(format!("rnk: {:.*} ", 2, command.rank));
-            out.push_grapheme_str(format!("age: {:.*} ", 2, command.features.age_factor));
-            out.push_grapheme_str(format!("lng: {:.*} ", 2, command.features.length_factor));
-            out.push_grapheme_str(format!("ext: {:.*} ", 0, command.features.exit_factor));
-            out.push_grapheme_str(format!(
+            // out.max_grapheme_length += debug_space;
+            let _ = queue!(screen, Print("  "));
+            let _ = queue!(screen, SetForegroundColor(Color::Blue));
+            let _ = queue!(screen, Print(format!("rnk: {:.*} ", 2, command.rank)));
+            let _ = queue!(screen, Print(format!("age: {:.*} ", 2, command.features.age_factor)));
+            let _ = queue!(screen, Print(format!("lng: {:.*} ", 2, command.features.length_factor)));
+            let _ = queue!(screen, Print(format!("ext: {:.*} ", 0, command.features.exit_factor)));
+            let _ = queue!(screen, Print(format!(
                 "r_ext: {:.*} ",
                 0, command.features.recent_failure_factor
-            ));
-            out.push_grapheme_str(format!("dir: {:.*} ", 3, command.features.dir_factor));
-            out.push_grapheme_str(format!(
-                "s_dir: {:.*} ",
-                3, command.features.selected_dir_factor
-            ));
-            out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.features.overlap_factor));
-            out.push_grapheme_str(format!(
-                "i_ovlp: {:.*} ",
-                3, command.features.immediate_overlap_factor
-            ));
-            out.push_grapheme_str(format!(
-                "occ: {:.*}",
-                2, command.features.occurrences_factor
-            ));
-            out.push_grapheme_str(format!(
-                "s_occ: {:.*} ",
-                2, command.features.selected_occurrences_factor
-            ));
+            )));
+            // out.push_grapheme_str(format!("dir: {:.*} ", 3, command.features.dir_factor));
+            // out.push_grapheme_str(format!(
+            //     "s_dir: {:.*} ",
+            //     3, command.features.selected_dir_factor
+            // ));
+            // out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.features.overlap_factor));
+            // out.push_grapheme_str(format!(
+            //     "i_ovlp: {:.*} ",
+            //     3, command.features.immediate_overlap_factor
+            // ));
+            // out.push_grapheme_str(format!(
+            //     "occ: {:.*}",
+            //     2, command.features.occurrences_factor
+            // ));
+            // out.push_grapheme_str(format!(
+            //     "s_occ: {:.*} ",
+            //     2, command.features.selected_occurrences_factor
+            // ));
 
-            out.push_str(&format!("{}", SetForegroundColor(base_color)));
+            // out.push_str(&format!("{}", SetForegroundColor(text_color)));
         }
 
-        out.string
+        // out.string
+        "".to_string()
     }
 
     fn result_top_index(&self) -> u16 {
@@ -963,7 +972,7 @@ impl<'a> Interface<'a> {
 // Ctrl('s') => forward history search
 // Ctrl('t') => transpose characters
 // Ctrl('q') | Ctrl('v') => quoted insert
-// Ctrl('y') => yank
-// Ctrl('_') => undo
+
+
 
 

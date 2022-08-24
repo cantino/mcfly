@@ -445,12 +445,12 @@ impl Settings {
                 if let Some(dir) = search_matches.value_of("directory") {
                     settings.dir = dir.to_string();
                 } else {
-                    settings.dir = env::var("PWD").unwrap_or_else(|err| {
+                    settings.dir = env::current_dir().unwrap_or_else(|err| {
                         panic!(
                             "McFly error: Unable to determine current directory ({})",
                             err
                         )
-                    });
+                    }).to_str().unwrap().to_string();
                 }
 
                 if let Ok(results) = env::var("MCFLY_RESULTS") {

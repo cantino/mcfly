@@ -3,6 +3,7 @@ extern "C" {
     pub fn ioctl(fd: i8, request: u32, arg: *const u8) -> i8;
 }
 
+#[cfg(not(windows))]
 pub fn use_tiocsti(string: &str) {
     for byte in string.as_bytes() {
         let a: *const u8 = byte;
@@ -10,4 +11,8 @@ pub fn use_tiocsti(string: &str) {
             panic!("Error encountered when calling ioctl");
         }
     }
+}
+#[cfg(windows)]
+pub fn use_tiocsti(string: &str) {
+    autopilot::key::type_string(string, &[], 0.0, 0.0)
 }
