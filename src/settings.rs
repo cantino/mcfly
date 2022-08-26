@@ -35,6 +35,7 @@ pub enum InitMode {
     Bash,
     Zsh,
     Fish,
+    Powershell,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -276,8 +277,8 @@ impl Settings {
             .subcommand(SubCommand::with_name("init")
                 .about("Prints the shell code used to execute mcfly")
                 .arg(Arg::with_name("shell")
-                    .help("Shell to init — one of bash, zsh, or fish")
-                    .possible_values(&["bash", "zsh", "fish"])
+                    .help("Shell to init — one of bash, zsh, fish, or powershell")
+                    .possible_values(&["bash", "zsh", "fish", "powershell"])
                     .required(true))
             )
             .get_matches();
@@ -407,12 +408,16 @@ impl Settings {
                 if let Some(dir) = add_matches.value_of("directory") {
                     settings.dir = dir.to_string();
                 } else {
-                    settings.dir = env::var("PWD").unwrap_or_else(|err| {
+                    settings.dir = env::current_dir().unwrap_or_else(|err| {
                         panic!(
                             "McFly error: Unable to determine current directory ({})",
                             err
                         )
-                    });
+                    }).to_str().to_owned().unwrap_or_else(|| {
+                        panic!(
+                            "McFly error: Unable to determine current directory"
+                        )
+                    }).to_string();
                 }
 
                 if let Some(old_dir) = add_matches.value_of("old_directory") {
@@ -476,19 +481,20 @@ impl Settings {
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = shell_history::last_history_line(
-                        &settings.mcfly_history,
-                        settings.history_format,
-                    )
-                    .unwrap_or_else(String::new)
-                    .trim_start_matches("#mcfly: ")
-                    .trim_start_matches("#mcfly:")
-                    .to_string();
-                    shell_history::delete_last_history_entry_if_search(
-                        &settings.mcfly_history,
-                        settings.history_format,
-                        settings.debug,
-                    );
+                    settings.command = "".to_string();
+                    // shell_history::last_history_line(
+                    //     &settings.mcfly_history,
+                    //     settings.history_format,
+                    // )
+                    // .unwrap_or_else(String::new)
+                    // .trim_start_matches("#mcfly: ")
+                    // .trim_start_matches("#mcfly:")
+                    // .to_string();
+                    // shell_history::delete_last_history_entry_if_search(
+                    //     &settings.mcfly_history,
+                    //     settings.history_format,
+                    //     settings.debug,
+                    // );
                 }
             }
 
@@ -522,6 +528,9 @@ impl Settings {
                     }
                     "fish" => {
                         settings.init_mode = InitMode::Fish;
+                    }
+                    "powershell" => {
+                        settings.init_mode = InitMode::Powershell;
                     }
                     _ => unreachable!(),
                 }
