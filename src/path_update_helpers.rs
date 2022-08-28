@@ -1,34 +1,9 @@
-use relative_path::RelativePath;
-use std::env;
 use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;
+use path_absolutize::*;
 
 pub fn normalize_path(incoming_path: &str) -> String {
-    let expanded_path = shellexpand::tilde(incoming_path);
-
-    let current_dir = env::var("PWD").unwrap_or_else(|err| {
-        panic!(
-            "McFly error: Unable to determine current directory ({})",
-            err
-        )
-    });
-    let current_dir_path = Path::new(&current_dir);
-
-    let path_buf = if expanded_path.starts_with('/') {
-        RelativePath::new(&expanded_path.into_owned())
-            .normalize()
-            .to_path("/")
-    } else {
-        let to_current_dir = RelativePath::new(&expanded_path).to_path(current_dir_path);
-        RelativePath::new(to_current_dir.to_str().unwrap())
-            .normalize()
-            .to_path("/")
-    };
-
-    path_buf
-        .to_str()
-        .unwrap_or_else(|| panic!("McFly error: Path must be a valid UTF8 string"))
-        .to_string()
+    return Path::new(incoming_path).absolutize_from(std::env::current_dir().unwrap().as_path()).unwrap().to_str().unwrap().to_string();
 }
 
 pub fn parse_mv_command(command: &str) -> Vec<String> {
@@ -108,39 +83,7 @@ mod tests {
     use super::{normalize_path, parse_mv_command};
     use std::env;
     use std::path::PathBuf;
-
-    #[test]
-    fn normalize_path_works_absolute_paths() {
-        assert_eq!(normalize_path("/foo/bar/baz"), String::from("/foo/bar/baz"));
-        assert_eq!(normalize_path("/"), String::from("/"));
-        assert_eq!(normalize_path("////"), String::from("/"));
-    }
-
-    #[test]
-    fn normalize_path_works_with_tilda() {
-        assert_eq!(normalize_path("~/"), env::var("HOME").unwrap());
-        assert_eq!(
-            normalize_path("~/foo"),
-            PathBuf::from(env::var("HOME").unwrap())
-                .join("foo")
-                .to_string_lossy()
-        );
-    }
-
-    #[test]
-    fn normalize_path_works_with_double_dots() {
-        assert_eq!(normalize_path("/foo/bar/../baz"), String::from("/foo/baz"));
-        assert_eq!(normalize_path("/foo/bar/../../baz"), String::from("/baz"));
-        assert_eq!(normalize_path("/foo/bar/../../"), String::from("/"));
-        assert_eq!(normalize_path("/foo/bar/../.."), String::from("/"));
-        assert_eq!(
-            normalize_path("~/foo/bar/../baz"),
-            PathBuf::from(env::var("HOME").unwrap())
-                .join("foo/baz")
-                .to_string_lossy()
-        );
-        assert_eq!(normalize_path("~/foo/bar/../.."), env::var("HOME").unwrap());
-    }
+    use std::path::Path;
 
     #[test]
     fn parse_mv_command_works_in_the_basic_case() {

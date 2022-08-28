@@ -36,6 +36,7 @@ serde = { version = "1.0", features = ["derive"] }
 shellexpand = "2.0"
 unicode-segmentation = "1.6"
 autopilot = "0.4.0"
+path-absolutize = "3.0.13"
 
 [dependencies.rusqlite]
 version = "0.15.0"

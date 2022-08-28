@@ -180,10 +180,11 @@ impl<'a> Interface<'a> {
         } else {
             let _ = queue!(screen, cursor::DisableBlinking);
         }
+        let _ = queue!(screen, cursor::EnableBlinking);
 
         let _ = queue!(screen, cursor::Show);
 
-        // screen.flush().unwrap();
+        screen.flush().unwrap();
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {
@@ -352,19 +353,16 @@ impl<'a> Interface<'a> {
 
     fn refresh_matches(&mut self, selection: usize) {
         self.selection = selection;
-        for new_match in self.history.find_matches(
+        self.matches = self.history.find_matches(
             &self.input.command,
             self.settings.results as i16,
             self.settings.fuzzy,
             &self.settings.result_sort,
-        ) {
-            self.matches.insert(0, new_match)
-        }
-        self.matches.truncate(self.settings.results.into());
+        );
     }
 
     fn select(&mut self) {
-        // let _ = terminal::enable_raw_mode();
+        let _ = terminal::enable_raw_mode();
 
         let mut screen = stdout();
 
@@ -380,53 +378,51 @@ impl<'a> Interface<'a> {
         // Synchronizing issue when typing fast - just run the loop a few times without a keystroke to synchronize the input
         let mut i = 0;
         loop {
-            if poll(std::time::Duration::ZERO).unwrap_or(false) || i > 3 {
-                let event =
-                    read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
+            let event =
+                read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
 
-                if self.menu_mode != MenuMode::Normal {
-                    match event {
-                        Event::Key(KeyEvent {
-                            modifiers: KeyModifiers::CONTROL,
-                            code:
-                                KeyCode::Char('c')
-                                | KeyCode::Char('d')
-                                | KeyCode::Char('g')
-                                | KeyCode::Char('z')
-                                | KeyCode::Char('r'),
-                        }) => {
-                            self.run = false;
-                            self.input.clear();
-                            break;
-                        }
-                        Event::Key(KeyEvent {
-                            code: KeyCode::Char('y'),
-                            ..
-                        }) => {
-                            self.confirm(true);
-                        }
-                        Event::Key(
-                            KeyEvent {
-                                code: KeyCode::Char('n'),
-                                ..
-                            }
-                            | KeyEvent {
-                                code: KeyCode::Esc, ..
-                            },
-                        ) => {
-                            self.confirm(false);
-                        }
-                        _ => {}
-                    };
-                } else {
-                    let early_out = match self.settings.key_scheme {
-                        KeyScheme::Emacs => self.select_with_emacs_key_scheme(event),
-                        KeyScheme::Vim => self.select_with_vim_key_scheme(event),
-                    };
-
-                    if early_out {
+            if self.menu_mode != MenuMode::Normal {
+                match event {
+                    Event::Key(KeyEvent {
+                        modifiers: KeyModifiers::CONTROL,
+                        code:
+                            KeyCode::Char('c')
+                            | KeyCode::Char('d')
+                            | KeyCode::Char('g')
+                            | KeyCode::Char('z')
+                            | KeyCode::Char('r'),
+                    }) => {
+                        self.run = false;
+                        self.input.clear();
                         break;
                     }
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('y'),
+                        ..
+                    }) => {
+                        self.confirm(true);
+                    }
+                    Event::Key(
+                        KeyEvent {
+                            code: KeyCode::Char('n'),
+                            ..
+                        }
+                        | KeyEvent {
+                            code: KeyCode::Esc, ..
+                        },
+                    ) => {
+                        self.confirm(false);
+                    }
+                    _ => {}
+                };
+            } else {
+                let early_out = match self.settings.key_scheme {
+                    KeyScheme::Emacs => self.select_with_emacs_key_scheme(event),
+                    KeyScheme::Vim => self.select_with_vim_key_scheme(event),
+                };
+
+                if early_out {
+                    break;
                 }
             }
 
@@ -434,6 +430,7 @@ impl<'a> Interface<'a> {
             self.results(&mut screen);
             self.menubar(&mut screen);
             self.prompt(&mut screen);
+            screen.flush().unwrap();
             screen.flush().unwrap();
             i += 1;
         }
