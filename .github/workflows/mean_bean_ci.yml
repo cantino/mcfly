@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         with:
-          depth: 50
+          fetch-depth: 50
       - uses: XAMPPRocky/get-github-release@v1
         id: cross
         with:
@@ -48,8 +48,6 @@ jobs:
       - run: ci/set_rust_version.bash ${{ matrix.channel }} ${{ matrix.target }}
       - name: Test
         uses: actions-rs/cargo@v1
-        env:
-          SDKROOT: /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
         with:
           command: test
           args: --target ${{ matrix.target }}
@@ -61,7 +59,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          depth: 50
+          fetch-depth: 50
 
       - name: Download Cross
         uses: actions/download-artifact@v1
@@ -91,3 +89,6 @@ jobs:
           - armv7-unknown-linux-gnueabihf
           - i686-unknown-linux-musl
           - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-gnu
+          - aarch64-unknown-linux-musl
+          - arm-unknown-linux-gnueabihf

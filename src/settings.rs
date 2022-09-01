@@ -9,6 +9,7 @@ use figment::{
     Figment,
 };
 use serde::{Deserialize, Serialize};
+use directories_next::{ProjectDirs, UserDirs};
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -38,13 +39,13 @@ pub enum InitMode {
     Powershell,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum InterfaceView {
     Top,
     Bottom,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub enum ResultSort {
     Rank,
     LastRun,
@@ -88,7 +89,7 @@ pub struct Colors {
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
-    pub fuzzy: bool,
+    pub fuzzy: i16,
     pub session_id: String,
     pub mcfly_history: PathBuf,
     pub output_selection: Option<String>,
@@ -109,6 +110,7 @@ pub struct Settings {
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
     pub colors: Colors,
+    pub disable_menu: bool,
 }
 
 impl Default for Settings {
@@ -127,7 +129,8 @@ impl Default for Settings {
             refresh_training_cache: false,
             append_to_histfile: false,
             debug: false,
-            fuzzy: false,
+            fuzzy: 0,
+            lightmode: false,
             key_scheme: KeyScheme::Emacs,
             history_format: HistoryFormat::Bash,
             limit: None,
@@ -150,6 +153,7 @@ impl Default for Settings {
                 cursor_fg: "Black".to_string(),
                 cursor_highlight: "Green".to_string(),
             },
+            disable_menu: false,
         }
     }
 }
@@ -177,7 +181,7 @@ impl Settings {
                 .takes_value(true))
             .arg(Arg::with_name("history_format")
                 .long("history_format")
-                .help("Shell history file format, 'bash', 'zsh', or 'fish' (defaults to 'bash')")
+                .help("Shell history file format, 'bash', 'zsh', 'zsh-extended' or 'fish' (defaults to 'bash')")
                 .value_name("FORMAT")
                 .takes_value(true))
             .subcommand(SubCommand::with_name("add")
@@ -191,10 +195,7 @@ impl Settings {
                     .takes_value(true))
                 .arg(Arg::with_name("append_to_histfile")
                     .long("append-to-histfile")
-                    .help("Also append new history to $HISTFILE (e.q., .bash_history)"))
-                .arg(Arg::with_name("zsh_extended_history")
-                    .long("zsh-extended-history")
-                    .help("If appending, use zsh's EXTENDED_HISTORY format"))
+                    .help("Also append new history to $HISTFILE/$MCFLY_HISTFILE (e.q., .bash_history)"))
                 .arg(Arg::with_name("when")
                     .short("w")
                     .long("when")
@@ -237,7 +238,7 @@ impl Settings {
                 .arg(Arg::with_name("fuzzy")
                     .short("f")
                     .long("fuzzy")
-                    .help("Fuzzy-find results instead of searching for contiguous strings"))
+                    .help("Fuzzy-find results. 0 is off; higher numbers weight shorter/earlier matches more. Try 2"))
                 .arg(Arg::with_name("delete_without_confirm")
                     .long("delete_without_confirm")
                     .help("Delete entry without confirm"))
@@ -373,6 +374,9 @@ impl Settings {
             Some("zsh") => HistoryFormat::Zsh {
                 extended_history: false,
             },
+            Some("zsh-extended") => HistoryFormat::Zsh {
+                extended_history: true,
+            },
             Some("fish") => HistoryFormat::Fish,
             Some(format) => panic!("McFly error: unknown history format '{}'", format),
         };
@@ -393,12 +397,6 @@ impl Settings {
                 );
 
                 settings.append_to_histfile = add_matches.is_present("append_to_histfile");
-                if add_matches.is_present("zsh_extended_history") {
-                    match settings.history_format {
-                        HistoryFormat::Zsh { .. } => settings.history_format = HistoryFormat::Zsh { extended_history: true },
-                        HistoryFormat::Bash | HistoryFormat::Fish => panic!("McFly error: cannot specify zsh extended history with non-zsh history format"),
-                    }
-                }
 
                 if add_matches.value_of("exit").is_some() {
                     settings.exit_code =
@@ -433,7 +431,7 @@ impl Settings {
                         &settings.mcfly_history,
                         settings.history_format,
                     )
-                    .unwrap_or_else(String::new);
+                    .unwrap_or_default();
                 }
 
                 // CD shows PWD as the resulting directory, but we want it from the source directory.
@@ -467,9 +465,18 @@ impl Settings {
                     settings.results = results;
                 }
 
-                settings.fuzzy = settings.fuzzy
-                    || env::var("MCFLY_FUZZY").is_ok()
-                    || search_matches.is_present("fuzzy");
+                if let Ok(fuzzy) = env::var("MCFLY_FUZZY") {
+                    if let Ok(fuzzy) = i16::from_str(&fuzzy) {
+                        settings.fuzzy = fuzzy;
+                    } else if fuzzy.to_lowercase() != "false" {
+                        settings.fuzzy = 2;
+                    }
+                }
+                if let Ok(fuzzy) = value_t!(search_matches.value_of("fuzzy"), i16) {
+                    settings.fuzzy = fuzzy;
+                } else if search_matches.is_present("fuzzy") {
+                    settings.fuzzy = 2;
+                }
 
                 settings.delete_without_confirm = search_matches
                     .is_present("delete_without_confirm")
@@ -482,19 +489,19 @@ impl Settings {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
                     settings.command = "".to_string();
-                    // shell_history::last_history_line(
-                    //     &settings.mcfly_history,
-                    //     settings.history_format,
-                    // )
-                    // .unwrap_or_else(String::new)
-                    // .trim_start_matches("#mcfly: ")
-                    // .trim_start_matches("#mcfly:")
-                    // .to_string();
-                    // shell_history::delete_last_history_entry_if_search(
-                    //     &settings.mcfly_history,
-                    //     settings.history_format,
-                    //     settings.debug,
-                    // );
+                    //settings.command = shell_history::last_history_line(
+                    //    &settings.mcfly_history,
+                    //    settings.history_format,
+                    //)
+                    //.unwrap_or_default()
+                    //.trim_start_matches("#mcfly: ")
+                    //.trim_start_matches("#mcfly:")
+                    //.to_string();
+                    //shell_history::delete_last_history_entry_if_search(
+                    //    &settings.mcfly_history,
+                    //    settings.history_format,
+                    //    settings.debug,
+                    //);
                 }
             }
 
@@ -546,26 +553,61 @@ impl Settings {
                 _ => KeyScheme::Emacs,
             };
         }
+        settings.lightmode = match env::var_os("MCFLY_LIGHT") {
+            Some(_val) => true,
+            None => false,
+        };
+
+        settings.disable_menu = match env::var_os("MCFLY_DISABLE_MENU") {
+            Some(_val) => true,
+            None => false,
+        };
+
+        settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
+            Ok("vim") => KeyScheme::Vim,
+            _ => KeyScheme::Emacs,
+        };
 
         settings
     }
 
+    // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_CACHE_DIR
     pub fn mcfly_training_cache_path() -> PathBuf {
-        Settings::storage_dir_path().join(PathBuf::from("training-cache.v1.csv"))
-    }
+        let cache_dir = Settings::mcfly_xdg_dir().cache_dir().to_path_buf();
 
-    pub fn storage_dir_path() -> PathBuf {
-        home_dir()
-            .unwrap_or_else(|| panic!("McFly error: Unable to access home directory"))
-            .join(PathBuf::from(".mcfly"))
+        Settings::mcfly_base_path(cache_dir).join(PathBuf::from("training-cache.v1.csv"))
     }
 
     pub fn mcfly_config_path() -> PathBuf {
         Settings::storage_dir_path().join(PathBuf::from("mcfly.toml"))
     }
 
+    // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_DATA_DIR
     pub fn mcfly_db_path() -> PathBuf {
-        Settings::storage_dir_path().join(PathBuf::from("history.db"))
+        let data_dir = Settings::mcfly_xdg_dir().data_dir().to_path_buf();
+
+        Settings::mcfly_base_path(data_dir).join(PathBuf::from("history.db"))
+    }
+
+    fn mcfly_xdg_dir() -> ProjectDirs {
+        ProjectDirs::from("", "", "McFly").unwrap()
+    }
+
+    fn mcfly_base_path(base_dir: PathBuf) -> PathBuf {
+        Settings::mcfly_dir_in_home().unwrap_or(base_dir)
+    }
+
+    fn mcfly_dir_in_home() -> Option<PathBuf> {
+        let user_dirs_file = UserDirs::new()
+            .unwrap()
+            .home_dir()
+            .join(PathBuf::from(".mcfly"));
+
+        if user_dirs_file.exists() {
+            Some(user_dirs_file)
+        } else {
+            None
+        }
     }
 }
 

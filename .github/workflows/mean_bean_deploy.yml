@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         with:
-          depth: 50
+          fetch-depth: 50
       - uses: XAMPPRocky/get-github-release@v1
         id: cross
         with:
@@ -70,8 +70,6 @@ jobs:
 
       - name: Build | Build
         uses: actions-rs/cargo@v1
-        env:
-          SDKROOT: /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
         with:
           command: build
           args: --release --target ${{ matrix.target }}
@@ -103,7 +101,10 @@ jobs:
     strategy:
       matrix:
         target:
+          - aarch64-unknown-linux-gnu
+          - aarch64-unknown-linux-musl
           - arm-unknown-linux-gnueabi
+          - arm-unknown-linux-gnueabihf
           - armv7-unknown-linux-gnueabihf
           - i686-unknown-linux-musl
           - x86_64-unknown-linux-musl

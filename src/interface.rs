@@ -3,8 +3,8 @@ use crate::history::History;
 
 use crate::history::Command;
 use crate::history_cleaner;
-use crate::settings::Settings;
 use crate::settings::{InterfaceView, KeyScheme};
+use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::queue;
@@ -27,6 +27,7 @@ pub struct Interface<'a> {
     delete_requests: Vec<String>,
     menu_mode: MenuMode,
     in_vim_insert_mode: bool,
+    result_sort: ResultSort,
 }
 
 pub struct SelectionResult {
@@ -43,27 +44,40 @@ pub enum MoveSelection {
     Down,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum MenuMode {
     Normal,
     ConfirmDelete,
 }
 
 impl MenuMode {
-    fn text(&self, interface: &Interface) -> &str {
+    fn text(&self, interface: &Interface) -> String {
+        let mut menu_text = String::from("McFly");
         match *self {
             MenuMode::Normal => match interface.settings.key_scheme {
-                KeyScheme::Emacs => "McFly | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete",
+                KeyScheme::Emacs => menu_text.push_str(" | ESC - Exit | "),
                 KeyScheme::Vim => {
                     if interface.in_vim_insert_mode {
-                        "McFly (Ins) | ESC - Cmd  | ⏎ - Run | TAB - Edit | F2 - Delete"
+                        menu_text.push_str(" (Ins) | ESC - Cmd | ");
                     } else {
-                        "McFly (Cmd) | ESC - Exit | ⏎ - Run | TAB - Edit | F2 - Delete"
+                        menu_text.push_str(" (Cmd) | ESC - Exit | ");
                     }
                 }
             },
-            MenuMode::ConfirmDelete => "Delete selected command from the history? (Y/N)",
+            MenuMode::ConfirmDelete => {
+                return String::from("Delete selected command from the history? (Y/N)")
+            }
         }
+
+        menu_text.push_str("⏎ - Run | TAB - Edit | ");
+
+        match interface.result_sort {
+            ResultSort::Rank => menu_text.push_str("F1 - Switch Sort to Time | "),
+            ResultSort::LastRun => menu_text.push_str("F1 - Switch Sort to Rank | "),
+        }
+
+        menu_text.push_str("F2 - Delete");
+        menu_text
     }
 
     fn bg(&self, interface: &Interface) -> Color {
@@ -102,6 +116,7 @@ impl<'a> Interface<'a> {
             delete_requests: Vec::new(),
             menu_mode: MenuMode::Normal,
             in_vim_insert_mode: true,
+            result_sort: settings.result_sort.to_owned(),
         }
     }
 
@@ -146,7 +161,9 @@ impl<'a> Interface<'a> {
     fn menubar<W: Write>(&self, screen: &mut W) {
         let (width, _height): (u16, u16) = terminal::size().unwrap();
 
-        let _ = queue!(screen, cursor::MoveTo(0, self.info_line_index()));
+        let _ = queue!(screen, cursor::Hide());
+        let _ = queue!(screen, cursor::MoveTo(1, self.info_line_index()));
+        let _ = queue!(screen, cursor::MoveTo(1, self.info_line_index()));
         let _ = queue!(screen, SetBackgroundColor(self.menu_mode.bg(self)));
         let _ = queue!(screen, SetForegroundColor(self.menu_mode.fg(self)));
         let _ = queue!(
@@ -159,7 +176,6 @@ impl<'a> Interface<'a> {
         );
         let _ = queue!(screen, ResetColor);
 
-        // screen.flush().unwrap();
     }
 
     fn prompt<W: Write>(&self, screen: &mut W) {
@@ -357,8 +373,15 @@ impl<'a> Interface<'a> {
             &self.input.command,
             self.settings.results as i16,
             self.settings.fuzzy,
-            &self.settings.result_sort,
+            &self.result_sort,
         );
+    }
+
+    fn switch_result_sort(&mut self) {
+        match self.result_sort {
+            ResultSort::Rank => self.result_sort = ResultSort::LastRun,
+            ResultSort::LastRun => self.result_sort = ResultSort::Rank,
+        }
     }
 
     fn select(&mut self) {
@@ -572,6 +595,13 @@ impl<'a> Interface<'a> {
                 self.refresh_matches(0);
             }
             Event::Key(KeyEvent {
+                code: KeyCode::F(1),
+                ..
+            }) => {
+                self.switch_result_sort();
+                self.refresh_matches();
+            }
+            Event::Key(KeyEvent {
                 code: KeyCode::F(2),
                 ..
             }) => {
@@ -725,6 +755,13 @@ impl<'a> Interface<'a> {
                     self.refresh_matches(0);
                 }
                 Event::Key(KeyEvent {
+                    code: KeyCode::F(1),
+                    ..
+                }) => {
+                    self.switch_result_sort();
+                    self.refresh_matches();
+                }
+                Event::Key(KeyEvent {
                     code: KeyCode::F(2),
                     ..
                 }) => {
@@ -856,6 +893,13 @@ impl<'a> Interface<'a> {
                     code: KeyCode::End, ..
                 }) => self.input.move_cursor(Move::EOL),
 
+                Event::Key(KeyEvent {
+                    code: KeyCode::F(1),
+                    ..
+                }) => {
+                    self.switch_result_sort();
+                    self.refresh_matches();
+                },
                 Event::Key(KeyEvent {
                     code: KeyCode::F(2),
                     ..

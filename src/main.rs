@@ -23,9 +23,16 @@ fn handle_addition(settings: &Settings) {
         );
 
         if settings.append_to_histfile {
-            let histfile = PathBuf::from(env::var("HISTFILE").unwrap_or_else(|err| {
-                panic!("McFly error: Please ensure that HISTFILE is set ({})", err)
-            }));
+            let histfile = PathBuf::from(
+                env::var("HISTFILE")
+                    .or_else(|_| env::var("MCFLY_HISTFILE"))
+                    .unwrap_or_else(|err| {
+                        panic!(
+                            "McFly error: Please ensure that $HISTFILE/$MCFLY_HISTFILE is set ({})",
+                            err
+                        )
+                    }),
+            );
             let command = shell_history::HistoryCommand::new(
                 &settings.command,
                 settings.when_run.unwrap_or(
@@ -63,7 +70,7 @@ fn handle_search(settings: &Settings) {
             out.push('\n');
 
             // Finally, any requests for deletion of commands from shell history, for cases where
-            // shells need to handle this natively instead of through us editing HISTFILE.
+            // shells need to handle this natively instead of through us editing HISTFILE/MCFLY_HISTFILE.
             for delete_request in result.delete_requests {
                 out.push_str("delete ");
                 out.push_str(&delete_request);

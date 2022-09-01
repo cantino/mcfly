@@ -4,30 +4,30 @@ use crate::history::History;
 use crate::settings::Settings;
 use crate::training_cache;
 use rand::seq::IteratorRandom;
+use std::fs;
 
 #[derive(Debug)]
-pub struct TrainingSampleGenerator<'a> {
-    settings: &'a Settings,
-    history: &'a History,
+pub struct TrainingSampleGenerator {
     data_set: Vec<(Features, bool)>,
 }
 
-impl<'a> TrainingSampleGenerator<'a> {
-    pub fn new(settings: &'a Settings, history: &'a History) -> TrainingSampleGenerator<'a> {
+impl TrainingSampleGenerator {
+    pub fn new(settings: &Settings, history: &History) -> TrainingSampleGenerator {
         let cache_path = Settings::mcfly_training_cache_path();
         let data_set = if settings.refresh_training_cache || !cache_path.exists() {
             let ds = TrainingSampleGenerator::generate_data_set(history);
+            let mcfly_cache_dir = cache_path.parent().unwrap();
+
+            fs::create_dir_all(mcfly_cache_dir)
+                .unwrap_or_else(|_| panic!("Unable to create {:?}", mcfly_cache_dir));
+
             training_cache::write(&ds, &cache_path);
             ds
         } else {
             training_cache::read(&cache_path)
         };
 
-        TrainingSampleGenerator {
-            settings,
-            history,
-            data_set,
-        }
+        TrainingSampleGenerator { data_set }
     }
 
     pub fn generate_data_set(history: &History) -> Vec<(Features, bool)> {
@@ -63,12 +63,7 @@ impl<'a> TrainingSampleGenerator<'a> {
             );
 
             // Load the entire match set.
-            let results = history.find_matches(
-                &String::new(),
-                -1,
-                false,
-                &crate::settings::ResultSort::Rank,
-            );
+            let results = history.find_matches("", -1, 0, &crate::settings::ResultSort::Rank);
 
             // Get the features for this command at the time it was logged.
             if positive_examples <= negative_examples {
@@ -108,7 +103,7 @@ impl<'a> TrainingSampleGenerator<'a> {
     {
         let mut positive_examples = 0;
         let mut negative_examples = 0;
-        let records = records.unwrap_or_else(|| self.data_set.len());
+        let records = records.unwrap_or(self.data_set.len());
         let mut rng = rand::thread_rng();
 
         loop {
