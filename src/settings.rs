@@ -3,7 +3,6 @@ use crate::shell_history;
 use clap::AppSettings;
 use clap::{crate_authors, crate_version, value_t};
 use clap::{App, Arg, SubCommand};
-use dirs::home_dir;
 use figment::{
     providers::{Format, Serialized, Toml},
     Figment,
@@ -39,13 +38,13 @@ pub enum InitMode {
     Powershell,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum InterfaceView {
     Top,
     Bottom,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ResultSort {
     Rank,
     LastRun,
@@ -102,6 +101,7 @@ pub struct Settings {
     pub append_to_histfile: bool,
     pub refresh_training_cache: bool,
     pub key_scheme: KeyScheme,
+    pub lightmode: bool,
     pub history_format: HistoryFormat,
     pub limit: Option<i64>,
     pub skip_environment_check: bool,
@@ -579,7 +579,7 @@ impl Settings {
     }
 
     pub fn mcfly_config_path() -> PathBuf {
-        Settings::storage_dir_path().join(PathBuf::from("mcfly.toml"))
+        Settings::mcfly_dir_in_home().unwrap().join(PathBuf::from("mcfly.toml"))
     }
 
     // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_DATA_DIR

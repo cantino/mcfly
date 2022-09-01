@@ -34,7 +34,6 @@ libc = "0.2"
 rand = "0.8"
 regex = "1"
 serde = { version = "1.0", features = ["derive"] }
-unicode-segmentation = "1.6"
 autopilot = "0.4.0"
 path-absolutize = "3.0.13"
 relative-path = "1.7"

@@ -1,5 +1,4 @@
 use libc;
-use std::convert::TryInto;
 
 // Should we be using https://docs.rs/libc/0.2.44/libc/fn.ioctl.html instead?
 extern "C" {

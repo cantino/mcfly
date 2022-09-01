@@ -6,12 +6,12 @@ use crate::history_cleaner;
 use crate::settings::{InterfaceView, KeyScheme};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
-use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::queue;
 use crossterm::style::{Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor};
 use crossterm::terminal;
 use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen};
-use crossterm::{cursor, execute};
+use crossterm::{cursor};
 use humantime::format_duration;
 use std::io::{stdout, Write};
 use std::str::FromStr;
@@ -161,7 +161,7 @@ impl<'a> Interface<'a> {
     fn menubar<W: Write>(&self, screen: &mut W) {
         let (width, _height): (u16, u16) = terminal::size().unwrap();
 
-        let _ = queue!(screen, cursor::Hide());
+        let _ = queue!(screen, cursor::Hide);
         let _ = queue!(screen, cursor::MoveTo(1, self.info_line_index()));
         let _ = queue!(screen, cursor::MoveTo(1, self.info_line_index()));
         let _ = queue!(screen, SetBackgroundColor(self.menu_mode.bg(self)));
@@ -363,12 +363,11 @@ impl<'a> Interface<'a> {
                 self.delete_requests.push(command.cmd.clone());
             }
             self.build_cache_table();
-            self.refresh_matches(0);
+            self.refresh_matches();
         }
     }
 
-    fn refresh_matches(&mut self, selection: usize) {
-        self.selection = selection;
+    fn refresh_matches(&mut self) {
         self.matches = self.history.find_matches(
             &self.input.command,
             self.settings.results as i16,
@@ -392,14 +391,13 @@ impl<'a> Interface<'a> {
         let _ = queue!(screen, EnterAlternateScreen);
         let _ = queue!(screen, Clear(ClearType::All));
 
-        self.refresh_matches(0);
+        self.refresh_matches();
         self.results(&mut screen);
         self.menubar(&mut screen);
         self.prompt(&mut screen);
 
         screen.flush().unwrap();
         // Synchronizing issue when typing fast - just run the loop a few times without a keystroke to synchronize the input
-        let mut i = 0;
         loop {
             let event =
                 read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
@@ -449,13 +447,12 @@ impl<'a> Interface<'a> {
                 }
             }
 
-            self.refresh_matches(self.selection);
+            self.refresh_matches();
             self.results(&mut screen);
             self.menubar(&mut screen);
             self.prompt(&mut screen);
             screen.flush().unwrap();
             screen.flush().unwrap();
-            i += 1;
         }
 
         let _ = queue!(screen, Clear(ClearType::All));
@@ -519,7 +516,7 @@ impl<'a> Interface<'a> {
                 },
             ) => {
                 self.input.delete(Move::BackwardWord);
-                self.refresh_matches(0);
+                self.refresh_matches();
             }
 
             Event::Key(KeyEvent {
@@ -564,7 +561,7 @@ impl<'a> Interface<'a> {
                 },
             ) => {
                 self.input.delete(Move::Backward);
-                self.refresh_matches(0);
+                self.refresh_matches();
             }
             Event::Key(
                 KeyEvent {
@@ -577,7 +574,7 @@ impl<'a> Interface<'a> {
                 },
             ) => {
                 self.input.delete(Move::Forward);
-                self.refresh_matches(0);
+                self.refresh_matches();
             }
 
             Event::Key(KeyEvent {
@@ -592,7 +589,7 @@ impl<'a> Interface<'a> {
                 ..
             }) => {
                 self.input.insert(c);
-                self.refresh_matches(0);
+                self.refresh_matches();
             }
             Event::Key(KeyEvent {
                 code: KeyCode::F(1),
@@ -625,11 +622,11 @@ impl<'a> Interface<'a> {
                 KeyCode::Char('e') => self.input.move_cursor(Move::EOL),
                 KeyCode::Char('k') => {
                     self.input.delete(Move::EOL);
-                    self.refresh_matches(0);
+                    self.refresh_matches();
                 }
                 KeyCode::Char('u') => {
                     self.input.delete(Move::BOL);
-                    self.refresh_matches(0);
+                    self.refresh_matches();
                 }
                 _ => {}
             },
@@ -642,7 +639,7 @@ impl<'a> Interface<'a> {
                 KeyCode::Char('f') => self.input.move_cursor(Move::ForwardWord),
                 KeyCode::Char('d') => {
                     self.input.delete(Move::ForwardWord);
-                    self.refresh_matches(0);
+                    self.refresh_matches();
                 }
                 _ => {}
             },
@@ -731,14 +728,14 @@ impl<'a> Interface<'a> {
                     ..
                 }) => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches(0);
+                    self.refresh_matches();
                 }
                 Event::Key(KeyEvent {
                     code: KeyCode::Delete,
                     ..
                 }) => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches(0);
+                    self.refresh_matches();
                 }
                 Event::Key(KeyEvent {
                     code: KeyCode::Home,
@@ -752,7 +749,7 @@ impl<'a> Interface<'a> {
                     ..
                 }) => {
                     self.input.insert(c);
-                    self.refresh_matches(0);
+                    self.refresh_matches();
                 }
                 Event::Key(KeyEvent {
                     code: KeyCode::F(1),
@@ -876,14 +873,14 @@ impl<'a> Interface<'a> {
                     ..
                 }) => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches(0);
+                    self.refresh_matches();
                 }
                 Event::Key(KeyEvent {
                     code: KeyCode::Delete | KeyCode::Char('x'),
                     ..
                 }) => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches(0);
+                    self.refresh_matches();
                 }
                 Event::Key(KeyEvent {
                     code: KeyCode::Home,
@@ -919,8 +916,8 @@ impl<'a> Interface<'a> {
         false
     }
 
-    fn truncate_for_display(
-        screen: &mut Write,
+    fn truncate_for_display<T: Write>(
+        screen: &mut T,
         command: &Command,
         search: &str,
         _width: u16,

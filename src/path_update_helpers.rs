@@ -1,7 +1,4 @@
 use std::path::Path;
-use relative_path::RelativePath;
-use std::env;
-use std::path::{Path, PathBuf};
 use unicode_segmentation::UnicodeSegmentation;
 use path_absolutize::*;
 
@@ -84,9 +81,6 @@ pub fn parse_mv_command(command: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{normalize_path, parse_mv_command};
-    use std::env;
-    use std::path::PathBuf;
-    use std::path::Path;
 
     #[test]
     fn parse_mv_command_works_in_the_basic_case() {

@@ -107,6 +107,7 @@ $null = New-Module mcfly {
         $line = $null
         $cursor = $null
         [Microsoft.PowerShell.PSConsoleReadline]::GetBufferState([ref]$line, [ref]$cursor)
+        [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine
         Invoke-McFly -CommandToComplete $line
     }
     Export-ModuleMember -Function @(
