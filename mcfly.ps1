@@ -73,7 +73,6 @@ $null = New-Module mcfly {
         )
         $ExitCode = $ExitCode ?? 0;
         $Command | Out-File -FilePath $env:MCFLY_HISTORY -Append
-        write-host "Adding Command"
         Start-Process -FilePath '::MCFLY::' -ArgumentList add, --exit, $ExitCode, --append-to-histfile -NoNewWindow | Write-Host
     }
 
@@ -82,16 +81,6 @@ $null = New-Module mcfly {
 
     Set-PSReadLineOption -PredictionSource HistoryAndPlugin
 
-    $historyHandler = {
-        Param([string]$Command)
-        $lastExitTmp = $LASTEXITCODE
-        $Command = $Command.Trim();
-        # PSReadLine executes this before the command even runs, so we don't know its exit code - assume 0
-        Add-CommandToMcFly -Command $Command -ExitCode 0
-        $LASTEXITCODE = $lastExitTmp
-        # Tell PSReadLine to save the command to their in-memory history (and also the dummy file)
-        return $true
-    }
     Set-PSReadLineOption -AddToHistoryHandler {
         Param([string]$Command)
         $lastExitTmp = $LASTEXITCODE

@@ -1,9 +1,16 @@
-use std::path::Path;
-use unicode_segmentation::UnicodeSegmentation;
 use path_absolutize::*;
+use std::path::{Path, PathBuf};
+use unicode_segmentation::UnicodeSegmentation;
 
 pub fn normalize_path(incoming_path: &str) -> String {
-    return Path::new(incoming_path).absolutize_from(std::env::current_dir().unwrap().as_path()).unwrap().to_str().unwrap().to_string();
+    let expanded_path = shellexpand::tilde(incoming_path).to_string();
+    println!("{}", expanded_path);
+    return Path::new(&expanded_path)
+        .absolutize_from(std::env::current_dir().unwrap().as_path())
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
 }
 
 pub fn parse_mv_command(command: &str) -> Vec<String> {
@@ -81,6 +88,100 @@ pub fn parse_mv_command(command: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::{normalize_path, parse_mv_command};
+    use std::env;
+    use std::path::PathBuf;
+
+    #[test]
+    #[cfg(not(windows))]
+    fn normalize_path_works_absolute_paths() {
+        assert_eq!(normalize_path("/foo/bar/baz"), String::from("/foo/bar/baz"));
+        assert_eq!(normalize_path("/"), String::from("/"));
+        assert_eq!(normalize_path("////"), String::from("/"));
+    }
+
+    #[test]
+    #[cfg(not(windows))]
+    fn normalize_path_works_with_tilda() {
+        assert_eq!(normalize_path("~/"), env::var("HOME").unwrap());
+        assert_eq!(
+            normalize_path("~/foo"),
+            PathBuf::from(env::var("HOME").unwrap())
+                .join("foo")
+                .to_string_lossy()
+        );
+    }
+
+    #[test]
+    #[cfg(not(windows))]
+    fn normalize_path_works_with_double_dots() {
+        assert_eq!(normalize_path("/foo/bar/../baz"), String::from("/foo/baz"));
+        assert_eq!(normalize_path("/foo/bar/../../baz"), String::from("/baz"));
+        assert_eq!(normalize_path("/foo/bar/../../"), String::from("/"));
+        assert_eq!(normalize_path("/foo/bar/../.."), String::from("/"));
+        assert_eq!(
+            normalize_path("~/foo/bar/../baz"),
+            PathBuf::from(env::var("HOME").unwrap())
+                .join("foo/baz")
+                .to_string_lossy()
+        );
+        assert_eq!(normalize_path("~/foo/bar/../.."), env::var("HOME").unwrap());
+    }
+
+    fn windows_home_path() -> String {
+        PathBuf::from(env::var("HOMEDRIVE").unwrap())
+            .join(env::var("HOMEPATH").unwrap())
+            .to_str()
+            .unwrap()
+            .to_string()
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn normalize_path_works_absolute_paths() {
+        assert_eq!(
+            normalize_path("C:\\foo\\bar\\baz"),
+            String::from("C:\\foo\\bar\\baz")
+        );
+        assert_eq!(normalize_path("C:\\"), String::from("C:\\"));
+        assert_eq!(normalize_path("C:\\\\\\\\"), String::from("C:\\"));
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn normalize_path_works_with_tilda() {
+        assert_eq!(normalize_path("~\\"), windows_home_path());
+        assert_eq!(
+            normalize_path("~\\foo"),
+            PathBuf::from(windows_home_path())
+                .join("foo")
+                .to_string_lossy()
+        );
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn normalize_path_works_with_double_dots() {
+        assert_eq!(
+            normalize_path("C:\\foo\\bar\\..\\baz"),
+            String::from("C:\\foo\\baz")
+        );
+        assert_eq!(
+            normalize_path("C:\\foo\\bar\\..\\..\\baz"),
+            String::from("C:\\baz")
+        );
+        assert_eq!(
+            normalize_path("C:\\foo\\bar\\..\\..\\"),
+            String::from("C:\\")
+        );
+        assert_eq!(normalize_path("C:\\foo\\bar\\..\\.."), String::from("C:\\"));
+        assert_eq!(
+            normalize_path("~\\foo\\bar\\..\\baz"),
+            PathBuf::from(windows_home_path())
+                .join("foo\\baz")
+                .to_string_lossy()
+        );
+        assert_eq!(normalize_path("~\\foo\\bar\\..\\.."), windows_home_path());
+    }
 
     #[test]
     fn parse_mv_command_works_in_the_basic_case() {
