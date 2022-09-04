@@ -15,7 +15,6 @@ use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen};
 use crossterm::{cursor, execute, queue};
 use humantime::format_duration;
 use std::io::{stdout, Write};
-use std::str::FromStr;
 use std::string::String;
 
 pub struct Interface<'a> {
@@ -82,19 +81,17 @@ impl MenuMode {
         menu_text
     }
 
-    fn bg(&self, interface: &Interface) -> Color {
+    fn bg(&self) -> Color {
         match *self {
-            MenuMode::Normal => Color::from_str(&interface.settings.colors.menu_bg).unwrap(),
-            MenuMode::ConfirmDelete => {
-                Color::from_str(&interface.settings.colors.menu_deleting_bg).unwrap()
-            }
+            MenuMode::Normal => Color::Blue,
+            MenuMode::ConfirmDelete => Color::Red,
         }
     }
 }
 
-const PROMPT_LINE_INDEX: u16 = 2;
-const INFO_LINE_INDEX: u16 = 0;
-const RESULTS_TOP_INDEX: u16 = 4;
+const PROMPT_LINE_INDEX: u16 = 3;
+const INFO_LINE_INDEX: u16 = 1;
+const RESULTS_TOP_INDEX: u16 = 5;
 
 impl<'a> Interface<'a> {
     pub fn new(settings: &'a Settings, history: &'a History) -> Interface<'a> {
@@ -159,7 +156,7 @@ impl<'a> Interface<'a> {
             cursor::Hide,
             cursor::MoveTo(0, self.info_line_index()),
             Clear(ClearType::CurrentLine),
-            SetBackgroundColor(self.menu_mode.bg(self)),
+            SetBackgroundColor(self.menu_mode.bg()),
             SetForegroundColor(Color::White),
             cursor::MoveTo(1, self.info_line_index()),
             Print(format!(
@@ -198,7 +195,6 @@ impl<'a> Interface<'a> {
             cursor::MoveTo(0, result_top_index + self.settings.results + 1)
         )
         .unwrap();
-        // screen.flush().unwrap();
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {

@@ -3,10 +3,6 @@ use crate::shell_history;
 use clap::AppSettings;
 use clap::{crate_authors, crate_version, value_t};
 use clap::{App, Arg, SubCommand};
-use figment::{
-    providers::{Format, Serialized, Toml},
-    Figment,
-};
 use serde::{Deserialize, Serialize};
 use directories_next::{ProjectDirs, UserDirs};
 use std::env;
@@ -69,22 +65,6 @@ pub enum HistoryFormat {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Colors {
-    pub menu_bg: String,
-    pub menu_fg: String,
-    pub menu_deleting_bg: String,
-    pub menu_deleting_fg: String,
-    pub bg: String,
-    pub fg: String,
-    pub prompt_fg: String,
-    pub highlight: String,
-    pub timing: String,
-    pub cursor_bg: String,
-    pub cursor_fg: String,
-    pub cursor_highlight: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
@@ -109,7 +89,6 @@ pub struct Settings {
     pub delete_without_confirm: bool,
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
-    pub colors: Colors,
     pub disable_menu: bool,
 }
 
@@ -139,20 +118,6 @@ impl Default for Settings {
             delete_without_confirm: false,
             interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
-            colors: Colors {
-                menu_bg: "Blue".to_string(),
-                menu_fg: "White".to_string(),
-                menu_deleting_bg: "Red".to_string(),
-                menu_deleting_fg: "Cyan".to_string(),
-                bg: "Black".to_string(),
-                fg: "White".to_string(),
-                prompt_fg: "White".to_string(),
-                highlight: "Green".to_string(),
-                timing: "Blue".to_string(),
-                cursor_bg: "Grey".to_string(),
-                cursor_fg: "Black".to_string(),
-                cursor_highlight: "Green".to_string(),
-            },
             disable_menu: false,
         }
     }
@@ -284,29 +249,7 @@ impl Settings {
             )
             .get_matches();
 
-        let mut default_settings = Settings::default();
-
-        if env::var("MCFLY_LIGHT").is_ok() {
-            default_settings.colors = Colors {
-                menu_bg: "Blue".to_string(),
-                menu_fg: "White".to_string(),
-                menu_deleting_bg: "Red".to_string(),
-                menu_deleting_fg: "Cyan".to_string(),
-                bg: "White".to_string(),
-                fg: "Black".to_string(),
-                prompt_fg: "Black".to_string(),
-                highlight: "Blue".to_string(),
-                timing: "Blue".to_string(),
-                cursor_bg: "Dark_Grey".to_string(),
-                cursor_fg: "White".to_string(),
-                cursor_highlight: "White".to_string(),
-            };
-        }
-
-        let mut settings: Settings = Figment::from(Serialized::defaults(default_settings))
-            .merge(Toml::file(Settings::mcfly_config_path()))
-            .extract()
-            .unwrap();
+        let mut settings = Settings::default();
 
         if matches.is_present("init") {
             settings.skip_environment_check = true;

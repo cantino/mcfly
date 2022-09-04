@@ -207,13 +207,10 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 <img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
 
 ## Settings
-
-Settings, in particular the interface colors, may be configured in [`~/.mcfly/mcfly.toml`](https://github.com/cantino/mcfly/blob/crossterm-and-colors/mcfly.example.toml).
-
-A number of settings can also be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
+A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
 ### Light Mode
-To swap the default color scheme for use in a light terminal, set the environment variable `MCFLY_LIGHT`.
+To swap the color scheme for use in a light terminal, set the environment variable `MCFLY_LIGHT`.
 
 bash / zsh:
 ```bash

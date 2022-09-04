@@ -1,5 +1,5 @@
 use path_absolutize::*;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use unicode_segmentation::UnicodeSegmentation;
 
 pub fn normalize_path(incoming_path: &str) -> String {

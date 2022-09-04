@@ -27,7 +27,7 @@ impl FixedLengthGraphemeString {
         FixedLengthGraphemeString {
             string: String::new(),
             grapheme_length: 0,
-            max_grapheme_length: max_grapheme_length,
+            max_grapheme_length,
         }
     }
 
