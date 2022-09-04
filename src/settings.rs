@@ -3,7 +3,6 @@ use crate::shell_history;
 use clap::AppSettings;
 use clap::{crate_authors, crate_version, value_t};
 use clap::{App, Arg, SubCommand};
-use serde::{Deserialize, Serialize};
 use directories_next::{ProjectDirs, UserDirs};
 use std::env;
 use std::path::PathBuf;
@@ -11,7 +10,7 @@ use std::str::FromStr;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum Mode {
     Add,
     Search,
@@ -20,13 +19,13 @@ pub enum Mode {
     Init,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum KeyScheme {
     Emacs,
     Vim,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum InitMode {
     Bash,
     Zsh,
@@ -34,19 +33,19 @@ pub enum InitMode {
     Powershell,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum InterfaceView {
     Top,
     Bottom,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub enum ResultSort {
     Rank,
     LastRun,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy)]
 pub enum HistoryFormat {
     /// bash format - commands in plain text, one per line, with multi-line commands joined.
     /// HISTTIMEFORMAT is assumed to be empty.
@@ -64,7 +63,7 @@ pub enum HistoryFormat {
     Fish,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Settings {
     pub mode: Mode,
     pub debug: bool,
@@ -431,20 +430,19 @@ impl Settings {
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
                 } else {
-                    settings.command = "".to_string();
-                    //settings.command = shell_history::last_history_line(
-                    //    &settings.mcfly_history,
-                    //    settings.history_format,
-                    //)
-                    //.unwrap_or_default()
-                    //.trim_start_matches("#mcfly: ")
-                    //.trim_start_matches("#mcfly:")
-                    //.to_string();
-                    //shell_history::delete_last_history_entry_if_search(
-                    //    &settings.mcfly_history,
-                    //    settings.history_format,
-                    //    settings.debug,
-                    //);
+                    settings.command = shell_history::last_history_line(
+                        &settings.mcfly_history,
+                        settings.history_format,
+                    )
+                    .unwrap_or_default()
+                    .trim_start_matches("#mcfly: ")
+                    .trim_start_matches("#mcfly:")
+                    .to_string();
+                    shell_history::delete_last_history_entry_if_search(
+                        &settings.mcfly_history,
+                        settings.history_format,
+                        settings.debug,
+                    );
                 }
             }
 

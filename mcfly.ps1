@@ -53,6 +53,12 @@ $null = New-Module mcfly {
         $LASTEXITCODE = $lastExitTmp
     }
 
+    function Invoke-McFly {
+        $lastExitTmp = $LASTEXITCODE
+        Start-Process -FilePath '::MCFLY::' -ArgumentList "search" -NoNewWindow -Wait
+        $LASTEXITCODE = $lastExitTmp
+    }
+
     <#
     .SYNOPSIS
     Add a command to McFly's history.
@@ -96,9 +102,11 @@ $null = New-Module mcfly {
         $line = $null
         $cursor = $null
         [Microsoft.PowerShell.PSConsoleReadline]::GetBufferState([ref]$line, [ref]$cursor)
-        [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine
-        Invoke-McFly -CommandToComplete $line
+        [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine()
+        "#mcfly: $line" | Out-File -FilePath $env:MCFLY_HISTORY -Append
+        Invoke-McFly
     }
+
     Export-ModuleMember -Function @(
         "Invoke-McFly"
         "Add-CommandToMcFly"

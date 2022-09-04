@@ -80,7 +80,6 @@ fn handle_search(settings: &Settings) {
             fs::write(path, &out)
                 .unwrap_or_else(|err| panic!("McFly error: unable to write to {}: {}", path, err));
         } else {
-            fake_typer::delete_chars(settings.command.chars().count());
             fake_typer::use_tiocsti(&cmd);
 
             if result.run {
