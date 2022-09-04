@@ -1,4 +1,3 @@
-
 use crate::shell_history;
 use clap::AppSettings;
 use clap::{crate_authors, crate_version, value_t};
@@ -79,8 +78,8 @@ pub struct Settings {
     pub old_dir: Option<String>,
     pub append_to_histfile: bool,
     pub refresh_training_cache: bool,
-    pub key_scheme: KeyScheme,
     pub lightmode: bool,
+    pub key_scheme: KeyScheme,
     pub history_format: HistoryFormat,
     pub limit: Option<i64>,
     pub skip_environment_check: bool,
@@ -488,12 +487,6 @@ impl Settings {
             _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
         }
 
-        if env::var("MCFLY_KEY_SCHEME").is_ok() {
-            settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
-                Ok("vim") => KeyScheme::Vim,
-                _ => KeyScheme::Emacs,
-            };
-        }
         settings.lightmode = match env::var_os("MCFLY_LIGHT") {
             Some(_val) => true,
             None => false,
@@ -517,10 +510,6 @@ impl Settings {
         let cache_dir = Settings::mcfly_xdg_dir().cache_dir().to_path_buf();
 
         Settings::mcfly_base_path(cache_dir).join(PathBuf::from("training-cache.v1.csv"))
-    }
-
-    pub fn mcfly_config_path() -> PathBuf {
-        Settings::mcfly_dir_in_home().unwrap().join(PathBuf::from("mcfly.toml"))
     }
 
     // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_DATA_DIR

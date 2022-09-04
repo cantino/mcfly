@@ -882,7 +882,7 @@ impl<'a> Interface<'a> {
         let max_grapheme_length = if width > debug_space {
             width - debug_space - 9
         } else {
-            width
+            11
         };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
@@ -937,91 +937,6 @@ impl<'a> Interface<'a> {
         }
 
         out.string
-    }
-
-    fn _truncate_for_display<T: Write>(
-        screen: &mut T,
-        command: &Command,
-        search: &str,
-        _width: u16,
-        highlighted_text_color: Color,
-        text_color: Color,
-        debug: bool,
-    ) -> String {
-        let mut prev: usize = 0;
-        let _debug_space = if debug { 90 } else { 0 };
-        // let max_grapheme_length = if width > debug_space {
-        //     width - debug_space - 9
-        // } else {
-        //     11
-        // };
-        // let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
-
-        if !search.is_empty() {
-            for (start, end) in &command.match_bounds {
-                if prev != *start {
-                    let _ = queue!(screen, Print(&command.cmd[prev..*start]));
-                }
-
-                let _ = queue!(screen, SetForegroundColor(highlighted_text_color));
-                let _ = queue!(screen, Print(&command.cmd[*start..*end]));
-                let _ = queue!(screen, SetForegroundColor(text_color));
-                prev = *end;
-            }
-        }
-
-        if prev != command.cmd.len() {
-            let _ = queue!(screen, Print(&command.cmd[prev..]));
-        }
-
-        if debug {
-            // out.max_grapheme_length += debug_space;
-            let _ = queue!(screen, Print("  "));
-            let _ = queue!(screen, SetForegroundColor(Color::Blue));
-            let _ = queue!(screen, Print(format!("rnk: {:.*} ", 2, command.rank)));
-            let _ = queue!(
-                screen,
-                Print(format!("age: {:.*} ", 2, command.features.age_factor))
-            );
-            let _ = queue!(
-                screen,
-                Print(format!("lng: {:.*} ", 2, command.features.length_factor))
-            );
-            let _ = queue!(
-                screen,
-                Print(format!("ext: {:.*} ", 0, command.features.exit_factor))
-            );
-            let _ = queue!(
-                screen,
-                Print(format!(
-                    "r_ext: {:.*} ",
-                    0, command.features.recent_failure_factor
-                ))
-            );
-            // out.push_grapheme_str(format!("dir: {:.*} ", 3, command.features.dir_factor));
-            // out.push_grapheme_str(format!(
-            //     "s_dir: {:.*} ",
-            //     3, command.features.selected_dir_factor
-            // ));
-            // out.push_grapheme_str(format!("ovlp: {:.*} ", 3, command.features.overlap_factor));
-            // out.push_grapheme_str(format!(
-            //     "i_ovlp: {:.*} ",
-            //     3, command.features.immediate_overlap_factor
-            // ));
-            // out.push_grapheme_str(format!(
-            //     "occ: {:.*}",
-            //     2, command.features.occurrences_factor
-            // ));
-            // out.push_grapheme_str(format!(
-            //     "s_occ: {:.*} ",
-            //     2, command.features.selected_occurrences_factor
-            // ));
-
-            // out.push_str(&format!("{}", SetForegroundColor(text_color)));
-        }
-
-        // out.string
-        "".to_string()
     }
 
     fn result_top_index(&self) -> u16 {
