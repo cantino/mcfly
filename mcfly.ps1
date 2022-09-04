@@ -11,7 +11,7 @@ $null = New-Module mcfly {
 
     # We need PSReadLine for a number of capabilities
     if ($null -eq (Get-Module -Name PSReadLine)) {
-        Write-Output "Installing PSReadLine as McFly dependency"
+        Write-Host "Installing PSReadLine as McFly dependency"
         Install-Module PSReadLine
     }
 
@@ -24,7 +24,7 @@ $null = New-Module mcfly {
 
     $fileExists = Test-Path -path $env:HISTFILE
     if (-not $fileExists) {
-        Write-Output "McFly: ${env:HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly.";
+        Write-Host "McFly: ${env:HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly.";
         return 1;
     }
 

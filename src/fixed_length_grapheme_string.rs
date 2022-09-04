@@ -1,5 +1,4 @@
-use std::{io::{Write}};
-
+use std::io::Write;
 use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Debug)]
