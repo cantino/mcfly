@@ -8,8 +8,7 @@ pub struct FixedLengthGraphemeString {
     pub max_grapheme_length: u16,
 }
 
-impl Write for FixedLengthGraphemeString
-{
+impl Write for FixedLengthGraphemeString {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let s = String::from_utf8(buf.to_vec()).unwrap();
         self.push_str(&s);
