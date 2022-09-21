@@ -37,7 +37,7 @@ pub enum InterfaceView {
     Bottom,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResultSort {
     Rank,
     LastRun,
