@@ -27,7 +27,7 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
 
   # McFly's temporary, per-session history file.
   if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-    export MCFLY_HISTORY=$(command mktemp ${TMPDIR:/tmp}/mcfly.XXXXXXXX)
+    export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
   fi
 
   # Check if we need to use extended history
@@ -43,7 +43,7 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
 
     # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
     if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-      export MCFLY_HISTORY=$(command mktemp ${TMPDIR:/tmp}/mcfly.XXXXXXXX)
+      export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
       command tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
     fi
 
@@ -70,7 +70,7 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
       () {
         echoti rmkx
         exec </dev/tty
-        local mcfly_output=$(mktemp ${TMPDIR:/tmp}/mcfly.output.XXXXXXXX)
+        local mcfly_output=$(mktemp ${TMPDIR:-/tmp}/mcfly.output.XXXXXXXX)
         $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT search -o "${mcfly_output}" "${LBUFFER}"
         echoti smkx
 
