@@ -53,7 +53,7 @@ pub fn read(cache_path: &Path) -> Vec<(Features, bool)> {
 
 fn output_header(writer: &mut Writer<File>) {
     writer
-        .write_record(&[
+        .write_record([
             "age_factor",
             "length_factor",
             "exit_factor",
