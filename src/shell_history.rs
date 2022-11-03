@@ -219,7 +219,7 @@ pub fn delete_last_history_entry_if_search(
         .chain(Some(String::from("")))
         .collect::<Vec<String>>();
 
-    fs::write(&path, lines.join("\n"))
+    fs::write(path, lines.join("\n"))
         .unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", &path));
 }
 
@@ -236,7 +236,7 @@ pub fn delete_lines(path: &Path, history_format: HistoryFormat, command: &str) {
         .chain(Some(String::from("")))
         .collect::<Vec<String>>();
 
-    fs::write(&path, lines.join("\n"))
+    fs::write(path, lines.join("\n"))
         .unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", &path));
 }
 
