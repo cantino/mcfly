@@ -316,7 +316,8 @@ impl<'a> Interface<'a> {
             cursor::MoveTo(0, 0),
             Clear(ClearType::CurrentLine),
             Print(s.into())
-        ).unwrap();
+        )
+        .unwrap();
 
         screen.flush().unwrap();
     }
@@ -394,10 +395,7 @@ impl<'a> Interface<'a> {
     fn select(&mut self) {
         let mut screen = stdout();
         terminal::enable_raw_mode().unwrap();
-        queue!(
-            screen,
-            EnterAlternateScreen,
-        ).unwrap();
+        queue!(screen, EnterAlternateScreen).unwrap();
 
         self.refresh_matches();
         self.results(&mut screen);
