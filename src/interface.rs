@@ -202,7 +202,6 @@ impl<'a> Interface<'a> {
             screen,
             cursor::Hide,
             cursor::MoveTo(1, self.result_top_index()),
-            Clear(ClearType::All)
         )
         .unwrap();
 
@@ -246,6 +245,7 @@ impl<'a> Interface<'a> {
                     1,
                     (command_line_index as i16 + self.result_top_index() as i16) as u16
                 ),
+                Clear(ClearType::CurrentLine),
                 SetBackgroundColor(bg),
                 SetForegroundColor(fg),
                 Print(Interface::truncate_for_display(
@@ -311,12 +311,12 @@ impl<'a> Interface<'a> {
 
     #[allow(unused)]
     fn debug<W: Write, S: Into<String>>(&self, screen: &mut W, s: S) {
-        let _ = queue!(
+        queue!(
             screen,
             cursor::MoveTo(0, 0),
             Clear(ClearType::CurrentLine),
             Print(s.into())
-        );
+        ).unwrap();
 
         screen.flush().unwrap();
     }
@@ -394,7 +394,10 @@ impl<'a> Interface<'a> {
     fn select(&mut self) {
         let mut screen = stdout();
         terminal::enable_raw_mode().unwrap();
-        queue!(screen, EnterAlternateScreen, Clear(ClearType::All)).unwrap();
+        queue!(
+            screen,
+            EnterAlternateScreen,
+        ).unwrap();
 
         self.refresh_matches();
         self.results(&mut screen);
