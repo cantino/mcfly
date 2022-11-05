@@ -396,7 +396,7 @@ impl History {
             }));
         }
 
-        if fuzzy > 0 {
+        if fuzzy > 0 && result_sort != &ResultSort::LastRun {
             names = names
                 .into_iter()
                 .sorted_by(|a, b| {
