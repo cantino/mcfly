@@ -212,9 +212,8 @@ impl<'a> Interface<'a> {
         }
 
         // We need the index of the last handled command after the loop, so declare outside of loop
-        let mut index : usize = 0;
+        let mut index: usize = 0;
         for command in self.matches.iter() {
-
             let mut fg = if self.settings.lightmode {
                 Color::Black
             } else {
@@ -323,8 +322,8 @@ impl<'a> Interface<'a> {
                     (command_line_index as i16 + self.result_top_index() as i16) as u16
                 ),
                 Clear(ClearType::CurrentLine)
-            ).unwrap();
-
+            )
+            .unwrap();
         }
     }
 
