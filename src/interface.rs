@@ -573,6 +573,10 @@ impl<'a> Interface<'a> {
                     self.input.delete(Move::Forward);
                     self.refresh_matches();
                 }
+                Key::Ctrl('w') => {
+                    self.input.delete(Move::BackwardWord);
+                    self.refresh_matches();
+                }
                 Key::Home => self.input.move_cursor(Move::BOL),
                 Key::End => self.input.move_cursor(Move::EOL),
                 Key::Char(c) => {
