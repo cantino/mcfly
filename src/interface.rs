@@ -580,7 +580,7 @@ impl<'a> Interface<'a> {
                 }
                 Key::Ctrl('w') => {
                     self.input.delete(Move::BackwardWord);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Key::Home => self.input.move_cursor(Move::BOL),
                 Key::End => self.input.move_cursor(Move::EOL),
