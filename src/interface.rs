@@ -283,7 +283,9 @@ impl<'a> Interface<'a> {
                 let duration = &format_duration(
                     Duration::minutes(
                         Utc::now()
-                            .signed_duration_since(Utc.timestamp(command.last_run.unwrap(), 0))
+                            .signed_duration_since(
+                                Utc.timestamp_opt(command.last_run.unwrap(), 0).unwrap(),
+                            )
                             .num_minutes(),
                     )
                     .to_std()
