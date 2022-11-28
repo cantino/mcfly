@@ -388,12 +388,14 @@ impl<'a> Interface<'a> {
                 self.delete_requests.push(command.cmd.clone());
             }
             self.build_cache_table();
-            self.refresh_matches();
+            self.refresh_matches(false);
         }
     }
 
-    fn refresh_matches(&mut self) {
-        self.selection = 0;
+    fn refresh_matches(&mut self, reset_selection: bool) {
+        if reset_selection {
+            self.selection = 0;
+        }
         self.matches = self.history.find_matches(
             &self.input.command,
             self.settings.results as i16,
@@ -415,7 +417,7 @@ impl<'a> Interface<'a> {
         //        let mut screen = stdout().into_raw_mode().unwrap();
         write!(screen, "{}", clear::All).unwrap();
 
-        self.refresh_matches();
+        self.refresh_matches(true);
         self.results(&mut screen);
         self.menubar(&mut screen);
         self.prompt(&mut screen);
@@ -484,11 +486,11 @@ impl<'a> Interface<'a> {
             Key::Ctrl('e') => self.input.move_cursor(Move::EOL),
             Key::Ctrl('w') | Key::Alt('\x08') | Key::Alt('\x7f') => {
                 self.input.delete(Move::BackwardWord);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
             Key::Alt('d') => {
                 self.input.delete(Move::ForwardWord);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
             Key::Ctrl('v') => {
                 self.debug = !self.debug;
@@ -501,29 +503,30 @@ impl<'a> Interface<'a> {
             Key::Down | Key::PageDown | Key::Ctrl('n') => self.move_selection(MoveSelection::Down),
             Key::Ctrl('k') => {
                 self.input.delete(Move::EOL);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
             Key::Ctrl('u') => {
                 self.input.delete(Move::BOL);
-                self.refresh_matches();
+                self.refresh_matches(true);
+                self.selection = 0;
             }
             Key::Backspace | Key::Ctrl('h') => {
                 self.input.delete(Move::Backward);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
             Key::Delete | Key::Ctrl('d') => {
                 self.input.delete(Move::Forward);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
             Key::Home => self.input.move_cursor(Move::BOL),
             Key::End => self.input.move_cursor(Move::EOL),
             Key::Char(c) => {
                 self.input.insert(c);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
             Key::F(1) => {
                 self.switch_result_sort();
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
             Key::F(2) => {
                 if !self.matches.is_empty() {
@@ -569,21 +572,21 @@ impl<'a> Interface<'a> {
                 Key::Esc => self.in_vim_insert_mode = false,
                 Key::Backspace => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Key::Delete => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Key::Home => self.input.move_cursor(Move::BOL),
                 Key::End => self.input.move_cursor(Move::EOL),
                 Key::Char(c) => {
                     self.input.insert(c);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Key::F(1) => {
                     self.switch_result_sort();
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Key::F(2) => {
                     if !self.matches.is_empty() {
@@ -642,11 +645,11 @@ impl<'a> Interface<'a> {
                 }
                 Key::Backspace => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Key::Delete | Key::Char('x') => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Key::Home => self.input.move_cursor(Move::BOL),
                 Key::End => self.input.move_cursor(Move::EOL),
@@ -655,7 +658,7 @@ impl<'a> Interface<'a> {
                 }
                 Key::F(1) => {
                     self.switch_result_sort();
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 },
                 Key::F(2) => {
                     if !self.matches.is_empty() {
