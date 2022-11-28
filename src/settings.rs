@@ -87,6 +87,7 @@ pub struct Settings {
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
     pub disable_menu: bool,
+    pub no_ui: bool,
 }
 
 impl Default for Settings {
@@ -116,6 +117,7 @@ impl Default for Settings {
             interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
             disable_menu: false,
+            no_ui: false,
         }
     }
 }
@@ -204,6 +206,9 @@ impl Settings {
                 .arg(Arg::with_name("delete_without_confirm")
                     .long("delete_without_confirm")
                     .help("Delete entry without confirm"))
+                .arg(Arg::with_name("no_ui")
+                    .long("no-ui")
+                    .help("Don't show the UI; requires --output-selection"))
                 .arg(Arg::with_name("output_selection")
                     .short("o")
                     .long("output-selection")
@@ -419,6 +424,11 @@ impl Settings {
                 settings.output_selection = search_matches
                     .value_of("output_selection")
                     .map(|s| s.to_owned());
+                settings.no_ui = search_matches.is_present("no_ui");
+
+                if settings.no_ui && settings.output_selection.is_none() {
+                    panic!("McFly error: no_ui requires output_selection");
+                }
 
                 if let Some(values) = search_matches.values_of("command") {
                     settings.command = values.collect::<Vec<_>>().join(" ");
