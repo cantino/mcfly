@@ -31,13 +31,13 @@ pub enum InitMode {
     Fish,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum InterfaceView {
     Top,
     Bottom,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResultSort {
     Rank,
     LastRun,

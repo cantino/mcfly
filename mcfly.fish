@@ -43,8 +43,12 @@ if test "$__MCFLY_LOADED" != "loaded"
   # If this is an interactive shell, set up key binding functions.
   if status is-interactive
     function __mcfly-history-widget -d "Search command history with McFly"
-      set -l mcfly_output (mktemp -t mcfly.output.XXXXXXXX)
-      eval $__MCFLY_CMD search -o '$mcfly_output' -- (commandline)
+      set tmpdir $TMPDIR
+      if test -z "$tmpdir"
+        set tmpdir /tmp
+      end
+      set -l mcfly_output (mktemp "$tmpdir/mcfly.output.XXXXXXXX")
+      eval $__MCFLY_CMD search -o '$mcfly_output' -- (commandline | string escape)
 
       # Interpret commandline/run requests from McFly
       set -l mode; set -l commandline

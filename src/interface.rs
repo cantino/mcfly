@@ -263,7 +263,9 @@ impl<'a> Interface<'a> {
                 let duration = &format_duration(
                     Duration::minutes(
                         Utc::now()
-                            .signed_duration_since(Utc.timestamp(command.last_run.unwrap(), 0))
+                            .signed_duration_since(
+                                Utc.timestamp_opt(command.last_run.unwrap(), 0).unwrap(),
+                            )
                             .num_minutes(),
                     )
                     .to_std()
@@ -371,12 +373,14 @@ impl<'a> Interface<'a> {
                 self.delete_requests.push(command.cmd.clone());
             }
             self.build_cache_table();
-            self.refresh_matches();
+            self.refresh_matches(false);
         }
     }
 
-    fn refresh_matches(&mut self) {
-        self.selection = 0;
+    fn refresh_matches(&mut self, reset_selection: bool) {
+        if reset_selection {
+            self.selection = 0;
+        }
         self.matches = self.history.find_matches(
             &self.input.command,
             self.settings.results as i16,
@@ -397,7 +401,7 @@ impl<'a> Interface<'a> {
         terminal::enable_raw_mode().unwrap();
         queue!(screen, EnterAlternateScreen, Clear(ClearType::All)).unwrap();
 
-        self.refresh_matches();
+        self.refresh_matches(true);
         self.results(&mut screen);
         self.menubar(&mut screen);
         self.prompt(&mut screen);
@@ -510,25 +514,25 @@ impl<'a> Interface<'a> {
                 Char('v') => self.debug = !self.debug,
                 Char('k') => {
                     self.input.delete(Move::EOL);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Char('u') => {
                     self.input.delete(Move::BOL);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Char('w') => {
                     self.input.delete(Move::BackwardWord);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Char('p') => self.move_selection(MoveSelection::Up),
                 Char('n') => self.move_selection(MoveSelection::Down),
                 Char('h') => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Char('d') => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 _ => {}
             },
@@ -538,7 +542,7 @@ impl<'a> Interface<'a> {
                 code: Char('\x08') | Char('\x7f'),
             } => {
                 self.input.delete(Move::BackwardWord);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
@@ -549,7 +553,7 @@ impl<'a> Interface<'a> {
                 Char('f') => self.input.move_cursor(Move::ForwardWord),
                 Char('d') => {
                     self.input.delete(Move::ForwardWord);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 _ => {}
             },
@@ -579,7 +583,7 @@ impl<'a> Interface<'a> {
                 ..
             } => {
                 self.input.delete(Move::Backward);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
@@ -587,7 +591,7 @@ impl<'a> Interface<'a> {
                 ..
             } => {
                 self.input.delete(Move::Forward);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
@@ -601,7 +605,7 @@ impl<'a> Interface<'a> {
 
             KeyEvent { code: Char(c), .. } => {
                 self.input.insert(c);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
@@ -609,7 +613,7 @@ impl<'a> Interface<'a> {
                 ..
             } => {
                 self.switch_result_sort();
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
@@ -699,14 +703,14 @@ impl<'a> Interface<'a> {
                     ..
                 } => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::Delete,
                     ..
                 } => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::Home,
@@ -717,14 +721,14 @@ impl<'a> Interface<'a> {
                 } => self.input.move_cursor(Move::EOL),
                 KeyEvent { code: Char(c), .. } => {
                     self.input.insert(c);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::F(1),
                     ..
                 } => {
                     self.switch_result_sort();
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::F(2),
@@ -827,14 +831,14 @@ impl<'a> Interface<'a> {
                     ..
                 } => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::Delete | Char('x'),
                     ..
                 } => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::Home,
@@ -849,7 +853,7 @@ impl<'a> Interface<'a> {
                     ..
                 } => {
                     self.switch_result_sort();
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::F(2),

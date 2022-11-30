@@ -35,7 +35,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
 
     # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
     if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-      MCFLY_HISTORY=$(mktemp -t mcfly.XXXXXXXX)
+      MCFLY_HISTORY=$(mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
       export MCFLY_HISTORY
       command tail -n100 "${HISTFILE}" >| "${MCFLY_HISTORY}"
     fi
