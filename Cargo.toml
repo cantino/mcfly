@@ -7,12 +7,7 @@ description = "McFly replaces your default ctrl-r shell history search with an i
 license = "MIT"
 repository = "https://github.com/cantino/mcfly"
 categories = ["command-line-utilities"]
-exclude = [
-  "HomebrewFormula",
-  "HomebrewFormula/*",
-  "pkg/*",
-  "docs/*",
-]
+exclude = ["HomebrewFormula", "HomebrewFormula/*", "pkg/*", "docs/*"]
 
 [profile.release]
 lto = true
@@ -22,7 +17,6 @@ debug = true
 
 [dependencies]
 chrono = "0.4"
-clap = "2"
 csv = "1"
 humantime = "2.1"
 directories-next = "2.0"
@@ -38,3 +32,7 @@ unicode-segmentation = "1.9"
 [dependencies.rusqlite]
 version = "0.28"
 features = ["bundled", "functions", "unlock_notify"]
+
+[dependencies.clap]
+version = "4"
+features = ["derive"]
