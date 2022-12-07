@@ -103,6 +103,19 @@ fn handle_init(settings: &Settings) {
     Init::new(&settings.init_mode);
 }
 
+fn handle_fzf(settings: &Settings) {
+    let history = History::load(settings.history_format);
+    history.build_cache_table(
+        &settings.dir,
+        &Some(settings.session_id.to_owned()),
+        None,
+        None,
+        None,
+        settings.limit,
+    );
+    mcfly::fzf::run(&history, &settings.result_sort, settings.fzf_zero_separated)
+}
+
 fn main() {
     let settings = Settings::parse_args();
 
@@ -121,6 +134,9 @@ fn main() {
         }
         Mode::Init => {
             handle_init(&settings);
+        }
+        Mode::Fzf => {
+            handle_fzf(&settings);
         }
     }
 }

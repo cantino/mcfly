@@ -66,31 +66,60 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
 
   # If this is an interactive shell, take ownership of ctrl-r.
   if [[ $- =~ .*i.* ]]; then
-    mcfly-history-widget() {
-      () {
-        echoti rmkx
-        exec </dev/tty
-        local mcfly_output=$(mktemp ${TMPDIR:-/tmp}/mcfly.output.XXXXXXXX)
-        $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT search -o "${mcfly_output}" "${LBUFFER}"
-        echoti smkx
+    if [ -z "$MCFLY_FZF" ]; then
+      mcfly-history-widget() {
+        () {
+          echoti rmkx
+          exec </dev/tty
+          local mcfly_output=$(mktemp ${TMPDIR:-/tmp}/mcfly.output.XXXXXXXX)
+          $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT search -o "${mcfly_output}" "${LBUFFER}"
+          echoti smkx
 
-        # Interpret commandline/run requests from McFly
-        while read -r key val; do
-          if [[ "$key" = "mode" ]]; then local mode="$val"; fi
-          if [[ "$key" = "commandline" ]]; then local commandline="$val"; fi
-        done < "${mcfly_output}"
-        command rm -f $mcfly_output
+          # Interpret commandline/run requests from McFly
+          while read -r key val; do
+            if [[ "$key" = "mode" ]]; then local mode="$val"; fi
+            if [[ "$key" = "commandline" ]]; then local commandline="$val"; fi
+          done < "${mcfly_output}"
+          command rm -f $mcfly_output
 
-        if [[ -n $commandline ]]; then
-          RBUFFER=""
-          LBUFFER="${commandline}"
-        fi
-        if [[ "${mode}" == "run" ]]; then
-          zle accept-line
-        fi
-        zle redisplay
+          if [[ -n $commandline ]]; then
+            RBUFFER=""
+            LBUFFER="${commandline}"
+          fi
+          if [[ "${mode}" == "run" ]]; then
+            zle accept-line
+          fi
+          zle redisplay
+        }
       }
-    }
+    else
+      # Adapted from junegunn/fzf shell/key-bindings.zsh
+      mcfly-history-widget() {
+        local selected num
+        setopt localoptions noglobsubst noposixbuiltins pipefail no_aliases 2> /dev/null
+
+        opts="--height ${FZF_TMUX_HEIGHT:-40%} --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS 
+          --nth=2.. --delimiter='\t' --no-hscroll --tiebreak=index --read0 --layout reverse 
+          --header='F1 Sort Rank | F2 Sort Time | Ctrl-R Toggle Sort'
+          --bind=ctrl-r:toggle-sort 
+          --bind='f1:reload(mcfly fzf -0 --sort RANK)' 
+          --bind='f2:reload(mcfly fzf -0 --sort LAST_RUN)' 
+          $FZF_CTRL_R_OPTS +m"
+
+        selected=$(
+          mcfly fzf -0 | FZF_DEFAULT_OPTS="$opts" fzf --query="$LBUFFER"
+        )
+
+        local ret=$?
+        if [ -n "$selected" ]; then
+          RBUFFER=""
+          LBUFFER="${selected#*$'\t'}"
+        fi
+        zle reset-prompt
+        #maybe zle redisplay?
+        return $ret
+      }
+    fi
     zle -N mcfly-history-widget
     bindkey '^R' mcfly-history-widget
   fi

@@ -16,6 +16,7 @@ pub enum Mode {
     Train,
     Move,
     Init,
+    Fzf,
 }
 
 #[derive(Debug)]
@@ -87,6 +88,7 @@ pub struct Settings {
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
     pub disable_menu: bool,
+    pub fzf_zero_separated: bool,
 }
 
 impl Default for Settings {
@@ -116,6 +118,7 @@ impl Default for Settings {
             interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
             disable_menu: false,
+            fzf_zero_separated: false,
         }
     }
 }
@@ -242,8 +245,19 @@ impl Settings {
                 .arg(Arg::with_name("shell")
                     .help("Shell to init — one of bash, zsh, or fish")
                     .possible_values(&["bash", "zsh", "fish"])
-                    .required(true))
-            )
+                    .required(true)))
+            .subcommand(SubCommand::with_name("fzf")
+                .about("Prints database for input to fzf")
+                .arg(Arg::with_name("null")
+                    .short("0")
+                    .long("null")
+                    .help("Write output in null-separated format"))
+                .arg(Arg::with_name("sort")
+                    .long("sort")
+                    .help("Whether to sort by rank or last run")
+                    .takes_value(true)
+                    .possible_value("RANK")
+                    .possible_value("LAST_RUN")))
             .get_matches();
 
         let mut settings = Settings::default();
@@ -472,6 +486,18 @@ impl Settings {
                     }
                     _ => unreachable!(),
                 }
+            }
+
+            ("fzf", Some(fzf_matches)) => {                
+                settings.result_sort = match fzf_matches.value_of("sort") {
+                    Some("RANK") => ResultSort::Rank,
+                    Some("LAST_RUN") => ResultSort::LastRun,
+                    _ => settings.result_sort,
+                };
+                
+                settings.fzf_zero_separated = fzf_matches.is_present("null");
+
+                settings.mode = Mode::Fzf;
             }
 
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)

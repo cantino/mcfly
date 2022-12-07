@@ -1,13 +1,11 @@
 use crate::command_input::{CommandInput, Move};
 use crate::history::History;
-
 use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
 use crate::history::Command;
 use crate::history_cleaner;
 use crate::settings::{InterfaceView, KeyScheme};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
-use humantime::format_duration;
 use std::io::{stdin, stdout, Write};
 use termion::color;
 use termion::event::Key;
@@ -280,35 +278,7 @@ impl<'a> Interface<'a> {
                 )
                 .unwrap();
 
-                let duration = &format_duration(
-                    Duration::minutes(
-                        Utc::now()
-                            .signed_duration_since(
-                                Utc.timestamp_opt(command.last_run.unwrap(), 0).unwrap(),
-                            )
-                            .num_minutes(),
-                    )
-                    .to_std()
-                    .unwrap(),
-                )
-                .to_string()
-                .split(' ')
-                .take(2)
-                .map(|s| {
-                    s.replace("years", "y")
-                        .replace("year", "y")
-                        .replace("months", "mo")
-                        .replace("month", "mo")
-                        .replace("days", "d")
-                        .replace("day", "d")
-                        .replace("hours", "h")
-                        .replace("hour", "h")
-                        .replace("minutes", "m")
-                        .replace("minute", "m")
-                        .replace("0s", "< 1m")
-                })
-                .collect::<Vec<String>>()
-                .join(" ");
+                let duration = format_time_since(command.last_run.unwrap());
 
                 let highlight = if self.settings.lightmode {
                     color::Fg(color::Blue).to_string()
@@ -785,6 +755,36 @@ impl<'a> Interface<'a> {
     fn is_screen_view_bottom(&self) -> bool {
         self.settings.interface_view == InterfaceView::Bottom
     }
+}
+
+pub(crate) fn format_time_since(secs: i64) -> String {
+    humantime::format_duration(
+        Duration::minutes(
+            Utc::now()
+                .signed_duration_since(Utc.timestamp_opt(secs, 0).unwrap())
+                .num_minutes(),
+        )
+        .to_std()
+        .unwrap(),
+    )
+    .to_string()
+    .split(' ')
+    .take(2)
+    .map(|s| {
+        s.replace("years", "y")
+            .replace("year", "y")
+            .replace("months", "mo")
+            .replace("month", "mo")
+            .replace("days", "d")
+            .replace("day", "d")
+            .replace("hours", "h")
+            .replace("hour", "h")
+            .replace("minutes", "m")
+            .replace("minute", "m")
+            .replace("0s", "< 1m")
+    })
+    .collect::<Vec<String>>()
+    .join(" ")
 }
 
 // TODO:

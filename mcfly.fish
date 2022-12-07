@@ -42,30 +42,51 @@ if test "$__MCFLY_LOADED" != "loaded"
 
   # If this is an interactive shell, set up key binding functions.
   if status is-interactive
-    function __mcfly-history-widget -d "Search command history with McFly"
-      set tmpdir $TMPDIR
-      if test -z "$tmpdir"
-        set tmpdir /tmp
-      end
-      set -l mcfly_output (mktemp "$tmpdir/mcfly.output.XXXXXXXX")
-      eval $__MCFLY_CMD search -o '$mcfly_output' -- (commandline | string escape)
+    if test -z "$MCFLY_FZF"
+      function __mcfly-history-widget -d "Search command history with McFly"
+        set tmpdir $TMPDIR
+        if test -z "$tmpdir"
+          set tmpdir /tmp
+        end
+        set -l mcfly_output (mktemp "$tmpdir/mcfly.output.XXXXXXXX")
+        eval $__MCFLY_CMD search -o '$mcfly_output' -- (commandline | string escape)
 
-      # Interpret commandline/run requests from McFly
-      set -l mode; set -l commandline
-      while read key val
-        test "$key" = "mode"; and set mode "$val"
-        test "$key" = "commandline"; and set commandline "$val"
-        test "$key" = "delete"; and history delete --exact --case-sensitive "$val"
-      end < "$mcfly_output"
-      rm -f $mcfly_output
+        # Interpret commandline/run requests from McFly
+        set -l mode; set -l commandline
+        while read key val
+          test "$key" = "mode"; and set mode "$val"
+          test "$key" = "commandline"; and set commandline "$val"
+          test "$key" = "delete"; and history delete --exact --case-sensitive "$val"
+        end < "$mcfly_output"
+        rm -f $mcfly_output
 
-      if test -n "$commandline"
-        commandline "$commandline"
+        if test -n "$commandline"
+          commandline "$commandline"
+        end
+        if test "$mode" = "run"
+          commandline -f execute
+        end
+        commandline -f repaint
       end
-      if test "$mode" = "run"
-        commandline -f execute
+    else
+      # Adapted from junegunn/fzf shell/key-bindings.fish
+      function __mcfly-history-widget -d "Search command history with McFly (using fzf)"
+        test -n "$FZF_TMUX_HEIGHT"; or set FZF_TMUX_HEIGHT 40%
+        begin
+          set -lx FZF_DEFAULT_OPTS "--height $FZF_TMUX_HEIGHT --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS 
+            --nth=2.. --delimiter='\t' --no-hscroll --tiebreak=index --read0 --layout reverse 
+            --header='F1 Sort Rank | F2 Sort Time | Ctrl-R Toggle Sort'
+            --bind=ctrl-r:toggle-sort 
+            --bind='f1:reload(mcfly fzf -0 --sort RANK)' 
+            --bind='f2:reload(mcfly fzf -0 --sort LAST_RUN)' 
+            $FZF_CTRL_R_OPTS +m"
+
+          eval $__MCFLY_CMD fzf -0 | eval fzf -q '(commandline)' | 
+          string replace -r "[^\t]*\t" "" | read -l result
+          and commandline -- $result
+        end
+        commandline -f repaint
       end
-      commandline -f repaint
     end
 
     function mcfly_key_bindings -d "Default key bindings for McFly"

@@ -311,6 +311,25 @@ fish:
 ```bash
 set -gx MCFLY_RESULTS_SORT LAST_RUN
 ```
+### Integration with fzf
+To use `fzf` as the search UI for `Ctrl+R` in terminal, set the environment variable
+`MCFLY_FZF` prior to loading mcfly via `mcfly init`. `fzf` must be installed separately 
+([instructions](https://github.com/junegunn/fzf#installation)).
+
+bash / zsh:
+```bash
+export MCFLY_FZF=TRUE
+```
+
+fish:
+```bash
+set -gx MCFLY_FZF TRUE
+```
+
+Tips:
+- The `fzf` interface does not support deleting history entries. Manually run `mcfly search` to access the standard UI.
+- Modify the environment variable `FZF_CTRL_R_OPTS` to pass custom flags for the
+  `fzf` interface
 
 ### Database Location
 
