@@ -6,9 +6,9 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   __MCFLY_LOADED="loaded"
 
   # Ensure HISTFILE exists.
-  export HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
-  if [[ ! -r "${HISTFILE}" ]]; then
-    echo "McFly: ${HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
+  histfile="${HISTFILE:-$HOME/.zsh_history}"
+  if [[ ! -r "${histfile}" ]]; then
+    echo "McFly: ${histfile} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
     return 1
   fi
 
@@ -44,13 +44,13 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
     # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
     if [[ ! -f "${MCFLY_HISTORY}" ]]; then
       export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
-      command tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
+      command tail -n100 "${histfile}" >| ${MCFLY_HISTORY}
     fi
 
     # Write history to $MCFLY_HISTORY.
     fc -W "${MCFLY_HISTORY}"
 
-    # Run mcfly with the saved code. It fill find the text of the last command in $MCFLY_HISTORY and save it to the database.
+    # Run mcfly with the saved code. It find the text of the last command in $MCFLY_HISTORY and save it to the database.
     [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Run mcfly add --exit ${exit_code}"
     $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT add --exit ${exit_code}
     return ${exit_code} # Restore the original exit code by returning it.
