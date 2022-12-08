@@ -123,8 +123,10 @@ impl Settings {
     pub fn parse_args() -> Settings {
         let cli = Cli::parse();
 
-        let mut settings = Settings::default();
-        settings.skip_environment_check = cli.is_init();
+        let mut settings = Settings {
+            skip_environment_check: cli.is_init(),
+            ..Default::default()
+        };
 
         settings.debug = cli.debug || env::var("MCFLY_DEBUG").is_ok();
         settings.limit = env::var("MCFLY_HISTORY_LIMIT")
