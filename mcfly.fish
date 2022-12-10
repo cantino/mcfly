@@ -77,13 +77,14 @@ if test "$__MCFLY_LOADED" != "loaded"
             --nth=2.. --delimiter='\t' --no-hscroll --tiebreak=index --read0 --layout reverse 
             --header='F1 Sort Rank | F2 Sort Time | Ctrl-R Toggle Sort'
             --bind=ctrl-r:toggle-sort 
-            --bind='f1:reload(mcfly fzf -0 --sort RANK)' 
-            --bind='f2:reload(mcfly fzf -0 --sort LAST_RUN)' 
+            --bind='f1:reload(mcfly fzf show -0 --sort RANK)' 
+            --bind='f2:reload(mcfly fzf show -0 --sort LAST_RUN)' 
             $FZF_CTRL_R_OPTS +m"
 
-          eval $__MCFLY_CMD fzf -0 | eval fzf -q '(commandline)' | 
+          eval $__MCFLY_CMD fzf show -0 | eval fzf -q '(commandline)' | 
           string replace -r "[^\t]*\t" "" | read -l result
           and commandline -- $result
+          and eval $__MCFLY_CMD fzf select -- "$result"
         end
         commandline -f repaint
       end

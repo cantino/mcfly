@@ -102,18 +102,21 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
           --nth=2.. --delimiter='\t' --no-hscroll --tiebreak=index --read0 --layout reverse 
           --header='F1 Sort Rank | F2 Sort Time | Ctrl-R Toggle Sort'
           --bind=ctrl-r:toggle-sort 
-          --bind='f1:reload(mcfly fzf -0 --sort RANK)' 
-          --bind='f2:reload(mcfly fzf -0 --sort LAST_RUN)' 
+          --bind='f1:reload(mcfly fzf show -0 --sort RANK)' 
+          --bind='f2:reload(mcfly fzf show -0 --sort LAST_RUN)' 
           $FZF_CTRL_R_OPTS +m"
 
         selected=$(
-          mcfly fzf -0 | FZF_DEFAULT_OPTS="$opts" fzf --query="$LBUFFER"
+          mcfly fzf show -0 | FZF_DEFAULT_OPTS="$opts" fzf --query="$LBUFFER"
         )
 
         local ret=$?
         if [ -n "$selected" ]; then
           RBUFFER=""
           LBUFFER="${selected#*$'\t'}"
+          if [ $ret -eq 0 ]; then
+            mcfly fzf select -- "$LBUFFER"
+          fi
         fi
         zle reset-prompt
         #maybe zle redisplay?

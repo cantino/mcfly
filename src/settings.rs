@@ -16,7 +16,8 @@ pub enum Mode {
     Train,
     Move,
     Init,
-    Fzf,
+    FzfShow,
+    FzfSelect,
 }
 
 #[derive(Debug)]
@@ -247,17 +248,34 @@ impl Settings {
                     .possible_values(&["bash", "zsh", "fish"])
                     .required(true)))
             .subcommand(SubCommand::with_name("fzf")
-                .about("Prints database for input to fzf")
-                .arg(Arg::with_name("null")
-                    .short("0")
-                    .long("null")
-                    .help("Write output in null-separated format"))
-                .arg(Arg::with_name("sort")
-                    .long("sort")
-                    .help("Whether to sort by rank or last run")
-                    .takes_value(true)
-                    .possible_value("RANK")
-                    .possible_value("LAST_RUN")))
+                .about("Commands for fzf integration")
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(SubCommand::with_name("show")
+                    .about("Print command history as fzf input")
+                    .arg(Arg::with_name("null")
+                        .short("0")
+                        .long("null")
+                        .help("Write output in null-separated format"))
+                    .arg(Arg::with_name("sort")
+                        .long("sort")
+                        .help("Whether to sort by rank or last run")
+                        .takes_value(true)
+                        .possible_value("RANK")
+                        .possible_value("LAST_RUN")))
+                .subcommand(SubCommand::with_name("select")
+                    .about("Record fzf completion selection")
+                    .arg(Arg::with_name("directory")
+                        .short("d")
+                        .long("dir")
+                        .value_name("PATH")
+                        .help("Directory where command was run (default $PWD)")
+                        .takes_value(true))
+                    .arg(Arg::with_name("command")
+                        .help("The command that was run")
+                        .value_name("COMMAND")
+                        .multiple(true)
+                        .required(true)
+                        .index(1))))
             .get_matches();
 
         let mut settings = Settings::default();
@@ -489,15 +507,43 @@ impl Settings {
             }
 
             ("fzf", Some(fzf_matches)) => {
-                settings.result_sort = match fzf_matches.value_of("sort") {
-                    Some("RANK") => ResultSort::Rank,
-                    Some("LAST_RUN") => ResultSort::LastRun,
-                    _ => settings.result_sort,
-                };
+                match fzf_matches.subcommand() {
+                    ("show", Some(fzf_show_matches)) => {
+                        settings.result_sort = match fzf_show_matches.value_of("sort") {
+                            Some("RANK") => ResultSort::Rank,
+                            Some("LAST_RUN") => ResultSort::LastRun,
+                            _ => settings.result_sort,
+                        };
+                        settings.fzf_zero_separated = fzf_show_matches.is_present("null");
+                        settings.mode = Mode::FzfShow;
+                    }
+                    ("select", Some(fzf_select_matches)) => {
+                        if let Some(dir) = fzf_select_matches.value_of("directory") {
+                            settings.dir = dir.to_string();
+                        } else {
+                            settings.dir = env::var("PWD").unwrap_or_else(|err| {
+                                panic!(
+                                    "McFly error: Unable to determine current directory ({})",
+                                    err
+                                )
+                            });
+                        }
 
-                settings.fzf_zero_separated = fzf_matches.is_present("null");
-
-                settings.mode = Mode::Fzf;
+                        match fzf_select_matches.values_of("command") {
+                            Some(commands) => {
+                                settings.command = commands.collect::<Vec<_>>().join(" ");
+                            }
+                            None => {
+                                panic!(
+                                    "McFly error: Missing required fzf select argument \"command\""
+                                )
+                            }
+                        }
+                        settings.mode = Mode::FzfSelect;
+                    }
+                    ("", _) => println!("No fzf subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)
+                    _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
+                }
             }
 
             ("", None) => println!("No subcommand was used"), // If no subcommand was used it'll match the tuple ("", None)

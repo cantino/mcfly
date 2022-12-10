@@ -71,14 +71,15 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
           --nth=2.. --delimiter='\t' --no-hscroll --tiebreak=index --read0 --layout reverse 
           --header='F1 Sort Rank | F2 Sort Time | Ctrl-R Toggle Sort'
           --bind=ctrl-r:toggle-sort 
-          --bind='f1:reload(mcfly fzf -0 --sort RANK)' 
-          --bind='f2:reload(mcfly fzf -0 --sort LAST_RUN)' 
+          --bind='f1:reload(mcfly fzf show -0 --sort RANK)' 
+          --bind='f2:reload(mcfly fzf show -0 --sort LAST_RUN)' 
           $FZF_CTRL_R_OPTS +m"
       output=$(
-        mcfly fzf -0 |
+        mcfly fzf show -0 |
           FZF_DEFAULT_OPTS="$opts" fzf --query "$READLINE_LINE"
       ) || return
       READLINE_LINE=${output#*$'\t'}
+      mcfly fzf select -- "$READLINE_LINE"
       if [[ -z "$READLINE_POINT" ]]; then
         echo "$READLINE_LINE"
       else
