@@ -16,7 +16,7 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   export MCFLY_SESSION_ID=$(command dd if=/dev/urandom bs=256 count=1 2> /dev/null | LC_ALL=C command tr -dc 'a-zA-Z0-9' | command head -c 24)
 
   # Find the binary
-  MCFLY_PATH=${MCFLY_PATH:-$(command -v mcfly)}
+  MCFLY_PATH=${MCFLY_PATH:-$(command which mcfly)}
   if [[ -z "$MCFLY_PATH" || "$MCFLY_PATH" == "mcfly not found" ]]; then
     echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.zsh."
     return 1

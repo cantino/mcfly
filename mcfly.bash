@@ -17,7 +17,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   export MCFLY_SESSION_ID
 
   # Find the binary
-  MCFLY_PATH=${MCFLY_PATH:-$(command -v mcfly)}
+  MCFLY_PATH=${MCFLY_PATH:-$(command which mcfly)}
   if [ -z "$MCFLY_PATH" ]; then
     echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.bash."
     return 1
