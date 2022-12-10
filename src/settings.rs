@@ -488,13 +488,13 @@ impl Settings {
                 }
             }
 
-            ("fzf", Some(fzf_matches)) => {                
+            ("fzf", Some(fzf_matches)) => {
                 settings.result_sort = match fzf_matches.value_of("sort") {
                     Some("RANK") => ResultSort::Rank,
                     Some("LAST_RUN") => ResultSort::LastRun,
                     _ => settings.result_sort,
                 };
-                
+
                 settings.fzf_zero_separated = fzf_matches.is_present("null");
 
                 settings.mode = Mode::Fzf;

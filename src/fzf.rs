@@ -1,7 +1,7 @@
 use std::io::Write;
 
-use crate::settings::{ResultSort, self};
 use crate::history::History;
+use crate::settings::{self, ResultSort};
 
 pub fn run(history: &History, sort_by: &ResultSort, zero_separated: bool) {
     let order_by_column: &str = match sort_by {
@@ -21,7 +21,9 @@ pub fn run(history: &History, sort_by: &ResultSort, zero_separated: bool) {
         .connection
         .prepare(query)
         .unwrap_or_else(|err| panic!("McFly error: Prepare to work ({})", err));
-    let mut rows = statement.query([]).unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));
+    let mut rows = statement
+        .query([])
+        .unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));
 
     let mut stdout = std::io::stdout();
 
@@ -38,15 +40,15 @@ pub fn run(history: &History, sort_by: &ResultSort, zero_separated: bool) {
                 err
             )
         });
-        
+
         let duration = crate::interface::format_time_since(last_run);
         let res = if zero_separated {
             stdout.write_fmt(format_args!("{}\t{}\0", duration, cmd))
         } else {
             stdout.write_fmt(format_args!("{}\t{}\n", duration, cmd))
         };
-        if let Err(_) = res {
-            break
+        if res.is_err() {
+            break;
         }
     }
 }

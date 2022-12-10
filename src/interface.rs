@@ -1,7 +1,7 @@
 use crate::command_input::{CommandInput, Move};
-use crate::history::History;
 use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
 use crate::history::Command;
+use crate::history::History;
 use crate::history_cleaner;
 use crate::settings::{InterfaceView, KeyScheme};
 use crate::settings::{ResultSort, Settings};
