@@ -75,7 +75,7 @@ pub struct Settings {
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub old_dir: Option<String>,
-    pub append_to_histfile: bool,
+    pub append_to_histfile: Option<String>,
     pub refresh_training_cache: bool,
     pub lightmode: bool,
     pub key_scheme: KeyScheme,
@@ -103,7 +103,7 @@ impl Default for Settings {
             exit_code: None,
             old_dir: None,
             refresh_training_cache: false,
-            append_to_histfile: false,
+            append_to_histfile: None,
             debug: false,
             fuzzy: 0,
             lightmode: false,
@@ -157,7 +157,8 @@ impl Settings {
                     .takes_value(true))
                 .arg(Arg::with_name("append_to_histfile")
                     .long("append-to-histfile")
-                    .help("Also append new history to $HISTFILE/$MCFLY_HISTFILE (e.q., .bash_history)"))
+                    .value_name("HISTFILE")
+                    .help("Also append command to the given file (e.q., .bash_history)"))
                 .arg(Arg::with_name("when")
                     .short("w")
                     .long("when")
@@ -335,7 +336,9 @@ impl Settings {
                     ),
                 );
 
-                settings.append_to_histfile = add_matches.is_present("append_to_histfile");
+                if let Some(append_to_histfile) = add_matches.value_of("append_to_histfile") {
+                    settings.append_to_histfile = Some(append_to_histfile.to_string());
+                }
 
                 if add_matches.value_of("exit").is_some() {
                     settings.exit_code =

@@ -6,9 +6,9 @@ use mcfly::settings::Mode;
 use mcfly::settings::Settings;
 use mcfly::shell_history;
 use mcfly::trainer::Trainer;
+use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, fs};
 
 fn handle_addition(settings: &Settings) {
     let history = History::load(settings.history_format);
@@ -22,17 +22,8 @@ fn handle_addition(settings: &Settings) {
             &settings.old_dir,
         );
 
-        if settings.append_to_histfile {
-            let histfile = PathBuf::from(
-                env::var("HISTFILE")
-                    .or_else(|_| env::var("MCFLY_HISTFILE"))
-                    .unwrap_or_else(|err| {
-                        panic!(
-                            "McFly error: Please ensure that $HISTFILE/$MCFLY_HISTFILE is set ({})",
-                            err
-                        )
-                    }),
-            );
+        if settings.append_to_histfile.is_some() {
+            let histfile = PathBuf::from(settings.append_to_histfile.as_ref().unwrap());
             let command = shell_history::HistoryCommand::new(
                 &settings.command,
                 settings.when_run.unwrap_or(
