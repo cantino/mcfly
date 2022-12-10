@@ -74,7 +74,7 @@ pub struct Settings {
     pub when_run: Option<i64>,
     pub exit_code: Option<i32>,
     pub old_dir: Option<String>,
-    pub append_to_histfile: bool,
+    pub append_to_histfile: Option<String>,
     pub refresh_training_cache: bool,
     pub lightmode: bool,
     pub key_scheme: KeyScheme,
@@ -102,7 +102,7 @@ impl Default for Settings {
             exit_code: None,
             old_dir: None,
             refresh_training_cache: false,
-            append_to_histfile: false,
+            append_to_histfile: None,
             debug: false,
             fuzzy: 0,
             lightmode: false,
@@ -305,6 +305,7 @@ impl Settings {
 
             SubCommand::Train { refresh_cache } => {
                 settings.mode = Mode::Train;
+
                 settings.refresh_training_cache = refresh_cache;
             }
 
@@ -313,11 +314,14 @@ impl Settings {
                 new_dir_path,
             } => {
                 settings.mode = Mode::Move;
+
                 settings.old_dir = Some(old_dir_path);
                 settings.dir = new_dir_path;
             }
 
             SubCommand::Init { shell } => {
+                settings.mode = Mode::Init;
+
                 use crate::cli::InitMode::*;
                 settings.init_mode = match shell {
                     Bash => InitMode::Bash,

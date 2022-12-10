@@ -42,9 +42,9 @@ pub enum SubCommand {
         #[arg(value_name = "EXIT_CODE", short, long)]
         exit: Option<i32>,
 
-        /// Also append new history to $HISTFILE/$MCFLY_HISTFILE (e.q., .bash_history)
-        #[arg(long)]
-        append_to_histfile: bool,
+        /// Also append command to the given file (e.q., .bash_history)
+        #[arg(value_name = "HISTFILE", short, long)]
+        append_to_histfile: Option<String>,
 
         /// The time that the command was run (default now)
         #[arg(value_name = "UNIX_EPOCH", short, long)]
@@ -82,7 +82,7 @@ pub enum SubCommand {
         delete_without_confirm: bool,
 
         /// Write results to file, including selection mode, new commandline, and any shell-specific requests
-        #[arg(short, long)]
+        #[arg(value_name = "PATH", short, long)]
         output_selection: Option<String>,
     },
 
