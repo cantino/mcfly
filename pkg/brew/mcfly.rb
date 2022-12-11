@@ -37,6 +37,8 @@ class Mcfly < Formula
 
       Fish:
         mcfly init fish | source
+
+      You will need to restart your terminal when first installing and on some updates. If you receive a McFly error when running commands, try restarting your terminal.
     EOS
   end
 end
