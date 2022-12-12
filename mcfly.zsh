@@ -67,12 +67,14 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   # If this is an interactive shell, take ownership of ctrl-r.
   if [[ $- =~ .*i.* ]]; then
     mcfly-history-widget() {
-      () {
         echoti rmkx
-        exec </dev/tty
+        chmod 666 /dev/tty
+        exec < /dev/tty
+
         local mcfly_output=$(mktemp ${TMPDIR:-/tmp}/mcfly.output.XXXXXXXX)
         $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT search -o "${mcfly_output}" "${LBUFFER}"
         echoti smkx
+
 
         # Interpret commandline/run requests from McFly
         while read -r key val; do
@@ -89,7 +91,6 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
           zle accept-line
         fi
         zle redisplay
-      }
     }
     zle -N mcfly-history-widget
     bindkey '^R' mcfly-history-widget

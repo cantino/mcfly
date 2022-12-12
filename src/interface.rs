@@ -8,7 +8,7 @@ use crate::settings::{InterfaceView, KeyScheme};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::KeyCode::Char;
-use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::style::{Color, Print, SetBackgroundColor, SetForegroundColor};
 use crossterm::terminal::{self, LeaveAlternateScreen};
 use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen};
@@ -408,9 +408,15 @@ impl<'a> Interface<'a> {
 
         screen.flush().unwrap();
 
-        loop {
-            let event =
-                read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
+        let stdin = std::io::stdin();
+        for c in stdin.keys() {
+            println!("{}", c);
+        // loop {
+            // if let Err(_) = poll(std::time::Duration::from_millis(100)) {
+            //     continue;
+            // }
+            // let event =
+            //     read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
             self.debug_cursor(&mut screen);
 
             if let Event::Key(key_event) = event {
@@ -477,6 +483,14 @@ impl<'a> Interface<'a> {
             | KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code: Char('j'),
+            }
+            | KeyEvent {
+                code: Char('\r')
+                ..
+            }
+            | KeyEvent {
+                code: Char('\n')
+                ..
             } => {
                 self.run = true;
                 self.accept_selection();
