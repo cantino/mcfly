@@ -18,7 +18,7 @@ debug = true
 [dependencies]
 chrono = "0.4"
 csv = "1"
-crossterm = "0.18"
+crossterm = "0.25"
 humantime = "2.1"
 directories-next = "2.0"
 itertools = "0.10"
@@ -36,3 +36,6 @@ features = ["bundled", "functions", "unlock_notify"]
 [dependencies.clap]
 version = "4"
 features = ["derive"]
+
+[patch.crates-io]
+crossterm = { git = "https://github.com/yyogo/crossterm.git", branch = "use-select-in-unix" }

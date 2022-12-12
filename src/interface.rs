@@ -408,15 +408,13 @@ impl<'a> Interface<'a> {
 
         screen.flush().unwrap();
 
-        let stdin = std::io::stdin();
-        for c in stdin.keys() {
-            println!("{}", c);
-        // loop {
+        loop {
             // if let Err(_) = poll(std::time::Duration::from_millis(100)) {
             //     continue;
             // }
-            // let event =
-            //     read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
+        terminal::enable_raw_mode().unwrap();
+            let event =
+                read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
             self.debug_cursor(&mut screen);
 
             if let Event::Key(key_event) = event {
@@ -425,6 +423,7 @@ impl<'a> Interface<'a> {
                         KeyEvent {
                             modifiers: KeyModifiers::CONTROL,
                             code: Char('c') | Char('d') | Char('g') | Char('z') | Char('r'),
+                            ..
                         } => {
                             self.run = false;
                             self.input.clear();
@@ -483,14 +482,13 @@ impl<'a> Interface<'a> {
             | KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code: Char('j'),
-            }
-            | KeyEvent {
-                code: Char('\r')
                 ..
             }
             | KeyEvent {
-                code: Char('\n')
-                ..
+                code: Char('\r'), ..
+            }
+            | KeyEvent {
+                code: Char('\n'), ..
             } => {
                 self.run = true;
                 self.accept_selection();
@@ -508,6 +506,7 @@ impl<'a> Interface<'a> {
             KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code: Char('c') | Char('g') | Char('z') | Char('r'),
+                ..
             }
             | KeyEvent {
                 code: KeyCode::Esc, ..
@@ -520,6 +519,7 @@ impl<'a> Interface<'a> {
             KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code,
+                ..
             } => match code {
                 Char('b') => self.input.move_cursor(Move::Backward),
                 Char('f') => self.input.move_cursor(Move::Forward),
@@ -554,6 +554,7 @@ impl<'a> Interface<'a> {
             KeyEvent {
                 modifiers: KeyModifiers::ALT,
                 code: Char('\x08') | Char('\x7f'),
+                ..
             } => {
                 self.input.delete(Move::BackwardWord);
                 self.refresh_matches(true);
@@ -562,6 +563,7 @@ impl<'a> Interface<'a> {
             KeyEvent {
                 modifiers: KeyModifiers::ALT,
                 code,
+                ..
             } => match code {
                 Char('b') => self.input.move_cursor(Move::BackwardWord),
                 Char('f') => self.input.move_cursor(Move::ForwardWord),
@@ -667,6 +669,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('j'),
+                    ..
                 } => {
                     self.run = true;
                     self.accept_selection();
@@ -676,6 +679,7 @@ impl<'a> Interface<'a> {
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('c') | Char('g') | Char('z') | Char('r'),
+                    ..
                 } => {
                     self.run = false;
                     self.input.clear();
@@ -698,6 +702,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('u') | Char('p'),
+                    ..
                 } => self.move_selection(MoveSelection::Up),
 
                 KeyEvent {
@@ -707,6 +712,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('d') | Char('n'),
+                    ..
                 } => self.move_selection(MoveSelection::Down),
 
                 KeyEvent {
@@ -775,6 +781,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('j'),
+                    ..
                 } => {
                     self.run = true;
                     self.accept_selection();
@@ -784,6 +791,7 @@ impl<'a> Interface<'a> {
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('c') | Char('g') | Char('z') | Char('r'), // TODO add ZZ as shortcut
+                    ..
                 }
                 | KeyEvent {
                     code: KeyCode::Esc, ..
@@ -809,6 +817,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('u'),
+                    ..
                 } => self.move_selection(MoveSelection::Up),
 
                 KeyEvent {
@@ -818,6 +827,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('d'),
+                    ..
                 } => self.move_selection(MoveSelection::Down),
 
                 KeyEvent {
