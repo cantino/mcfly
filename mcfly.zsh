@@ -5,10 +5,10 @@
 if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   __MCFLY_LOADED="loaded"
 
-  # Ensure HISTFILE exists.
-  histfile="${HISTFILE:-$HOME/.zsh_history}"
-  if [[ ! -r "${histfile}" ]]; then
-    echo "McFly: ${histfile} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
+  # Setup MCFLY_HISTFILE and make sure it exists.
+  export MCFLY_HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
+  if [[ ! -r "${MCFLY_HISTFILE}" ]]; then
+    echo "McFly: ${MCFLY_HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
     return 1
   fi
 
@@ -44,7 +44,7 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
     # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
     if [[ ! -f "${MCFLY_HISTORY}" ]]; then
       export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
-      command tail -n100 "${histfile}" >| ${MCFLY_HISTORY}
+      command tail -n100 "${MCFLY_HISTFILE}" >| ${MCFLY_HISTORY}
     fi
 
     # Write history to $MCFLY_HISTORY.
