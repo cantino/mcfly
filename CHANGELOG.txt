@@ -1,3 +1,5 @@
+0.7.1 - Dec 15, 2022
+ - Ensure at least MCFLY_HISTFILE is set for history import when HISTFILE is missing
 0.7.0 - Dec 10, 2022
  - Upgraded to clap4 (thanks @TD-Sky!)
  - Switched back to which for command location due to issues when run at root (thanks @Efreak and @joefiorini!)
