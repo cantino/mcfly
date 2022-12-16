@@ -254,10 +254,7 @@ impl<'a> Interface<'a> {
             write!(
                 screen,
                 "{}{}",
-                cursor::Goto(
-                    1,
-                    (command_line_index as i16 + result_top_index as i16) as u16
-                ),
+                cursor::Goto(1, (command_line_index + result_top_index as i16) as u16),
                 Interface::truncate_for_display(
                     command,
                     &self.input.command,
@@ -275,7 +272,7 @@ impl<'a> Interface<'a> {
                     "{}",
                     cursor::Goto(
                         width - 9,
-                        (command_line_index as i16 + result_top_index as i16) as u16
+                        (command_line_index + result_top_index as i16) as u16
                     )
                 )
                 .unwrap();

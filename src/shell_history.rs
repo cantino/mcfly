@@ -65,7 +65,7 @@ pub fn history_file_path() -> PathBuf {
         )
             }),
     );
-    fs::canonicalize(&path).unwrap_or_else(|err| {
+    fs::canonicalize(path).unwrap_or_else(|err| {
         panic!(
             "McFly error: The contents of $HISTFILE/$MCFLY_HISTFILE appears invalid ({})",
             err

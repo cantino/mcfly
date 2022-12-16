@@ -45,7 +45,7 @@ fn clean_temporary_files(mcfly_history: &Path, history_format: HistoryFormat, co
                 err
             )
         });
-        let paths = fs::read_dir(&expanded_path).unwrap();
+        let paths = fs::read_dir(expanded_path).unwrap();
 
         for entry in paths.flatten() {
             if let Some(file_name) = entry.path().file_name() {
