@@ -128,7 +128,7 @@ impl Settings {
             ..Default::default()
         };
 
-        settings.debug = cli.debug || env::var("MCFLY_DEBUG").is_ok();
+        settings.debug = cli.debug || is_env_var_truthy("MCFLY_DEBUG");
         settings.limit = env::var("MCFLY_HISTORY_LIMIT")
             .ok()
             .and_then(|o| o.parse::<i64>().ok());
@@ -280,7 +280,7 @@ impl Settings {
                 }
 
                 settings.delete_without_confirm =
-                    delete_without_confirm || env::var("MCFLY_DELETE_WITHOUT_CONFIRM").is_ok();
+                    delete_without_confirm || is_env_var_truthy("MCFLY_DELETE_WITHOUT_CONFIRM");
 
                 settings.output_selection = output_selection;
 
@@ -331,9 +331,9 @@ impl Settings {
             }
         }
 
-        settings.lightmode = env::var_os("MCFLY_LIGHT").is_some();
+        settings.lightmode = is_env_var_truthy("MCFLY_LIGHT");
 
-        settings.disable_menu = env::var_os("MCFLY_DISABLE_MENU").is_some();
+        settings.disable_menu = is_env_var_truthy("MCFLY_DISABLE_MENU");
 
         settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
             Ok("vim") => KeyScheme::Vim,
@@ -382,4 +382,18 @@ fn pwd() -> String {
             err
         )
     })
+}
+
+fn is_env_var_truthy(name: &str) -> bool {
+    match env::var(name) {
+        Ok(val) => {
+            val != "F"
+                && val != "f"
+                && val != "false"
+                && val != "False"
+                && val != "FALSE"
+                && val != "0"
+        }
+        Err(_) => false,
+    }
 }
