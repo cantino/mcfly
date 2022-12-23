@@ -386,7 +386,14 @@ fn pwd() -> String {
 
 fn is_env_var_truthy(name: &str) -> bool {
     match env::var(name) {
-        Ok(val) => val != "F" && val != "f" && val != "false" && val != "False" && val != "FALSE" && val != "0",
+        Ok(val) => {
+            val != "F"
+                && val != "f"
+                && val != "false"
+                && val != "False"
+                && val != "FALSE"
+                && val != "0"
+        }
         Err(_) => false,
     }
 }
