@@ -63,7 +63,14 @@ impl TrainingSampleGenerator {
             );
 
             // Load the entire match set.
-            let results = history.find_matches("", -1, 0, &crate::settings::ResultSort::Rank);
+            let results = history.find_matches(
+                "",
+                -1,
+                0,
+                &crate::settings::ResultSort::Rank,
+                &crate::settings::ResultFilter::Global,
+                &command.dir.clone().unwrap_or_else(|| "".to_string()),
+            );
 
             // Get the features for this command at the time it was logged.
             if positive_examples <= negative_examples {
