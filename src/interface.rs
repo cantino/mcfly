@@ -85,10 +85,8 @@ impl MenuMode {
         menu_text.push_str("F2 - Delete | ");
 
         match interface.result_filter {
-            ResultFilter::Global => menu_text.push_str("F3 - Show Directory Command History"),
-            ResultFilter::CurrentDirectory => {
-                menu_text.push_str("F3 - Show Global Command History")
-            }
+            ResultFilter::Global => menu_text.push_str("F3 - This Directory"),
+            ResultFilter::CurrentDirectory => menu_text.push_str("F3 - All Directories"),
         }
 
         menu_text
@@ -429,10 +427,10 @@ impl<'a> Interface<'a> {
     }
 
     fn switch_result_filter(&mut self) {
-        match self.result_filter {
-            ResultFilter::Global => self.result_filter = ResultFilter::CurrentDirectory,
-            ResultFilter::CurrentDirectory => self.result_filter = ResultFilter::Global,
-        }
+        self.result_filter = match self.result_filter {
+            ResultFilter::Global => ResultFilter::CurrentDirectory,
+            ResultFilter::CurrentDirectory => ResultFilter::Global,
+        };
     }
 
     fn select(&mut self) {
