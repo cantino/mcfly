@@ -24,7 +24,7 @@ pub fn migrate(connection: &Connection) {
 
     if current_version > CURRENT_SCHEMA_VERSION {
         panic!(
-            "McFly error: Database schema version ({}) is newer than the max version supported by this binary ({})",
+            "McFly error: Database schema version ({}) is newer than the max version supported by this binary ({}). You should update mcfly.",
             current_version,
             CURRENT_SCHEMA_VERSION,
         );
