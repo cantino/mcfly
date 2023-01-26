@@ -194,8 +194,8 @@ When suggesting a command, McFly takes into consideration:
 * Add below code to your zshrc.
 
     ```zsh
-    zinit ice lucid wait"0a" from"gh-r" as"program" atload'eval "$(mcfly init zsh)"' 
-    zinit light cantino/mcfly 
+    zinit ice lucid wait"0a" from"gh-r" as"program" atload'eval "$(mcfly init zsh)"'
+    zinit light cantino/mcfly
     ```
 * It will download mcfly and install for you.
 * `$(mcfly init zsh)` will be executed after prompt
@@ -310,6 +310,19 @@ export MCFLY_RESULTS_SORT=LAST_RUN
 fish:
 ```bash
 set -gx MCFLY_RESULTS_SORT LAST_RUN
+```
+
+### Custom Prompt
+To change the prompt, set `MCFLY_PROMPT` (default: `$`).
+
+bash / zsh:
+```bash
+export MCFLY_PROMPT="❯"
+```
+
+fish:
+```bash
+set -gx MCFLY_PROMPT "❯"
 ```
 
 ### Database Location
