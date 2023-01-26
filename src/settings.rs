@@ -86,6 +86,7 @@ pub struct Settings {
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
     pub disable_menu: bool,
+    pub prompt: String,
 }
 
 impl Default for Settings {
@@ -115,6 +116,7 @@ impl Default for Settings {
             interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
             disable_menu: false,
+            prompt: String::from("$"),
         }
     }
 }
@@ -339,6 +341,10 @@ impl Settings {
             Ok("vim") => KeyScheme::Vim,
             _ => KeyScheme::Emacs,
         };
+
+        if let Ok(prompt) = env::var("MCFLY_PROMPT") {
+            settings.prompt = prompt;
+        }
 
         settings
     }
