@@ -29,6 +29,7 @@ pub struct Interface<'a> {
     menu_mode: MenuMode,
     in_vim_insert_mode: bool,
     result_sort: ResultSort,
+    command_chain: String,
 }
 
 pub struct SelectionResult {
@@ -49,6 +50,7 @@ pub enum MoveSelection {
 pub enum MenuMode {
     Normal,
     ConfirmDelete,
+    ChainCommands,
 }
 
 impl MenuMode {
@@ -67,6 +69,12 @@ impl MenuMode {
             },
             MenuMode::ConfirmDelete => {
                 return String::from("Delete selected command from the history? (Y/N)")
+            }
+            MenuMode::ChainCommands => {
+                menu_text.push_str(" | SHIFT + TAB - Chain Commands | TAB - Edit | ⏎ - Run");
+                menu_text.push_str(" | Current chain: ");
+                menu_text.push_str(interface.command_chain.as_str());
+                return menu_text;
             }
         }
 
@@ -89,6 +97,7 @@ impl MenuMode {
         match *self {
             MenuMode::Normal => Color::Blue,
             MenuMode::ConfirmDelete => Color::Red,
+            MenuMode::ChainCommands => Color::Magenta,
         }
     }
 }
@@ -111,6 +120,7 @@ impl<'a> Interface<'a> {
             menu_mode: MenuMode::Normal,
             in_vim_insert_mode: true,
             result_sort: settings.result_sort.to_owned(),
+            command_chain: String::new(),
         }
     }
 
@@ -376,6 +386,19 @@ impl<'a> Interface<'a> {
         }
     }
 
+    fn add_to_chain(&mut self) {
+        if self.command_chain.len() == 0 {
+            self.command_chain += self.matches[self.selection].cmd.as_str();
+        } else {
+            self.command_chain += " && ";
+            self.command_chain += self.matches[self.selection].cmd.as_str();
+        }
+    }
+
+    fn accept_chain(&mut self) {
+        self.input.set(self.command_chain.as_str());
+    }
+
     fn confirm(&mut self, confirmation: bool) {
         if confirmation {
             if let MenuMode::ConfirmDelete = self.menu_mode {
@@ -435,7 +458,7 @@ impl<'a> Interface<'a> {
             self.debug_cursor(&mut screen);
 
             if let Event::Key(key_event) = event {
-                if self.menu_mode != MenuMode::Normal {
+                if self.menu_mode == MenuMode::ConfirmDelete {
                     match key_event {
                         KeyEvent {
                             modifiers: KeyModifiers::CONTROL,
@@ -508,19 +531,39 @@ impl<'a> Interface<'a> {
             | KeyEvent {
                 code: Char('\n'), ..
             } => {
-                self.run = !self.settings.disable_run_command;
-                self.accept_selection();
-                return true;
+                if self.menu_mode == MenuMode::ChainCommands {
+                    self.run = !self.settings.disable_run_command;
+                    self.accept_chain();
+                    return true;
+                } else {
+                    self.run = !self.settings.disable_run_command;
+                    self.accept_selection();
+                    return true;
+                }
             }
-
             KeyEvent {
                 code: KeyCode::Tab, ..
             } => {
-                self.run = false;
-                self.accept_selection();
-                return true;
+                if self.menu_mode == MenuMode::ChainCommands {
+                    self.run = false;
+                    self.accept_chain();
+                    return true;
+                } else {
+                    self.run = false;
+                    self.accept_selection();
+                    return true;
+                }
             }
-
+            KeyEvent {
+                code: KeyCode::BackTab,
+                ..
+            } => {
+                if self.menu_mode != MenuMode::ChainCommands {
+                    self.menu_mode = MenuMode::ChainCommands;
+                } else {
+                    self.add_to_chain();
+                }
+            }
             KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code: Char('c') | Char('g') | Char('z') | Char('r'),
@@ -675,11 +718,16 @@ impl<'a> Interface<'a> {
                 KeyEvent {
                     code: KeyCode::Tab, ..
                 } => {
-                    self.run = false;
-                    self.accept_selection();
-                    return true;
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.run = false;
+                        self.accept_chain();
+                        return true;
+                    } else {
+                        self.run = false;
+                        self.accept_selection();
+                        return true;
+                    }
                 }
-
                 KeyEvent {
                     code: KeyCode::Enter,
                     ..
@@ -689,11 +737,26 @@ impl<'a> Interface<'a> {
                     code: Char('j'),
                     ..
                 } => {
-                    self.run = !self.settings.disable_run_command;
-                    self.accept_selection();
-                    return true;
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.run = !self.settings.disable_run_command;
+                        self.accept_chain();
+                        return true;
+                    } else {
+                        self.run = !self.settings.disable_run_command;
+                        self.accept_selection();
+                        return true;
+                    }
                 }
-
+                KeyEvent {
+                    code: KeyCode::BackTab,
+                    ..
+                } => {
+                    if self.menu_mode != MenuMode::ChainCommands {
+                        self.menu_mode = MenuMode::ChainCommands;
+                    } else {
+                        self.add_to_chain();
+                    }
+                }
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('c') | Char('g') | Char('z') | Char('r'),
@@ -787,11 +850,16 @@ impl<'a> Interface<'a> {
                 KeyEvent {
                     code: KeyCode::Tab, ..
                 } => {
-                    self.run = false;
-                    self.accept_selection();
-                    return true;
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.run = false;
+                        self.accept_chain();
+                        return true;
+                    } else {
+                        self.run = false;
+                        self.accept_selection();
+                        return true;
+                    }
                 }
-
                 KeyEvent {
                     code: KeyCode::Enter,
                     ..
@@ -801,11 +869,26 @@ impl<'a> Interface<'a> {
                     code: Char('j'),
                     ..
                 } => {
-                    self.run = !self.settings.disable_run_command;
-                    self.accept_selection();
-                    return true;
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.run = !self.settings.disable_run_command;
+                        self.accept_chain();
+                        return true;
+                    } else {
+                        self.run = !self.settings.disable_run_command;
+                        self.accept_selection();
+                        return true;
+                    }
                 }
-
+                KeyEvent {
+                    code: KeyCode::BackTab,
+                    ..
+                } => {
+                    if self.menu_mode != MenuMode::ChainCommands {
+                        self.menu_mode = MenuMode::ChainCommands;
+                    } else {
+                        self.add_to_chain();
+                    }
+                }
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('c') | Char('g') | Char('z') | Char('r'), // TODO add ZZ as shortcut
