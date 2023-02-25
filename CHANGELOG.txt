@@ -1,3 +1,14 @@
+0.7.1 - Dec 15, 2022
+ - Ensure at least MCFLY_HISTFILE is set for history import when HISTFILE is missing
+0.7.0 - Dec 10, 2022
+ - Upgraded to clap4 (thanks @TD-Sky!)
+ - Switched back to which for command location due to issues when run at root (thanks @Efreak and @joefiorini!)
+ - Stopped exporting HISTFILE to fix issue when using nested shells (thanks @dithpri and @AndrewKvalheim!)
+ - Added ctrl-w to vim keybinds (thanks @copy!)
+ - Cursor no longer jumps to top when deleting history (thanks @navazjm!)
+ - Fixed compatibility with mktemp from uutils/coreutils (thanks @jhult!)
+ - Skip fuzzy matches when sorting by time (thanks @navazjm!)
+ - Fix handling of open-quote strings in fish (thanks @hivehand!)
 0.6.1 - Jul 16, 2022
  - Avoid return 0 to prevent re-sourcing .zshrc from erroring
  - Vim mode improvement (thanks @fabiogibson!)

@@ -22,6 +22,14 @@ pub fn migrate(connection: &Connection) {
         .unwrap_or_else(|err| panic!("McFly error: Query to work ({})", err))
         .unwrap_or(0);
 
+    if current_version > CURRENT_SCHEMA_VERSION {
+        panic!(
+            "McFly error: Database schema version ({}) is newer than the max version supported by this binary ({}). You should update mcfly.",
+            current_version,
+            CURRENT_SCHEMA_VERSION,
+        );
+    }
+
     if current_version < CURRENT_SCHEMA_VERSION {
         print!(
             "McFly: Upgrading McFly DB to version {}, please wait...",

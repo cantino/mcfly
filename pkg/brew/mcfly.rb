@@ -7,16 +7,16 @@
 #   brew untap cantino/mcfly
 
 class Mcfly < Formula
-  version 'v0.6.1'
+  version 'v0.7.1'
   desc "McFly"
   homepage "https://github.com/cantino/mcfly"
 
   if OS.mac?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-apple-darwin.tar.gz"
-    sha256 "6649f1356215c8193853d0e4fd00f1686c0d74380a2754fa1ffb60faf34bebed"
+    sha256 "2d62398984b908ca06403f6ed9198702e8e193799fef57c9b7d38e69b7b4a33d"
   elsif OS.linux?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-unknown-linux-musl.tar.gz"
-    sha256 "f1353005b20d1b2a4884075635e3c9bfa679b6dd54cc5969864576129adf4fdc"
+    sha256 "76c54d1b320aaf39f2f65e628615e3eaa2a56f94dce8547e542b7ec94a3c9346"
   end
 
   def install
@@ -37,6 +37,8 @@ class Mcfly < Formula
 
       Fish:
         mcfly init fish | source
+
+      You will need to restart your terminal when first installing and on some updates. If you receive a McFly error when running commands, try restarting your terminal.
     EOS
   end
 end

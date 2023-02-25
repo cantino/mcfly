@@ -198,10 +198,11 @@ impl<'a> Interface<'a> {
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {
+        let result_top_index = self.result_top_index();
         queue!(
             screen,
             cursor::Hide,
-            cursor::MoveTo(1, self.result_top_index()),
+            cursor::MoveTo(1, result_top_index),
             Clear(ClearType::All)
         )
         .unwrap();
@@ -219,7 +220,7 @@ impl<'a> Interface<'a> {
                 Color::White
             };
 
-            let mut fg_highlight = if self.settings.lightmode {
+            let mut highlight = if self.settings.lightmode {
                 Color::Blue
             } else {
                 Color::Green
@@ -231,11 +232,11 @@ impl<'a> Interface<'a> {
                 if self.settings.lightmode {
                     fg = Color::White;
                     bg = Color::DarkGrey;
-                    fg_highlight = Color::White;
+                    highlight = Color::White;
                 } else {
                     fg = Color::Black;
                     bg = Color::White;
-                    fg_highlight = Color::Green;
+                    highlight = Color::Green;
                 }
             }
 
@@ -244,7 +245,7 @@ impl<'a> Interface<'a> {
                 screen,
                 cursor::MoveTo(
                     1,
-                    (command_line_index as i16 + self.result_top_index() as i16) as u16
+                    (command_line_index as i16 + result_top_index as i16) as u16
                 ),
                 SetBackgroundColor(bg),
                 SetForegroundColor(fg),
@@ -252,7 +253,7 @@ impl<'a> Interface<'a> {
                     command,
                     &self.input.command,
                     width,
-                    fg_highlight,
+                    highlight,
                     fg,
                     self.debug
                 ))
@@ -260,6 +261,15 @@ impl<'a> Interface<'a> {
             .unwrap();
 
             if command.last_run.is_some() {
+                queue!(
+                    screen,
+                    cursor::MoveTo(
+                        width - 9,
+                        (command_line_index + result_top_index as i16) as u16
+                    )
+                )
+                .unwrap();
+
                 let duration = &format_duration(
                     Duration::minutes(
                         Utc::now()

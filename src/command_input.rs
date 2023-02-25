@@ -76,11 +76,7 @@ impl CommandInput {
             }
         }
 
-        if tmp < 0 {
-            tmp = 0;
-        } else if tmp > self.len as isize {
-            tmp = self.len as isize;
-        }
+        tmp = tmp.clamp(0, self.len as isize);
         self.cursor = tmp as usize;
     }
 
@@ -254,6 +250,7 @@ impl CommandInput {
                         word_index += 1;
                     }
 
+                    #[allow(clippy::implicit_saturating_sub)]
                     if word_index > 0 {
                         word_index -= 1;
                     }
