@@ -18,7 +18,6 @@ debug = true
 [dependencies]
 chrono = "0.4"
 csv = "1"
-crossterm = "0.25"
 humantime = "2.1"
 directories-next = "2.0"
 itertools = "0.10"
@@ -32,6 +31,11 @@ unicode-segmentation = "1.9"
 [dependencies.rusqlite]
 version = "0.28"
 features = ["bundled", "functions", "unlock_notify"]
+
+[dependencies.crossterm]
+version = "0.26"
+features = ["use-dev-tty"]
+
 
 [dependencies.clap]
 version = "4"
