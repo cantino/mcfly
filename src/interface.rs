@@ -8,7 +8,7 @@ use crate::settings::{InterfaceView, KeyScheme};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::KeyCode::Char;
-use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::style::{Color, Print, SetBackgroundColor, SetForegroundColor};
 use crossterm::terminal::{self, LeaveAlternateScreen};
 use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen};
@@ -419,9 +419,6 @@ impl<'a> Interface<'a> {
         screen.flush().unwrap();
 
         loop {
-            // if let Err(_) = poll(std::time::Duration::from_millis(100)) {
-            //     continue;
-            // }
         terminal::enable_raw_mode().unwrap();
             let event =
                 read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
