@@ -170,6 +170,7 @@ impl<'a> Interface<'a> {
     }
 
     fn prompt<W: Write>(&self, screen: &mut W) {
+        let prompt_line_index = self.prompt_line_index();
         let fg = if self.settings.lightmode {
             Color::Black
         } else {
@@ -177,11 +178,11 @@ impl<'a> Interface<'a> {
         };
         queue!(
             screen,
-            cursor::MoveTo(1, self.prompt_line_index()),
+            cursor::MoveTo(1, prompt_line_index),
             SetForegroundColor(fg),
             Clear(ClearType::CurrentLine),
             Print(format!("$ {}", self.input)),
-            cursor::MoveTo(self.input.cursor as u16 + 3, self.prompt_line_index()),
+            cursor::MoveTo(self.input.cursor as u16 + 3, prompt_line_index),
             cursor::Show
         )
         .unwrap();
@@ -419,7 +420,7 @@ impl<'a> Interface<'a> {
         screen.flush().unwrap();
 
         loop {
-        terminal::enable_raw_mode().unwrap();
+            terminal::enable_raw_mode().unwrap();
             let event =
                 read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
             self.debug_cursor(&mut screen);
