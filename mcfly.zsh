@@ -5,10 +5,10 @@
 if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   __MCFLY_LOADED="loaded"
 
-  # Ensure HISTFILE exists.
-  export HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
-  if [[ ! -r "${HISTFILE}" ]]; then
-    echo "McFly: ${HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
+  # Setup MCFLY_HISTFILE and make sure it exists.
+  export MCFLY_HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
+  if [[ ! -r "${MCFLY_HISTFILE}" ]]; then
+    echo "McFly: ${MCFLY_HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
     return 1
   fi
 
@@ -16,7 +16,7 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   export MCFLY_SESSION_ID=$(command dd if=/dev/urandom bs=256 count=1 2> /dev/null | LC_ALL=C command tr -dc 'a-zA-Z0-9' | command head -c 24)
 
   # Find the binary
-  MCFLY_PATH=${MCFLY_PATH:-$(command -v mcfly)}
+  MCFLY_PATH=${MCFLY_PATH:-$(command which mcfly)}
   if [[ -z "$MCFLY_PATH" || "$MCFLY_PATH" == "mcfly not found" ]]; then
     echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.zsh."
     return 1
@@ -27,7 +27,7 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
 
   # McFly's temporary, per-session history file.
   if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-    export MCFLY_HISTORY=$(command mktemp -t mcfly.XXXXXXXX)
+    export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
   fi
 
   # Check if we need to use extended history
@@ -43,14 +43,14 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
 
     # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
     if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-      export MCFLY_HISTORY=$(command mktemp -t mcfly.XXXXXXXX)
-      command tail -n100 "${HISTFILE}" >| ${MCFLY_HISTORY}
+      export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
+      command tail -n100 "${MCFLY_HISTFILE}" >| ${MCFLY_HISTORY}
     fi
 
     # Write history to $MCFLY_HISTORY.
     fc -W "${MCFLY_HISTORY}"
 
-    # Run mcfly with the saved code. It fill find the text of the last command in $MCFLY_HISTORY and save it to the database.
+    # Run mcfly with the saved code. It find the text of the last command in $MCFLY_HISTORY and save it to the database.
     [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Run mcfly add --exit ${exit_code}"
     $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT add --exit ${exit_code}
     return ${exit_code} # Restore the original exit code by returning it.
@@ -70,7 +70,7 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
       () {
         echoti rmkx
         exec </dev/tty
-        local mcfly_output=$(mktemp -t mcfly.output.XXXXXXXX)
+        local mcfly_output=$(mktemp ${TMPDIR:-/tmp}/mcfly.output.XXXXXXXX)
         $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT search -o "${mcfly_output}" "${LBUFFER}"
         echoti smkx
 
