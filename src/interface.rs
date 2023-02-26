@@ -481,6 +481,7 @@ impl<'a> Interface<'a> {
             LeaveAlternateScreen
         )
         .unwrap();
+        terminal::disable_raw_mode().unwrap();
     }
 
     fn select_with_emacs_key_scheme(&mut self, event: KeyEvent) -> bool {

@@ -41,5 +41,3 @@ features = ["use-dev-tty"]
 version = "4"
 features = ["derive"]
 
-[patch.crates-io]
-crossterm = { git = "https://github.com/yyogo/crossterm.git", branch = "use-select-in-unix" }
