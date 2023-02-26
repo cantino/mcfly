@@ -170,6 +170,7 @@ impl<'a> Interface<'a> {
     }
 
     fn prompt<W: Write>(&self, screen: &mut W) {
+        let prompt_line_index = self.prompt_line_index();
         let fg = if self.settings.lightmode {
             Color::Black
         } else {
@@ -177,11 +178,11 @@ impl<'a> Interface<'a> {
         };
         queue!(
             screen,
-            cursor::MoveTo(1, self.prompt_line_index()),
+            cursor::MoveTo(1, prompt_line_index),
             SetForegroundColor(fg),
             Clear(ClearType::CurrentLine),
             Print(format!("$ {}", self.input)),
-            cursor::MoveTo(self.input.cursor as u16 + 3, self.prompt_line_index()),
+            cursor::MoveTo(self.input.cursor as u16 + 3, prompt_line_index),
             cursor::Show
         )
         .unwrap();
@@ -198,10 +199,12 @@ impl<'a> Interface<'a> {
     }
 
     fn results<W: Write>(&mut self, screen: &mut W) {
+        let result_top_index = self.result_top_index();
         queue!(
             screen,
             cursor::Hide,
-            cursor::MoveTo(1, self.result_top_index()),
+            cursor::MoveTo(1, result_top_index),
+            Clear(ClearType::All)
         )
         .unwrap();
 
@@ -220,7 +223,7 @@ impl<'a> Interface<'a> {
                 Color::White
             };
 
-            let mut fg_highlight = if self.settings.lightmode {
+            let mut highlight = if self.settings.lightmode {
                 Color::Blue
             } else {
                 Color::Green
@@ -232,11 +235,11 @@ impl<'a> Interface<'a> {
                 if self.settings.lightmode {
                     fg = Color::White;
                     bg = Color::DarkGrey;
-                    fg_highlight = Color::White;
+                    highlight = Color::White;
                 } else {
                     fg = Color::Black;
                     bg = Color::White;
-                    fg_highlight = Color::Green;
+                    highlight = Color::Green;
                 }
             }
 
@@ -247,7 +250,6 @@ impl<'a> Interface<'a> {
                     1,
                     (command_line_index as i16 + self.result_top_index() as i16) as u16
                 ),
-                Clear(ClearType::CurrentLine),
                 SetBackgroundColor(bg),
                 SetForegroundColor(fg),
                 Print(Interface::truncate_for_display(
@@ -262,10 +264,21 @@ impl<'a> Interface<'a> {
             .unwrap();
 
             if command.last_run.is_some() {
+                queue!(
+                    screen,
+                    cursor::MoveTo(
+                        width - 9,
+                        (command_line_index + result_top_index as i16) as u16
+                    )
+                )
+                .unwrap();
+
                 let duration = &format_duration(
                     Duration::minutes(
                         Utc::now()
-                            .signed_duration_since(Utc.timestamp(command.last_run.unwrap(), 0))
+                            .signed_duration_since(
+                                Utc.timestamp_opt(command.last_run.unwrap(), 0).unwrap(),
+                            )
                             .num_minutes(),
                     )
                     .to_std()
@@ -308,22 +321,6 @@ impl<'a> Interface<'a> {
                 )
                 .unwrap();
             }
-            index += 1;
-        }
-
-        // Since we only clear by line instead of clearing the screen each update,
-        //  we need to clear all the lines that may have previously had a command
-        for i in index..(self.settings.results as usize) {
-            let command_line_index = self.command_line_index(i as i16);
-            queue!(
-                screen,
-                cursor::MoveTo(
-                    1,
-                    (command_line_index as i16 + self.result_top_index() as i16) as u16
-                ),
-                Clear(ClearType::CurrentLine)
-            )
-            .unwrap();
         }
     }
 
@@ -389,12 +386,14 @@ impl<'a> Interface<'a> {
                 self.delete_requests.push(command.cmd.clone());
             }
             self.build_cache_table();
-            self.refresh_matches();
+            self.refresh_matches(false);
         }
     }
 
-    fn refresh_matches(&mut self) {
-        self.selection = 0;
+    fn refresh_matches(&mut self, reset_selection: bool) {
+        if reset_selection {
+            self.selection = 0;
+        }
         self.matches = self.history.find_matches(
             &self.input.command,
             self.settings.results as i16,
@@ -413,9 +412,9 @@ impl<'a> Interface<'a> {
     fn select(&mut self) {
         let mut screen = stdout();
         terminal::enable_raw_mode().unwrap();
-        queue!(screen, EnterAlternateScreen).unwrap();
+        queue!(screen, EnterAlternateScreen, Clear(ClearType::All)).unwrap();
 
-        self.refresh_matches();
+        self.refresh_matches(true);
         self.results(&mut screen);
         self.menubar(&mut screen);
         self.prompt(&mut screen);
@@ -433,6 +432,7 @@ impl<'a> Interface<'a> {
                         KeyEvent {
                             modifiers: KeyModifiers::CONTROL,
                             code: Char('c') | Char('d') | Char('g') | Char('z') | Char('r'),
+                            ..
                         } => {
                             self.run = false;
                             self.input.clear();
@@ -480,6 +480,7 @@ impl<'a> Interface<'a> {
             LeaveAlternateScreen
         )
         .unwrap();
+        terminal::disable_raw_mode().unwrap();
     }
 
     fn select_with_emacs_key_scheme(&mut self, event: KeyEvent) -> bool {
@@ -491,6 +492,13 @@ impl<'a> Interface<'a> {
             | KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code: Char('j'),
+                ..
+            }
+            | KeyEvent {
+                code: Char('\r'), ..
+            }
+            | KeyEvent {
+                code: Char('\n'), ..
             } => {
                 self.run = true;
                 self.accept_selection();
@@ -508,6 +516,7 @@ impl<'a> Interface<'a> {
             KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code: Char('c') | Char('g') | Char('z') | Char('r'),
+                ..
             }
             | KeyEvent {
                 code: KeyCode::Esc, ..
@@ -520,6 +529,7 @@ impl<'a> Interface<'a> {
             KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code,
+                ..
             } => match code {
                 Char('b') => self.input.move_cursor(Move::Backward),
                 Char('f') => self.input.move_cursor(Move::Forward),
@@ -528,25 +538,25 @@ impl<'a> Interface<'a> {
                 Char('v') => self.debug = !self.debug,
                 Char('k') => {
                     self.input.delete(Move::EOL);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Char('u') => {
                     self.input.delete(Move::BOL);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Char('w') => {
                     self.input.delete(Move::BackwardWord);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Char('p') => self.move_selection(MoveSelection::Up),
                 Char('n') => self.move_selection(MoveSelection::Down),
                 Char('h') => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 Char('d') => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 _ => {}
             },
@@ -554,20 +564,22 @@ impl<'a> Interface<'a> {
             KeyEvent {
                 modifiers: KeyModifiers::ALT,
                 code: Char('\x08') | Char('\x7f'),
+                ..
             } => {
                 self.input.delete(Move::BackwardWord);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
                 modifiers: KeyModifiers::ALT,
                 code,
+                ..
             } => match code {
                 Char('b') => self.input.move_cursor(Move::BackwardWord),
                 Char('f') => self.input.move_cursor(Move::ForwardWord),
                 Char('d') => {
                     self.input.delete(Move::ForwardWord);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 _ => {}
             },
@@ -597,7 +609,7 @@ impl<'a> Interface<'a> {
                 ..
             } => {
                 self.input.delete(Move::Backward);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
@@ -605,7 +617,7 @@ impl<'a> Interface<'a> {
                 ..
             } => {
                 self.input.delete(Move::Forward);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
@@ -619,7 +631,7 @@ impl<'a> Interface<'a> {
 
             KeyEvent { code: Char(c), .. } => {
                 self.input.insert(c);
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
@@ -627,7 +639,7 @@ impl<'a> Interface<'a> {
                 ..
             } => {
                 self.switch_result_sort();
-                self.refresh_matches();
+                self.refresh_matches(true);
             }
 
             KeyEvent {
@@ -667,6 +679,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('j'),
+                    ..
                 } => {
                     self.run = true;
                     self.accept_selection();
@@ -676,6 +689,7 @@ impl<'a> Interface<'a> {
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('c') | Char('g') | Char('z') | Char('r'),
+                    ..
                 } => {
                     self.run = false;
                     self.input.clear();
@@ -698,6 +712,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('u') | Char('p'),
+                    ..
                 } => self.move_selection(MoveSelection::Up),
 
                 KeyEvent {
@@ -707,6 +722,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('d') | Char('n'),
+                    ..
                 } => self.move_selection(MoveSelection::Down),
 
                 KeyEvent {
@@ -717,14 +733,14 @@ impl<'a> Interface<'a> {
                     ..
                 } => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::Delete,
                     ..
                 } => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::Home,
@@ -735,14 +751,14 @@ impl<'a> Interface<'a> {
                 } => self.input.move_cursor(Move::EOL),
                 KeyEvent { code: Char(c), .. } => {
                     self.input.insert(c);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::F(1),
                     ..
                 } => {
                     self.switch_result_sort();
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::F(2),
@@ -775,6 +791,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('j'),
+                    ..
                 } => {
                     self.run = true;
                     self.accept_selection();
@@ -784,6 +801,7 @@ impl<'a> Interface<'a> {
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('c') | Char('g') | Char('z') | Char('r'), // TODO add ZZ as shortcut
+                    ..
                 }
                 | KeyEvent {
                     code: KeyCode::Esc, ..
@@ -792,7 +810,6 @@ impl<'a> Interface<'a> {
                     self.input.clear();
                     return true;
                 }
-
                 KeyEvent {
                     code: KeyCode::Left | Char('h'),
                     ..
@@ -809,6 +826,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('u'),
+                    ..
                 } => self.move_selection(MoveSelection::Up),
 
                 KeyEvent {
@@ -818,6 +836,7 @@ impl<'a> Interface<'a> {
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('d'),
+                    ..
                 } => self.move_selection(MoveSelection::Down),
 
                 KeyEvent {
@@ -845,14 +864,14 @@ impl<'a> Interface<'a> {
                     ..
                 } => {
                     self.input.delete(Move::Backward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::Delete | Char('x'),
                     ..
                 } => {
                     self.input.delete(Move::Forward);
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::Home,
@@ -867,7 +886,7 @@ impl<'a> Interface<'a> {
                     ..
                 } => {
                     self.switch_result_sort();
-                    self.refresh_matches();
+                    self.refresh_matches(true);
                 }
                 KeyEvent {
                     code: KeyCode::F(2),

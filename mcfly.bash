@@ -5,10 +5,10 @@
 if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   __MCFLY_LOADED="loaded"
 
-  # Ensure HISTFILE exists.
-  export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
-  if [[ ! -r "${HISTFILE}" ]]; then
-    echo "McFly: ${HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
+  # Setup MCFLY_HISTFILE and make sure it exists.
+  export MCFLY_HISTFILE="${HISTFILE:-$HOME/.bash_history}"
+  if [[ ! -r "${MCFLY_HISTFILE}" ]]; then
+    echo "McFly: ${MCFLY_HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
     return 1
   fi
 
@@ -17,7 +17,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   export MCFLY_SESSION_ID
 
   # Find the binary
-  MCFLY_PATH=${MCFLY_PATH:-$(command -v mcfly)}
+  MCFLY_PATH=${MCFLY_PATH:-$(command which mcfly)}
   if [ -z "$MCFLY_PATH" ]; then
     echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.bash."
     return 1
@@ -37,7 +37,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
     if [[ ! -f "${MCFLY_HISTORY}" ]]; then
       MCFLY_HISTORY=$(mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
       export MCFLY_HISTORY
-      command tail -n100 "${HISTFILE}" >| "${MCFLY_HISTORY}"
+      command tail -n100 "${MCFLY_HISTFILE}" >| "${MCFLY_HISTORY}"
     fi
 
     history -a "${MCFLY_HISTORY}" # Append history to $MCFLY_HISTORY.
@@ -45,7 +45,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
     # * append commands to $HISTFILE, (~/.bash_history by default)
     #   for backwards compatibility and to load in new terminal sessions;
     # * find the text of the last command in $MCFLY_HISTORY and save it to the database.
-    $MCFLY_PATH add --exit ${exit_code} --append-to-histfile
+    $MCFLY_PATH add --exit ${exit_code} --append-to-histfile "${MCFLY_HISTFILE}"
     # Clear the in-memory history and reload it from $MCFLY_HISTORY
     # (to remove instances of '#mcfly: ' from the local session history).
     history -cr "${MCFLY_HISTORY}"

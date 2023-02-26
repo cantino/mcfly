@@ -1,18 +1,13 @@
 [package]
 name = "mcfly"
-version = "0.6.1"
+version = "0.7.1"
 authors = ["Andrew Cantino <cantino@users.noreply.github.com>"]
 edition = "2021"
 description = "McFly replaces your default ctrl-r shell history search with an intelligent search engine that takes into account your working directory and the context of recently executed commands. McFly's suggestions are prioritized in real time with a small neural network."
 license = "MIT"
 repository = "https://github.com/cantino/mcfly"
 categories = ["command-line-utilities"]
-exclude = [
-  "HomebrewFormula",
-  "HomebrewFormula/*",
-  "pkg/*",
-  "docs/*",
-]
+exclude = ["HomebrewFormula", "HomebrewFormula/*", "pkg/*", "docs/*"]
 
 [profile.release]
 lto = true
@@ -22,7 +17,6 @@ debug = true
 
 [dependencies]
 chrono = "0.4"
-clap = "2"
 csv = "1"
 crossterm = "0.18"
 dirs = "2.0"
@@ -40,3 +34,13 @@ unicode-segmentation = "1.9"
 [dependencies.rusqlite]
 version = "0.28"
 features = ["bundled", "functions", "unlock_notify"]
+
+[dependencies.crossterm]
+version = "0.26"
+features = ["use-dev-tty"]
+
+
+[dependencies.clap]
+version = "4"
+features = ["derive"]
+

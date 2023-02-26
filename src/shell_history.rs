@@ -65,7 +65,7 @@ pub fn history_file_path() -> PathBuf {
         )
             }),
     );
-    fs::canonicalize(&path).unwrap_or_else(|err| {
+    fs::canonicalize(path).unwrap_or_else(|err| {
         panic!(
             "McFly error: The contents of $HISTFILE/$MCFLY_HISTFILE appears invalid ({})",
             err
@@ -247,7 +247,7 @@ pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) 
         .open(path)
         .unwrap_or_else(|err| {
             panic!(
-                "McFly error: please make sure HISTFILE/MCFLY_HISTFILE ({:?}) exists ({})",
+                "McFly error: please make sure the specified --append-to-histfile file ({:?}) exists ({})",
                 path, err
             )
         });

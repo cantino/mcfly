@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod command_input;
 pub mod fake_typer;
 pub mod fixed_length_grapheme_string;
