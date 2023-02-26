@@ -124,6 +124,7 @@ pub enum InitMode {
     Bash,
     Zsh,
     Fish,
+    Powershell,
 }
 
 impl Cli {
