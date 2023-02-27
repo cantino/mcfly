@@ -237,7 +237,7 @@ impl<'a> Interface<'a> {
                 } else {
                     fg = Color::Black;
                     bg = Color::White;
-                    highlight = Color::Green;
+                    highlight = Color::DarkGreen;
                 }
             }
 
