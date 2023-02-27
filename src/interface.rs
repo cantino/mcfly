@@ -222,9 +222,9 @@ impl<'a> Interface<'a> {
             };
 
             let mut highlight = if self.settings.lightmode {
-                Color::Blue
+                Color::DarkBlue
             } else {
-                Color::Green
+                Color::DarkGreen
             };
 
             let mut bg = Color::Reset;
@@ -233,7 +233,7 @@ impl<'a> Interface<'a> {
                 if self.settings.lightmode {
                     fg = Color::White;
                     bg = Color::DarkGrey;
-                    highlight = Color::White;
+                    highlight = Color::Grey;
                 } else {
                     fg = Color::Black;
                     bg = Color::White;
