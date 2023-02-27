@@ -200,13 +200,7 @@ impl<'a> Interface<'a> {
 
     fn results<W: Write>(&mut self, screen: &mut W) {
         let result_top_index = self.result_top_index();
-        queue!(
-            screen,
-            cursor::Hide,
-            cursor::MoveTo(1, result_top_index),
-            Clear(ClearType::All)
-        )
-        .unwrap();
+        queue!(screen, cursor::Hide, cursor::MoveTo(1, result_top_index)).unwrap();
 
         let (width, _height): (u16, u16) = terminal::size().unwrap();
 
@@ -250,13 +244,14 @@ impl<'a> Interface<'a> {
                     1,
                     (command_line_index as i16 + self.result_top_index() as i16) as u16
                 ),
+                Clear(ClearType::CurrentLine),
                 SetBackgroundColor(bg),
                 SetForegroundColor(fg),
                 Print(Interface::truncate_for_display(
                     command,
                     &self.input.command,
                     width,
-                    fg_highlight,
+                    highlight,
                     fg,
                     self.debug
                 ))
@@ -321,6 +316,22 @@ impl<'a> Interface<'a> {
                 )
                 .unwrap();
             }
+            index += 1;
+        }
+
+        // Since we only clear by line instead of clearing the screen each update,
+        //  we need to clear all the lines that may have previously had a command
+        for i in index..(self.settings.results as usize) {
+            let command_line_index = self.command_line_index(i as i16);
+            queue!(
+                screen,
+                cursor::MoveTo(
+                    1,
+                    (command_line_index as i16 + self.result_top_index() as i16) as u16
+                ),
+                Clear(ClearType::CurrentLine)
+            )
+            .unwrap();
         }
     }
 
@@ -412,7 +423,7 @@ impl<'a> Interface<'a> {
     fn select(&mut self) {
         let mut screen = stdout();
         terminal::enable_raw_mode().unwrap();
-        queue!(screen, EnterAlternateScreen, Clear(ClearType::All)).unwrap();
+        queue!(screen, EnterAlternateScreen).unwrap();
 
         self.refresh_matches(true);
         self.results(&mut screen);
