@@ -242,7 +242,7 @@ impl<'a> Interface<'a> {
                 screen,
                 cursor::MoveTo(
                     1,
-                    (command_line_index as i16 + self.result_top_index() as i16) as u16
+                    (command_line_index + self.result_top_index() as i16) as u16
                 ),
                 Clear(ClearType::CurrentLine),
                 SetBackgroundColor(bg),
@@ -307,7 +307,7 @@ impl<'a> Interface<'a> {
                     screen,
                     cursor::MoveTo(
                         width - 9,
-                        (command_line_index as i16 + self.result_top_index() as i16) as u16
+                        (command_line_index + self.result_top_index() as i16) as u16
                     ),
                     SetForegroundColor(timing_color),
                     Print(format!("{:>9}", duration)),
@@ -327,7 +327,7 @@ impl<'a> Interface<'a> {
                 screen,
                 cursor::MoveTo(
                     1,
-                    (command_line_index as i16 + self.result_top_index() as i16) as u16
+                    (command_line_index + self.result_top_index() as i16) as u16
                 ),
                 Clear(ClearType::CurrentLine)
             )
