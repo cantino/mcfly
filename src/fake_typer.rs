@@ -1,6 +1,8 @@
+#[cfg(not(windows))]
 use libc;
 
 // Should we be using https://docs.rs/libc/0.2.44/libc/fn.ioctl.html instead?
+#[cfg(not(windows))]
 extern "C" {
     pub fn ioctl(fd: libc::c_int, request: libc::c_ulong, arg: ...) -> libc::c_int;
 }

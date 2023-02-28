@@ -8,7 +8,7 @@ use crate::settings::{InterfaceView, KeyScheme};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::KeyCode::Char;
-use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use crossterm::style::{Color, Print, SetBackgroundColor, SetForegroundColor};
 use crossterm::terminal::{self, LeaveAlternateScreen};
 use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen};
@@ -495,6 +495,9 @@ impl<'a> Interface<'a> {
     }
 
     fn select_with_emacs_key_scheme(&mut self, event: KeyEvent) -> bool {
+        if event.kind == KeyEventKind::Release {
+            return false;
+        }
         match event {
             KeyEvent {
                 code: KeyCode::Enter,

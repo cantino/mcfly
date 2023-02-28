@@ -79,7 +79,7 @@ $null = New-Module mcfly {
         )
         $ExitCode = $ExitCode ?? 0;
         $Command | Out-File -FilePath $env:MCFLY_HISTORY -Append
-        Start-Process -FilePath '::MCFLY::' -ArgumentList add, --exit, $ExitCode, --append-to-histfile -NoNewWindow | Write-Host
+        Start-Process -FilePath '::MCFLY::' -ArgumentList add, --exit, $ExitCode, --append-to-histfile, $env:HISTFILE -NoNewWindow | Write-Host
     }
 
     # We need to make sure we call out AddToHistoryHandler right after each command is called
