@@ -343,7 +343,9 @@ impl Settings {
         };
 
         if let Ok(prompt) = env::var("MCFLY_PROMPT") {
-            settings.prompt = prompt;
+            if prompt.chars().count() == 1 {
+                settings.prompt = prompt;
+            }
         }
 
         settings
