@@ -15,4 +15,4 @@ jobs:
           override: true
           components: rustfmt
 
-      - run: rustfmt --edition 2018 **/*.rs --check
+      - run: cargo fmt --check
