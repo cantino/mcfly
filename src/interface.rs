@@ -244,10 +244,7 @@ impl<'a> Interface<'a> {
             let command_line_index = self.command_line_index(index as i16);
             queue!(
                 screen,
-                cursor::MoveTo(
-                    1,
-                    (command_line_index + result_top_index as i16) as u16
-                ),
+                cursor::MoveTo(1, (command_line_index + result_top_index as i16) as u16),
                 SetBackgroundColor(bg),
                 SetForegroundColor(fg),
                 Print(Interface::truncate_for_display(
