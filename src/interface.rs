@@ -69,7 +69,11 @@ impl MenuMode {
             }
         }
 
-        menu_text.push_str("⏎ - Run | TAB - Edit | ");
+        if interface.settings.disable_run_command {
+            menu_text.push_str("⏎, TAB - Edit | ");
+        } else {
+            menu_text.push_str("⏎ - Run | TAB - Edit | ");
+        }
 
         match interface.result_sort {
             ResultSort::Rank => menu_text.push_str("F1 - Switch Sort to Time | "),
@@ -464,7 +468,7 @@ impl<'a> Interface<'a> {
     fn select_with_emacs_key_scheme(&mut self, k: Key) -> bool {
         match k {
             Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
-                self.run = true;
+                self.run = !self.settings.disable_run_command;
                 self.accept_selection();
                 return true;
             }
@@ -545,7 +549,7 @@ impl<'a> Interface<'a> {
         if self.in_vim_insert_mode {
             match k {
                 Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
-                    self.run = true;
+                    self.run = !self.settings.disable_run_command;
                     self.accept_selection();
                     return true;
                 }
@@ -604,7 +608,7 @@ impl<'a> Interface<'a> {
         } else {
             match k {
                 Key::Char('\n') | Key::Char('\r') | Key::Ctrl('j') => {
-                    self.run = true;
+                    self.run = ! self.settings.disable_run_command;
                     self.accept_selection();
                     return true;
                 }
