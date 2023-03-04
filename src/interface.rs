@@ -185,7 +185,7 @@ impl<'a> Interface<'a> {
             cursor::MoveTo(1, prompt_line_index),
             SetForegroundColor(fg),
             Clear(ClearType::CurrentLine),
-            Print(format!("{} {}",self.settings.prompt, self.input)),
+            Print(format!("{} {}", self.settings.prompt, self.input)),
             cursor::MoveTo(self.input.cursor as u16 + 3, prompt_line_index),
             cursor::Show
         )
@@ -793,7 +793,7 @@ impl<'a> Interface<'a> {
                     code: Char('j'),
                     ..
                 } => {
-                    self.run = ! self.settings.disable_run_command;
+                    self.run = !self.settings.disable_run_command;
                     self.accept_selection();
                     return true;
                 }
