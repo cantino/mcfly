@@ -29,7 +29,7 @@ pub struct Interface<'a> {
     menu_mode: MenuMode,
     in_vim_insert_mode: bool,
     result_sort: ResultSort,
-    command_chain: String,
+    command_chain: Vec<String>,
 }
 
 pub struct SelectionResult {
@@ -71,9 +71,19 @@ impl MenuMode {
                 return String::from("Delete selected command from the history? (Y/N)")
             }
             MenuMode::ChainCommands => {
+                let mut commands_to_execute = String::new();
+
+                for (i, command) in interface.command_chain.iter().enumerate() {
+                    commands_to_execute += command;
+
+                    if i != interface.command_chain.len() - 1 {
+                        commands_to_execute += " && ";
+                    }
+                }
+
                 menu_text.push_str(" | SHIFT + TAB - Chain Commands | TAB - Edit | ⏎ - Run");
                 menu_text.push_str(" | Current chain: ");
-                menu_text.push_str(interface.command_chain.as_str());
+                menu_text.push_str(&commands_to_execute);
                 return menu_text;
             }
         }
@@ -120,7 +130,7 @@ impl<'a> Interface<'a> {
             menu_mode: MenuMode::Normal,
             in_vim_insert_mode: true,
             result_sort: settings.result_sort.to_owned(),
-            command_chain: String::new(),
+            command_chain: Vec::new(),
         }
     }
 
@@ -387,16 +397,26 @@ impl<'a> Interface<'a> {
     }
 
     fn add_to_chain(&mut self) {
-        if self.command_chain.len() == 0 {
-            self.command_chain += self.matches[self.selection].cmd.as_str();
-        } else {
-            self.command_chain += " && ";
-            self.command_chain += self.matches[self.selection].cmd.as_str();
-        }
+        self.command_chain
+            .push(self.matches[self.selection].cmd.to_string())
     }
 
     fn accept_chain(&mut self) {
-        self.input.set(self.command_chain.as_str());
+        let mut commands_to_execute = String::new();
+
+        for (i, command) in self.command_chain.iter().enumerate() {
+            commands_to_execute += command;
+
+            if i != self.command_chain.len() - 1 {
+                commands_to_execute += " && ";
+            }
+        }
+
+        self.input.set(commands_to_execute.as_str());
+    }
+
+    fn pop_from_chain(&mut self) {
+        self.command_chain.pop();
     }
 
     fn confirm(&mut self, confirmation: bool) {
@@ -560,6 +580,7 @@ impl<'a> Interface<'a> {
             } => {
                 if self.menu_mode != MenuMode::ChainCommands {
                     self.menu_mode = MenuMode::ChainCommands;
+                    self.add_to_chain();
                 } else {
                     self.add_to_chain();
                 }
@@ -705,7 +726,14 @@ impl<'a> Interface<'a> {
                     }
                 }
             }
-
+            KeyEvent {
+                code: KeyCode::F(3),
+                ..
+            } => {
+                if self.menu_mode == MenuMode::ChainCommands {
+                    self.pop_from_chain();
+                }
+            }
             _ => {}
         }
 
@@ -753,6 +781,7 @@ impl<'a> Interface<'a> {
                 } => {
                     if self.menu_mode != MenuMode::ChainCommands {
                         self.menu_mode = MenuMode::ChainCommands;
+                        self.add_to_chain();
                     } else {
                         self.add_to_chain();
                     }
@@ -843,6 +872,14 @@ impl<'a> Interface<'a> {
                         }
                     }
                 }
+                KeyEvent {
+                    code: KeyCode::F(3),
+                    ..
+                } => {
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.pop_from_chain();
+                    }
+                }
                 _ => {}
             }
         } else {
@@ -885,6 +922,7 @@ impl<'a> Interface<'a> {
                 } => {
                     if self.menu_mode != MenuMode::ChainCommands {
                         self.menu_mode = MenuMode::ChainCommands;
+                        self.add_to_chain();
                     } else {
                         self.add_to_chain();
                     }
@@ -990,6 +1028,14 @@ impl<'a> Interface<'a> {
                         } else {
                             self.menu_mode = MenuMode::ConfirmDelete;
                         }
+                    }
+                }
+                KeyEvent {
+                    code: KeyCode::F(3),
+                    ..
+                } => {
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.pop_from_chain();
                     }
                 }
                 _ => {}
