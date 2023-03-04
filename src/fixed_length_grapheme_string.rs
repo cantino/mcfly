@@ -1,3 +1,4 @@
+use std::io::Write;
 use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Debug)]
@@ -5,6 +6,18 @@ pub struct FixedLengthGraphemeString {
     pub string: String,
     pub grapheme_length: u16,
     pub max_grapheme_length: u16,
+}
+
+impl Write for FixedLengthGraphemeString {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let s = String::from_utf8(buf.to_vec()).unwrap();
+        self.push_str(&s);
+        Ok(s.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
 }
 
 impl FixedLengthGraphemeString {

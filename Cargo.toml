@@ -26,13 +26,18 @@ rand = "0.8"
 regex = "1"
 relative-path = "1.7"
 shellexpand = "2.1"
-termion = "1.5"
 unicode-segmentation = "1.9"
 
 [dependencies.rusqlite]
 version = "0.28"
 features = ["bundled", "functions", "unlock_notify"]
 
+[dependencies.crossterm]
+version = "0.26"
+features = ["use-dev-tty"]
+
+
 [dependencies.clap]
 version = "4"
 features = ["derive"]
+
