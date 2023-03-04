@@ -70,7 +70,11 @@ impl MenuMode {
             }
         }
 
-        menu_text.push_str("⏎ - Run | TAB - Edit | ");
+        if interface.settings.disable_run_command {
+            menu_text.push_str("⏎, TAB - Edit | ");
+        } else {
+            menu_text.push_str("⏎ - Run | TAB - Edit | ");
+        }
 
         match interface.result_sort {
             ResultSort::Rank => menu_text.push_str("F1 - Switch Sort to Time | "),
@@ -181,7 +185,7 @@ impl<'a> Interface<'a> {
             cursor::MoveTo(1, prompt_line_index),
             SetForegroundColor(fg),
             Clear(ClearType::CurrentLine),
-            Print(format!("$ {}", self.input)),
+            Print(format!("{} {}",self.settings.prompt, self.input)),
             cursor::MoveTo(self.input.cursor as u16 + 3, prompt_line_index),
             cursor::Show
         )
@@ -496,7 +500,7 @@ impl<'a> Interface<'a> {
             | KeyEvent {
                 code: Char('\n'), ..
             } => {
-                self.run = true;
+                self.run = !self.settings.disable_run_command;
                 self.accept_selection();
                 return true;
             }
@@ -677,7 +681,7 @@ impl<'a> Interface<'a> {
                     code: Char('j'),
                     ..
                 } => {
-                    self.run = true;
+                    self.run = !self.settings.disable_run_command;
                     self.accept_selection();
                     return true;
                 }
@@ -771,6 +775,7 @@ impl<'a> Interface<'a> {
                 _ => {}
             }
         } else {
+<<<<<<< HEAD
             match event {
                 KeyEvent {
                     code: KeyCode::Tab, ..
@@ -789,7 +794,7 @@ impl<'a> Interface<'a> {
                     code: Char('j'),
                     ..
                 } => {
-                    self.run = true;
+                    self.run = ! self.settings.disable_run_command;
                     self.accept_selection();
                     return true;
                 }
