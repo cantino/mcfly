@@ -175,7 +175,7 @@ impl<'a> Interface<'a> {
         let prompt_line_index = self.prompt_line_index();
         write!(
             screen,
-            "{}{}{}$ {}",
+            "{}{}{}{} {}",
             if self.settings.lightmode {
                 color::Fg(color::Black).to_string()
             } else {
@@ -183,6 +183,7 @@ impl<'a> Interface<'a> {
             },
             cursor::Goto(1, self.prompt_line_index()),
             clear::CurrentLine,
+            self.settings.prompt,
             self.input
         )
         .unwrap();
