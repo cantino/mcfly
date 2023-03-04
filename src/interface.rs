@@ -775,7 +775,6 @@ impl<'a> Interface<'a> {
                 _ => {}
             }
         } else {
-<<<<<<< HEAD
             match event {
                 KeyEvent {
                     code: KeyCode::Tab, ..
