@@ -70,7 +70,11 @@ impl MenuMode {
             }
         }
 
-        menu_text.push_str("⏎ - Run | TAB - Edit | ");
+        if interface.settings.disable_run_command {
+            menu_text.push_str("⏎, TAB - Edit | ");
+        } else {
+            menu_text.push_str("⏎ - Run | TAB - Edit | ");
+        }
 
         match interface.result_sort {
             ResultSort::Rank => menu_text.push_str("F1 - Switch Sort to Time | "),
@@ -181,7 +185,7 @@ impl<'a> Interface<'a> {
             cursor::MoveTo(1, prompt_line_index),
             SetForegroundColor(fg),
             Clear(ClearType::CurrentLine),
-            Print(format!("$ {}", self.input)),
+            Print(format!("{} {}", self.settings.prompt, self.input)),
             cursor::MoveTo(self.input.cursor as u16 + 3, prompt_line_index),
             cursor::Show
         )
@@ -218,9 +222,9 @@ impl<'a> Interface<'a> {
             };
 
             let mut highlight = if self.settings.lightmode {
-                Color::Blue
+                Color::DarkBlue
             } else {
-                Color::Green
+                Color::DarkGreen
             };
 
             let mut bg = Color::Reset;
@@ -229,21 +233,18 @@ impl<'a> Interface<'a> {
                 if self.settings.lightmode {
                     fg = Color::White;
                     bg = Color::DarkGrey;
-                    highlight = Color::White;
+                    highlight = Color::Grey;
                 } else {
                     fg = Color::Black;
                     bg = Color::White;
-                    highlight = Color::Green;
+                    highlight = Color::DarkGreen;
                 }
             }
 
             let command_line_index = self.command_line_index(index as i16);
             queue!(
                 screen,
-                cursor::MoveTo(
-                    1,
-                    (command_line_index + self.result_top_index() as i16) as u16
-                ),
+                cursor::MoveTo(1, (command_line_index + result_top_index as i16) as u16),
                 Clear(ClearType::CurrentLine),
                 SetBackgroundColor(bg),
                 SetForegroundColor(fg),
@@ -514,7 +515,7 @@ impl<'a> Interface<'a> {
             | KeyEvent {
                 code: Char('\n'), ..
             } => {
-                self.run = true;
+                self.run = !self.settings.disable_run_command;
                 self.accept_selection();
                 return true;
             }
@@ -695,7 +696,7 @@ impl<'a> Interface<'a> {
                     code: Char('j'),
                     ..
                 } => {
-                    self.run = true;
+                    self.run = !self.settings.disable_run_command;
                     self.accept_selection();
                     return true;
                 }
@@ -807,7 +808,7 @@ impl<'a> Interface<'a> {
                     code: Char('j'),
                     ..
                 } => {
-                    self.run = true;
+                    self.run = !self.settings.disable_run_command;
                     self.accept_selection();
                     return true;
                 }

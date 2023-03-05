@@ -87,6 +87,8 @@ pub struct Settings {
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
     pub disable_menu: bool,
+    pub prompt: String,
+    pub disable_run_command: bool,
 }
 
 impl Default for Settings {
@@ -116,6 +118,8 @@ impl Default for Settings {
             interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
             disable_menu: false,
+            prompt: String::from("$"),
+            disable_run_command: false,
         }
     }
 }
@@ -337,10 +341,18 @@ impl Settings {
 
         settings.disable_menu = is_env_var_truthy("MCFLY_DISABLE_MENU");
 
+        settings.disable_run_command = is_env_var_truthy("MCFLY_DISABLE_RUN_COMMAND");
+
         settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
             Ok("vim") => KeyScheme::Vim,
             _ => KeyScheme::Emacs,
         };
+
+        if let Ok(prompt) = env::var("MCFLY_PROMPT") {
+            if prompt.chars().count() == 1 {
+                settings.prompt = prompt;
+            }
+        }
 
         settings
     }
