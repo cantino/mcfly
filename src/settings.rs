@@ -401,12 +401,15 @@ fn pwd() -> String {
 
 #[cfg(windows)]
 fn pwd() -> String {
-    env::current_dir().unwrap_or_else(|err| {
-        panic!(
-            "McFly error: Unable to determine current directory ({})",
-            err
-        )
-    }).display().to_string()
+    env::current_dir()
+        .unwrap_or_else(|err| {
+            panic!(
+                "McFly error: Unable to determine current directory ({})",
+                err
+            )
+        })
+        .display()
+        .to_string()
 }
 
 fn is_env_var_truthy(name: &str) -> bool {
