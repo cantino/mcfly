@@ -212,7 +212,6 @@ impl<'a> Interface<'a> {
             self.selection = self.matches.len() - 1;
         }
 
-        // We need the index of the last handled command after the loop, so declare outside of loop
         let mut index: usize = 0;
         for command in self.matches.iter() {
             let mut fg = if self.settings.lightmode {
@@ -319,17 +318,13 @@ impl<'a> Interface<'a> {
             }
             index += 1;
         }
-
         // Since we only clear by line instead of clearing the screen each update,
         //  we need to clear all the lines that may have previously had a command
         for i in index..(self.settings.results as usize) {
             let command_line_index = self.command_line_index(i as i16);
             queue!(
                 screen,
-                cursor::MoveTo(
-                    1,
-                    (command_line_index + self.result_top_index() as i16) as u16
-                ),
+                cursor::MoveTo(1, (command_line_index + result_top_index as i16) as u16),
                 Clear(ClearType::CurrentLine)
             )
             .unwrap();
