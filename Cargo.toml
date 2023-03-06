@@ -22,10 +22,8 @@ dirs = "2.0"
 humantime = "2.1"
 directories-next = "2.0"
 itertools = "0.10"
-libc = "0.2"
 rand = "0.8"
 regex = "1"
-autopilot = {git="https://github.com/jtschuster/autopilot-rs"}
 path-absolutize = "3.0.13"
 shellexpand = "2.1"
 unicode-segmentation = "1.9"
@@ -43,3 +41,8 @@ features = ["use-dev-tty"]
 version = "4"
 features = ["derive"]
 
+[target.'cfg(not(windows))'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+autopilot = {git="https://github.com/jtschuster/autopilot-rs"}
