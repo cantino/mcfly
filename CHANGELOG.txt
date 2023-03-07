@@ -1,3 +1,9 @@
+0.8.0 - Mar 6, 2023
+ - Add forward-compatibility check for database schema (thanks @bnprks!)
+ - Add MCFLY_DISABLE_RUN_COMMAND option to disable command running (thanks @chaserhkj!)
+ - Add customizable prompt with MCFLY_PROMPT (thanks @vedkothavade!)
+ - Replace termion with crossterm (big change, thanks @jtschuster!)
+ - Allow ENV variables to be set to FALSE
 0.7.1 - Dec 15, 2022
  - Ensure at least MCFLY_HISTFILE is set for history import when HISTFILE is missing
 0.7.0 - Dec 10, 2022
