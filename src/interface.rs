@@ -81,8 +81,13 @@ impl MenuMode {
                     }
                 }
 
-                menu_text.push_str(" | SHIFT + TAB - Chain Commands | TAB - Edit | ⏎ - Run");
-                menu_text.push_str(" | Current chain: ");
+                menu_text.push_str(" | SHIFT + TAB - Chain Commands | ");
+                if interface.settings.disable_run_command {
+                    menu_text.push_str("⏎, TAB - Edit | ");
+                } else {
+                    menu_text.push_str("⏎ - Run | TAB - Edit | ");
+                }
+                menu_text.push_str("Current chain: ");
                 menu_text.push_str(&commands_to_execute);
                 return menu_text;
             }
