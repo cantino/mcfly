@@ -324,6 +324,7 @@ fish:
 ```bash
 set -gx MCFLY_PROMPT "❯"
 ```
+Note that only single-character-prompts are allowed. setting `MCFLY_PROMPT` to `"<str>"` will reset it to the default prompt.
 
 ### Database Location
 
