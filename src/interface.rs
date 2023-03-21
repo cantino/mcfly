@@ -29,6 +29,7 @@ pub struct Interface<'a> {
     menu_mode: MenuMode,
     in_vim_insert_mode: bool,
     result_sort: ResultSort,
+    command_chain: Vec<String>,
 }
 
 pub struct SelectionResult {
@@ -49,6 +50,7 @@ pub enum MoveSelection {
 pub enum MenuMode {
     Normal,
     ConfirmDelete,
+    ChainCommands,
 }
 
 impl MenuMode {
@@ -67,6 +69,27 @@ impl MenuMode {
             },
             MenuMode::ConfirmDelete => {
                 return String::from("Delete selected command from the history? (Y/N)")
+            }
+            MenuMode::ChainCommands => {
+                let mut commands_to_execute = String::new();
+
+                for (i, command) in interface.command_chain.iter().enumerate() {
+                    commands_to_execute += command;
+
+                    if i != interface.command_chain.len() - 1 {
+                        commands_to_execute += " && ";
+                    }
+                }
+
+                menu_text.push_str(" | SHIFT + TAB - Chain Commands | ");
+                if interface.settings.disable_run_command {
+                    menu_text.push_str("⏎, TAB - Edit | ");
+                } else {
+                    menu_text.push_str("⏎ - Run | TAB - Edit | ");
+                }
+                menu_text.push_str("Current chain: ");
+                menu_text.push_str(&commands_to_execute);
+                return menu_text;
             }
         }
 
@@ -89,6 +112,7 @@ impl MenuMode {
         match *self {
             MenuMode::Normal => Color::Blue,
             MenuMode::ConfirmDelete => Color::Red,
+            MenuMode::ChainCommands => Color::Magenta,
         }
     }
 }
@@ -111,6 +135,7 @@ impl<'a> Interface<'a> {
             menu_mode: MenuMode::Normal,
             in_vim_insert_mode: true,
             result_sort: settings.result_sort.to_owned(),
+            command_chain: Vec::new(),
         }
     }
 
@@ -376,6 +401,29 @@ impl<'a> Interface<'a> {
         }
     }
 
+    fn add_to_chain(&mut self) {
+        self.command_chain
+            .push(self.matches[self.selection].cmd.to_string())
+    }
+
+    fn accept_chain(&mut self) {
+        let mut commands_to_execute = String::new();
+
+        for (i, command) in self.command_chain.iter().enumerate() {
+            commands_to_execute += command;
+
+            if i != self.command_chain.len() - 1 {
+                commands_to_execute += " && ";
+            }
+        }
+
+        self.input.set(commands_to_execute.as_str());
+    }
+
+    fn pop_from_chain(&mut self) {
+        self.command_chain.pop();
+    }
+
     fn confirm(&mut self, confirmation: bool) {
         if confirmation {
             if let MenuMode::ConfirmDelete = self.menu_mode {
@@ -435,7 +483,7 @@ impl<'a> Interface<'a> {
             self.debug_cursor(&mut screen);
 
             if let Event::Key(key_event) = event {
-                if self.menu_mode != MenuMode::Normal {
+                if self.menu_mode == MenuMode::ConfirmDelete {
                     match key_event {
                         KeyEvent {
                             modifiers: KeyModifiers::CONTROL,
@@ -508,19 +556,40 @@ impl<'a> Interface<'a> {
             | KeyEvent {
                 code: Char('\n'), ..
             } => {
-                self.run = !self.settings.disable_run_command;
-                self.accept_selection();
-                return true;
+                if self.menu_mode == MenuMode::ChainCommands {
+                    self.run = !self.settings.disable_run_command;
+                    self.accept_chain();
+                    return true;
+                } else {
+                    self.run = !self.settings.disable_run_command;
+                    self.accept_selection();
+                    return true;
+                }
             }
-
             KeyEvent {
                 code: KeyCode::Tab, ..
             } => {
-                self.run = false;
-                self.accept_selection();
-                return true;
+                if self.menu_mode == MenuMode::ChainCommands {
+                    self.run = false;
+                    self.accept_chain();
+                    return true;
+                } else {
+                    self.run = false;
+                    self.accept_selection();
+                    return true;
+                }
             }
-
+            KeyEvent {
+                code: KeyCode::BackTab,
+                ..
+            } => {
+                if self.menu_mode != MenuMode::ChainCommands {
+                    self.menu_mode = MenuMode::ChainCommands;
+                    self.add_to_chain();
+                } else {
+                    self.add_to_chain();
+                }
+            }
             KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code: Char('c') | Char('g') | Char('z') | Char('r'),
@@ -662,7 +731,14 @@ impl<'a> Interface<'a> {
                     }
                 }
             }
-
+            KeyEvent {
+                code: KeyCode::F(3),
+                ..
+            } => {
+                if self.menu_mode == MenuMode::ChainCommands {
+                    self.pop_from_chain();
+                }
+            }
             _ => {}
         }
 
@@ -675,11 +751,16 @@ impl<'a> Interface<'a> {
                 KeyEvent {
                     code: KeyCode::Tab, ..
                 } => {
-                    self.run = false;
-                    self.accept_selection();
-                    return true;
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.run = false;
+                        self.accept_chain();
+                        return true;
+                    } else {
+                        self.run = false;
+                        self.accept_selection();
+                        return true;
+                    }
                 }
-
                 KeyEvent {
                     code: KeyCode::Enter,
                     ..
@@ -689,11 +770,27 @@ impl<'a> Interface<'a> {
                     code: Char('j'),
                     ..
                 } => {
-                    self.run = !self.settings.disable_run_command;
-                    self.accept_selection();
-                    return true;
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.run = !self.settings.disable_run_command;
+                        self.accept_chain();
+                        return true;
+                    } else {
+                        self.run = !self.settings.disable_run_command;
+                        self.accept_selection();
+                        return true;
+                    }
                 }
-
+                KeyEvent {
+                    code: KeyCode::BackTab,
+                    ..
+                } => {
+                    if self.menu_mode != MenuMode::ChainCommands {
+                        self.menu_mode = MenuMode::ChainCommands;
+                        self.add_to_chain();
+                    } else {
+                        self.add_to_chain();
+                    }
+                }
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('c') | Char('g') | Char('z') | Char('r'),
@@ -780,6 +877,14 @@ impl<'a> Interface<'a> {
                         }
                     }
                 }
+                KeyEvent {
+                    code: KeyCode::F(3),
+                    ..
+                } => {
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.pop_from_chain();
+                    }
+                }
                 _ => {}
             }
         } else {
@@ -787,11 +892,16 @@ impl<'a> Interface<'a> {
                 KeyEvent {
                     code: KeyCode::Tab, ..
                 } => {
-                    self.run = false;
-                    self.accept_selection();
-                    return true;
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.run = false;
+                        self.accept_chain();
+                        return true;
+                    } else {
+                        self.run = false;
+                        self.accept_selection();
+                        return true;
+                    }
                 }
-
                 KeyEvent {
                     code: KeyCode::Enter,
                     ..
@@ -801,11 +911,27 @@ impl<'a> Interface<'a> {
                     code: Char('j'),
                     ..
                 } => {
-                    self.run = !self.settings.disable_run_command;
-                    self.accept_selection();
-                    return true;
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.run = !self.settings.disable_run_command;
+                        self.accept_chain();
+                        return true;
+                    } else {
+                        self.run = !self.settings.disable_run_command;
+                        self.accept_selection();
+                        return true;
+                    }
                 }
-
+                KeyEvent {
+                    code: KeyCode::BackTab,
+                    ..
+                } => {
+                    if self.menu_mode != MenuMode::ChainCommands {
+                        self.menu_mode = MenuMode::ChainCommands;
+                        self.add_to_chain();
+                    } else {
+                        self.add_to_chain();
+                    }
+                }
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
                     code: Char('c') | Char('g') | Char('z') | Char('r'), // TODO add ZZ as shortcut
@@ -907,6 +1033,14 @@ impl<'a> Interface<'a> {
                         } else {
                             self.menu_mode = MenuMode::ConfirmDelete;
                         }
+                    }
+                }
+                KeyEvent {
+                    code: KeyCode::F(3),
+                    ..
+                } => {
+                    if self.menu_mode == MenuMode::ChainCommands {
+                        self.pop_from_chain();
                     }
                 }
                 _ => {}
