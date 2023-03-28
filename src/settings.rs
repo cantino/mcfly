@@ -1,6 +1,7 @@
 use crate::cli::{Cli, SubCommand};
 use crate::shell_history;
 use clap::Parser;
+use crossterm::style::Color;
 use directories_next::{ProjectDirs, UserDirs};
 use std::env;
 use std::path::PathBuf;
@@ -88,6 +89,8 @@ pub struct Settings {
     pub disable_menu: bool,
     pub prompt: String,
     pub disable_run_command: bool,
+    pub menu_background: Color,
+    pub menu_foreground: Color,
 }
 
 impl Default for Settings {
@@ -119,6 +122,8 @@ impl Default for Settings {
             disable_menu: false,
             prompt: String::from("$"),
             disable_run_command: false,
+            menu_background: Color::Blue,
+            menu_foreground: Color::White,
         }
     }
 }
@@ -153,6 +158,16 @@ impl Settings {
                 _ => ResultSort::Rank,
             },
             _ => ResultSort::Rank,
+        };
+
+        settings.menu_background = match env::var("MCFLY_MENU_BACKGROUND") {
+            Ok(val) => Color::try_from(val.as_str()).unwrap_or(Settings::default().menu_background),
+            _ => Settings::default().menu_background,
+        };
+
+        settings.menu_foreground = match env::var("MCFLY_MENU_FOREGROUND") {
+            Ok(val) => Color::try_from(val.as_str()).unwrap_or(Settings::default().menu_foreground),
+            _ => Settings::default().menu_foreground,
         };
 
         settings.session_id = cli.session_id.unwrap_or_else(||

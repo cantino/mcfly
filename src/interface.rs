@@ -85,9 +85,9 @@ impl MenuMode {
         menu_text
     }
 
-    fn bg(&self) -> Color {
+    fn bg(&self, menu_background: Color) -> Color {
         match *self {
-            MenuMode::Normal => Color::Blue,
+            MenuMode::Normal => menu_background,
             MenuMode::ConfirmDelete => Color::Red,
         }
     }
@@ -160,8 +160,8 @@ impl<'a> Interface<'a> {
             cursor::Hide,
             cursor::MoveTo(0, self.info_line_index()),
             Clear(ClearType::CurrentLine),
-            SetBackgroundColor(self.menu_mode.bg()),
-            SetForegroundColor(Color::White),
+            SetBackgroundColor(self.menu_mode.bg(self.settings.menu_background)),
+            SetForegroundColor(self.settings.menu_foreground),
             cursor::MoveTo(1, self.info_line_index()),
             Print(format!(
                 "{text:width$}",
