@@ -160,15 +160,13 @@ impl Settings {
             _ => ResultSort::Rank,
         };
 
-        settings.menu_background = match env::var("MCFLY_MENU_BACKGROUND") {
-            Ok(val) => Color::try_from(val.as_str()).unwrap_or(Settings::default().menu_background),
-            _ => Settings::default().menu_background,
-        };
+        if let Some(color) = get_env_var_color("MCFLY_MENU_BACKGROUND") {
+            settings.menu_background = color;
+        }
 
-        settings.menu_foreground = match env::var("MCFLY_MENU_FOREGROUND") {
-            Ok(val) => Color::try_from(val.as_str()).unwrap_or(Settings::default().menu_foreground),
-            _ => Settings::default().menu_foreground,
-        };
+        if let Some(color) = get_env_var_color("MCFLY_MENU_FOREGROUND") {
+            settings.menu_foreground = color;
+        }
 
         settings.session_id = cli.session_id.unwrap_or_else(||
             env::var("MCFLY_SESSION_ID")
@@ -422,5 +420,12 @@ fn is_env_var_truthy(name: &str) -> bool {
                 && val != "0"
         }
         Err(_) => false,
+    }
+}
+
+fn get_env_var_color(name: &str) -> Option<Color> {
+    match env::var(name).ok() {
+        Some(color_env_var) => Color::try_from(color_env_var.as_str()).ok(),
+        None => None,
     }
 }
