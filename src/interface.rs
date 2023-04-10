@@ -175,11 +175,18 @@ impl<'a> Interface<'a> {
 
     fn prompt<W: Write>(&self, screen: &mut W) {
         let prompt_line_index = self.prompt_line_index();
-        let fg = if self.settings.lightmode {
-            Color::Black
-        } else {
-            Color::White
+
+        let fg = match self.settings.prompt_foreground {
+            Some(color) => color,
+            None => {
+                if self.settings.lightmode {
+                    Color::Black
+                } else {
+                    Color::White
+                }
+            }
         };
+
         queue!(
             screen,
             cursor::MoveTo(1, prompt_line_index),

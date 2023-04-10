@@ -91,6 +91,7 @@ pub struct Settings {
     pub disable_run_command: bool,
     pub menu_background: Color,
     pub menu_foreground: Color,
+    pub prompt_foreground: Option<Color>,
 }
 
 impl Default for Settings {
@@ -124,6 +125,7 @@ impl Default for Settings {
             disable_run_command: false,
             menu_background: Color::Blue,
             menu_foreground: Color::White,
+            prompt_foreground: None,
         }
     }
 }
@@ -167,6 +169,8 @@ impl Settings {
         if let Some(color) = get_env_var_color("MCFLY_MENU_FOREGROUND") {
             settings.menu_foreground = color;
         }
+
+        settings.prompt_foreground = get_env_var_color("MCFLY_PROMPT_COLOR");
 
         settings.session_id = cli.session_id.unwrap_or_else(||
             env::var("MCFLY_SESSION_ID")
