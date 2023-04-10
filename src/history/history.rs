@@ -259,9 +259,9 @@ impl History {
             _ => "rank",
         };
 
-        let dir_filter = match &result_filter {
-            ResultFilter::Global => "%".to_string(),
-            ResultFilter::CurrentDirectory => dir.to_string(),
+        let (dir_filter_off, dir_filter) = match &result_filter {
+            ResultFilter::Global => (true, "%".to_string()),
+            ResultFilter::CurrentDirectory => (false, dir.to_string()),
         };
 
         let query: &str = &format!(
@@ -271,7 +271,7 @@ impl History {
                 selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
                 selected_occurrences_factor, occurrences_factor, last_run
             FROM contextual_commands
-            WHERE cmd LIKE (:like) AND dir LIKE (:dir)",
+            WHERE cmd LIKE (:like) AND (:dir_filter_off OR dir LIKE :dir)",
             "ORDER BY",
             order_by_column,
             "DESC LIMIT :limit"
@@ -283,7 +283,7 @@ impl History {
             .unwrap_or_else(|err| panic!("McFly error: Prepare to work ({})", err));
         let command_iter = statement
             .query_map(
-                named_params! { ":like": &like_query, ":limit": &num, ":dir": &dir_filter},
+                named_params! { ":like": &like_query, ":limit": &num, ":dir_filter_off": &dir_filter_off, ":dir": &dir_filter},
                 |row| {
                     let text: String = row
                         .get(1)
