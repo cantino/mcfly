@@ -436,8 +436,7 @@ fn is_env_var_truthy(name: &str) -> bool {
 }
 
 fn get_env_var_color(name: &str) -> Option<Color> {
-    match env::var(name).ok() {
-        Some(color_env_var) => Color::try_from(color_env_var.as_str()).ok(),
-        None => None,
-    }
+    env::var(name)
+        .ok()
+        .and_then(|val| Color::try_from(val.as_str()).ok())
 }

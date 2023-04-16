@@ -176,16 +176,13 @@ impl<'a> Interface<'a> {
     fn prompt<W: Write>(&self, screen: &mut W) {
         let prompt_line_index = self.prompt_line_index();
 
-        let fg = match self.settings.prompt_foreground {
-            Some(color) => color,
-            None => {
-                if self.settings.lightmode {
-                    Color::Black
-                } else {
-                    Color::White
-                }
+        let fg = self.settings.prompt_foreground.unwrap_or({
+            if self.settings.lightmode {
+                Color::Black
+            } else {
+                Color::White
             }
-        };
+        });
 
         queue!(
             screen,
@@ -221,34 +218,31 @@ impl<'a> Interface<'a> {
 
         let mut index: usize = 0;
         for command in self.matches.iter() {
-            let mut fg = match self.settings.lightmode {
-                true => Color::Black,
-                false => Color::White,
+            let fg = if (index == self.selection) != self.settings.lightmode {
+                Color::Black
+            } else {
+                Color::White
             };
 
-            let mut highlight = match self.settings.highlight_foreground {
-                Some(color) => color,
-                None if self.settings.lightmode => Color::DarkBlue,
-                None => Color::DarkGreen,
-            };
-
-            let mut bg = Color::Reset;
-
-            if index == self.selection {
-                bg = match self.settings.selection_background {
-                    Some(color) => color,
-                    None if self.settings.lightmode => Color::DarkGrey,
-                    None => Color::White,
-                };
-
+            let highlight = self.settings.highlight_foreground.unwrap_or({
                 if self.settings.lightmode {
-                    fg = Color::White;
-                    highlight = Color::Grey;
+                    Color::DarkBlue
                 } else {
-                    fg = Color::Black;
-                    highlight = Color::DarkGreen;
+                    Color::DarkGreen
                 }
-            }
+            });
+
+            let bg = if index == self.selection {
+                self.settings.selection_background.unwrap_or({
+                    if self.settings.lightmode {
+                        Color::DarkGrey
+                    } else {
+                        Color::White
+                    }
+                })
+            } else {
+                Color::Reset
+            };
 
             let command_line_index = self.command_line_index(index as i16);
             queue!(
