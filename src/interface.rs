@@ -235,7 +235,7 @@ impl<'a> Interface<'a> {
             let mut bg = Color::Reset;
 
             if index == self.selection {
-                bg = match self.settings.highlight_foreground {
+                bg = match self.settings.selection_background {
                     Some(color) => color,
                     None if self.settings.lightmode => Color::DarkGrey,
                     None => Color::White,
