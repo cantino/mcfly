@@ -328,7 +328,10 @@ Note that only single-character-prompts are allowed. setting `MCFLY_PROMPT` to `
 
 ### Database Location
 
-McFly stores its SQLite database in the standard location for the OS. On OS X, this is in `~/Library/Application Support/McFly` and on Linux it is in `$XDG_DATA_DIR/mcfly/history.db` (default would be `~/.local/share/mcfly/history.db`). For legacy support, if `~/.mcfly/` exists, it is used instead.
+McFly stores its SQLite database & cache according to the [`XDG Base Directory Specification`](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+i.e. in `$XDG_STATE_DIR/mcfly/history.db` (default would be `~/.local/state/mcfly/history.db`).
+For legacy support, if `~/.mcfly/history.db` or `$XDG_DATA_HOME/mcfly/history.db` or `~/Library/Application Support/McFly/history.db` (on macOS) exists,
+then it will automatically be migrated to the above location.
 
 ### Slow startup
 

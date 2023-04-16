@@ -1,3 +1,5 @@
+ - Use `$XDG_STATE_HOME` directory for storing history.db (thanks @utkarshgupta137!)
+   The history.db file will be automatically migrated to the new location.
 0.8.0 - Mar 6, 2023
  - Add forward-compatibility check for database schema (thanks @bnprks!)
  - Add MCFLY_DISABLE_RUN_COMMAND option to disable command running (thanks @chaserhkj!)
