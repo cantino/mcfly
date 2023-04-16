@@ -92,6 +92,8 @@ pub struct Settings {
     pub menu_background: Color,
     pub menu_foreground: Color,
     pub prompt_foreground: Option<Color>,
+    pub highlight_foreground: Option<Color>,
+    pub selection_background: Option<Color>,
 }
 
 impl Default for Settings {
@@ -126,6 +128,8 @@ impl Default for Settings {
             menu_background: Color::Blue,
             menu_foreground: Color::White,
             prompt_foreground: None,
+            highlight_foreground: None,
+            selection_background: None,
         }
     }
 }
@@ -171,6 +175,10 @@ impl Settings {
         }
 
         settings.prompt_foreground = get_env_var_color("MCFLY_PROMPT_COLOR");
+
+        settings.highlight_foreground = get_env_var_color("MCFLY_HIGHLIGHT_COLOR");
+
+        settings.selection_background = get_env_var_color("MCFLY_SELECTION_COLOR");
 
         settings.session_id = cli.session_id.unwrap_or_else(||
             env::var("MCFLY_SESSION_ID")

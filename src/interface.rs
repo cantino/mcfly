@@ -221,28 +221,31 @@ impl<'a> Interface<'a> {
 
         let mut index: usize = 0;
         for command in self.matches.iter() {
-            let mut fg = if self.settings.lightmode {
-                Color::Black
-            } else {
-                Color::White
+            let mut fg = match self.settings.lightmode {
+                true => Color::Black,
+                false => Color::White,
             };
 
-            let mut highlight = if self.settings.lightmode {
-                Color::DarkBlue
-            } else {
-                Color::DarkGreen
+            let mut highlight = match self.settings.highlight_foreground {
+                Some(color) => color,
+                None if self.settings.lightmode => Color::DarkBlue,
+                None => Color::DarkGreen,
             };
 
             let mut bg = Color::Reset;
 
             if index == self.selection {
+                bg = match self.settings.highlight_foreground {
+                    Some(color) => color,
+                    None if self.settings.lightmode => Color::DarkGrey,
+                    None => Color::White,
+                };
+
                 if self.settings.lightmode {
                     fg = Color::White;
-                    bg = Color::DarkGrey;
                     highlight = Color::Grey;
                 } else {
                     fg = Color::Black;
-                    bg = Color::White;
                     highlight = Color::DarkGreen;
                 }
             }
