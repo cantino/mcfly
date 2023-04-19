@@ -1,6 +1,7 @@
 use crate::cli::{Cli, SubCommand};
 use crate::shell_history;
 use clap::Parser;
+use crossterm::style::Color;
 use directories_next::{ProjectDirs, UserDirs};
 use std::env;
 use std::path::PathBuf;
@@ -88,6 +89,11 @@ pub struct Settings {
     pub disable_menu: bool,
     pub prompt: String,
     pub disable_run_command: bool,
+    pub menu_background: Color,
+    pub menu_foreground: Color,
+    pub prompt_foreground: Option<Color>,
+    pub highlight_foreground: Option<Color>,
+    pub selection_background: Option<Color>,
 }
 
 impl Default for Settings {
@@ -119,6 +125,11 @@ impl Default for Settings {
             disable_menu: false,
             prompt: String::from("$"),
             disable_run_command: false,
+            menu_background: Color::Blue,
+            menu_foreground: Color::White,
+            prompt_foreground: None,
+            highlight_foreground: None,
+            selection_background: None,
         }
     }
 }
@@ -154,6 +165,20 @@ impl Settings {
             },
             _ => ResultSort::Rank,
         };
+
+        if let Some(color) = get_env_var_color("MCFLY_MENU_BACKGROUND") {
+            settings.menu_background = color;
+        }
+
+        if let Some(color) = get_env_var_color("MCFLY_MENU_FOREGROUND") {
+            settings.menu_foreground = color;
+        }
+
+        settings.prompt_foreground = get_env_var_color("MCFLY_PROMPT_COLOR");
+
+        settings.highlight_foreground = get_env_var_color("MCFLY_HIGHLIGHT_COLOR");
+
+        settings.selection_background = get_env_var_color("MCFLY_SELECTION_COLOR");
 
         settings.session_id = cli.session_id.unwrap_or_else(||
             env::var("MCFLY_SESSION_ID")
@@ -408,4 +433,10 @@ fn is_env_var_truthy(name: &str) -> bool {
         }
         Err(_) => false,
     }
+}
+
+fn get_env_var_color(name: &str) -> Option<Color> {
+    env::var(name)
+        .ok()
+        .and_then(|val| Color::try_from(val.as_str()).ok())
 }

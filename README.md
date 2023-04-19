@@ -326,6 +326,34 @@ set -gx MCFLY_PROMPT "❯"
 ```
 Note that only single-character-prompts are allowed. setting `MCFLY_PROMPT` to `"<str>"` will reset it to the default prompt.
 
+### Custom Menubar Colors
+To change the background color of the menubar, set `MCFLY_MENU_BACKGROUND` (default: `blue`).
+To change the foreground color of the menubar, set `MCFLY_MENU_FOREGROUND` (default: `white`).
+
+bash / zsh:
+```bash
+export MCFLY_MENU_BACKGROUND=green
+export MCFLY_MENU_FOREGROUND=black
+```
+
+fish:
+```bash
+set -gx MCFLY_MENU_BACKGROUND green
+set -gx MCFLY_MENU_FOREGROUND black
+```
+
+The following colors are supported:
+| Light       | Dark           |
+| :---------- | :------------- |
+| `dark_grey` | `black`        |
+| `red`       | `dark_red`     |
+| `green`     | `dark_green`   |
+| `yellow`    | `dark_yellow`  |
+| `blue`      | `dark_blue`    |
+| `magenta`   | `dark_magenta` |
+| `cyan`      | `dark_cyan`    |
+| `white`     | `grey`         |
+
 ### Database Location
 
 McFly stores its SQLite database in the standard location for the OS. On OS X, this is in `~/Library/Application Support/McFly` and on Linux it is in `$XDG_DATA_DIR/mcfly/history.db` (default would be `~/.local/share/mcfly/history.db`). For legacy support, if `~/.mcfly/` exists, it is used instead.
