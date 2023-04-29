@@ -23,7 +23,7 @@ directories-next = "2.0"
 itertools = "0.10"
 libc = "0.2"
 rand = "0.8"
-regex = "1"
+regex = { version = "1", default-features = false, features = ["perf", "std"] }
 relative-path = "1.7"
 shellexpand = "2.1"
 unicode-segmentation = "1.9"
