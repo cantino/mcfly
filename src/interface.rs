@@ -4,7 +4,7 @@ use crate::history::History;
 use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
 use crate::history::Command;
 use crate::history_cleaner;
-use crate::settings::{InterfaceView, KeyScheme};
+use crate::settings::{InterfaceView, KeyScheme, ResultFilter};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::KeyCode::Char;
@@ -29,6 +29,7 @@ pub struct Interface<'a> {
     menu_mode: MenuMode,
     in_vim_insert_mode: bool,
     result_sort: ResultSort,
+    result_filter: ResultFilter,
 }
 
 pub struct SelectionResult {
@@ -81,7 +82,13 @@ impl MenuMode {
             ResultSort::LastRun => menu_text.push_str("F1 - Switch Sort to Rank | "),
         }
 
-        menu_text.push_str("F2 - Delete");
+        menu_text.push_str("F2 - Delete | ");
+
+        match interface.result_filter {
+            ResultFilter::Global => menu_text.push_str("F3 - This Directory"),
+            ResultFilter::CurrentDirectory => menu_text.push_str("F3 - All Directories"),
+        }
+
         menu_text
     }
 
@@ -111,6 +118,7 @@ impl<'a> Interface<'a> {
             menu_mode: MenuMode::Normal,
             in_vim_insert_mode: true,
             result_sort: settings.result_sort.to_owned(),
+            result_filter: settings.result_filter.to_owned(),
         }
     }
 
@@ -406,6 +414,8 @@ impl<'a> Interface<'a> {
             self.settings.results as i16,
             self.settings.fuzzy,
             &self.result_sort,
+            &self.result_filter,
+            &self.settings.dir,
         );
     }
 
@@ -414,6 +424,13 @@ impl<'a> Interface<'a> {
             ResultSort::Rank => self.result_sort = ResultSort::LastRun,
             ResultSort::LastRun => self.result_sort = ResultSort::Rank,
         }
+    }
+
+    fn switch_result_filter(&mut self) {
+        self.result_filter = match self.result_filter {
+            ResultFilter::Global => ResultFilter::CurrentDirectory,
+            ResultFilter::CurrentDirectory => ResultFilter::Global,
+        };
     }
 
     fn select(&mut self) {
@@ -663,6 +680,13 @@ impl<'a> Interface<'a> {
                 }
             }
 
+            KeyEvent {
+                code: KeyCode::F(3),
+                ..
+            } => {
+                self.switch_result_filter();
+                self.refresh_matches(true);
+            }
             _ => {}
         }
 
