@@ -241,8 +241,6 @@ impl History {
         num: i16,
         fuzzy: i16,
         result_sort: &ResultSort,
-        result_filter: &ResultFilter,
-        dir: &String,
     ) -> Vec<Command> {
         let mut like_query = "%".to_string();
 
@@ -259,11 +257,6 @@ impl History {
             _ => "rank",
         };
 
-        let (dir_filter_off, dir_filter) = match &result_filter {
-            ResultFilter::Global => (true, "%".to_string()),
-            ResultFilter::CurrentDirectory => (false, dir.to_string()),
-        };
-
         let query: &str = &format!(
             "{} {} {} {}",
             "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
@@ -271,7 +264,7 @@ impl History {
                 selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
                 selected_occurrences_factor, occurrences_factor, last_run
             FROM contextual_commands
-            WHERE cmd LIKE (:like) AND (:dir_filter_off OR dir LIKE :dir)",
+            WHERE cmd LIKE (:like)",
             "ORDER BY",
             order_by_column,
             "DESC LIMIT :limit"
@@ -283,7 +276,7 @@ impl History {
             .unwrap_or_else(|err| panic!("McFly error: Prepare to work ({})", err));
         let command_iter = statement
             .query_map(
-                named_params! { ":like": &like_query, ":limit": &num, ":dir_filter_off": &dir_filter_off, ":dir": &dir_filter},
+                named_params! { ":like": &like_query, ":limit": &num },
                 |row| {
                     let text: String = row
                         .get(1)
@@ -449,9 +442,11 @@ impl History {
         names
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn build_cache_table(
         &self,
         dir: &str,
+        result_filter: &ResultFilter,
         session_id: &Option<String>,
         start_time: Option<i64>,
         end_time: Option<i64>,
@@ -531,6 +526,11 @@ impl History {
             0
         };
 
+        let dir_filter_off = match &result_filter {
+            ResultFilter::Global => true,
+            ResultFilter::CurrentDirectory => false,
+        };
+
         self.connection.execute(
             "CREATE TEMP TABLE contextual_commands AS SELECT
                   id, cmd, cmd_tpl, session_id, when_run, MAX(when_run) AS last_run, exit_code, selected, dir,
@@ -572,13 +572,14 @@ impl History {
                   COUNT(*) / :max_occurrences AS occurrences_factor
 
                   FROM commands c
-                  WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time
+                  WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time AND (:dir_filter_off OR dir LIKE :directory)
                   GROUP BY cmd
                   ORDER BY id DESC;",
             named_params! {
                 ":when_run_max": &when_run_max,
                 ":history_duration": &(when_run_max - when_run_min),
                 ":directory": &dir.to_owned(),
+                ":dir_filter_off": &dir_filter_off,
                 ":max_occurrences": &max_occurrences,
                 ":max_length": &max_length,
                 ":max_selected_occurrences": &max_selected_occurrences,

@@ -78,15 +78,15 @@ impl MenuMode {
         }
 
         match interface.result_sort {
-            ResultSort::Rank => menu_text.push_str("F1 - Switch Sort to Time | "),
-            ResultSort::LastRun => menu_text.push_str("F1 - Switch Sort to Rank | "),
+            ResultSort::Rank => menu_text.push_str("F1 - Rank Sort | "),
+            ResultSort::LastRun => menu_text.push_str("F1 - Time Sort | "),
         }
 
         menu_text.push_str("F2 - Delete | ");
 
         match interface.result_filter {
-            ResultFilter::Global => menu_text.push_str("F3 - This Directory"),
-            ResultFilter::CurrentDirectory => menu_text.push_str("F3 - All Directories"),
+            ResultFilter::Global => menu_text.push_str("F3 - All Directories"),
+            ResultFilter::CurrentDirectory => menu_text.push_str("F3 - This Directory"),
         }
 
         menu_text
@@ -152,6 +152,7 @@ impl<'a> Interface<'a> {
     fn build_cache_table(&self) {
         self.history.build_cache_table(
             &self.settings.dir.to_owned(),
+            &self.result_filter,
             &Some(self.settings.session_id.to_owned()),
             None,
             None,
@@ -414,8 +415,6 @@ impl<'a> Interface<'a> {
             self.settings.results as i16,
             self.settings.fuzzy,
             &self.result_sort,
-            &self.result_filter,
-            &self.settings.dir,
         );
     }
 
@@ -431,6 +430,7 @@ impl<'a> Interface<'a> {
             ResultFilter::Global => ResultFilter::CurrentDirectory,
             ResultFilter::CurrentDirectory => ResultFilter::Global,
         };
+        self.build_cache_table();
     }
 
     fn select(&mut self) {

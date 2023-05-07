@@ -146,7 +146,7 @@ impl Settings {
             .and_then(|o| o.parse::<i64>().ok());
 
         settings.interface_view = match env::var("MCFLY_INTERFACE_VIEW") {
-            Ok(val) => match val.as_str() {
+            Ok(val) => match val.to_uppercase().as_str() {
                 "TOP" => InterfaceView::Top,
                 "BOTTOM" => InterfaceView::Bottom,
                 _ => InterfaceView::Top,
@@ -155,7 +155,7 @@ impl Settings {
         };
 
         settings.result_sort = match env::var("MCFLY_RESULTS_SORT") {
-            Ok(val) => match val.as_str() {
+            Ok(val) => match val.to_uppercase().as_str() {
                 "RANK" => ResultSort::Rank,
                 "LAST_RUN" => ResultSort::LastRun,
                 _ => ResultSort::Rank,
@@ -164,7 +164,7 @@ impl Settings {
         };
 
         settings.result_filter = match env::var("MCFLY_RESULTS_FILTER") {
-            Ok(val) => match val.as_str() {
+            Ok(val) => match val.to_uppercase().as_str() {
                 "GLOBAL" => ResultFilter::Global,
                 "CURRENT_DIRECTORY" => ResultFilter::CurrentDirectory,
                 _ => ResultFilter::Global,
