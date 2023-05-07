@@ -23,14 +23,14 @@ directories-next = "2.0"
 itertools = "0.10"
 libc = "0.2"
 rand = "0.8"
-regex = "1"
+regex = { version = "1", default-features = false, features = ["perf", "std"] }
 relative-path = "1.7"
 shellexpand = "2.1"
 unicode-segmentation = "1.9"
 
 [dependencies.rusqlite]
 version = "0.28"
-features = ["bundled", "functions", "unlock_notify"]
+features = ["functions", "unlock_notify"]
 
 [dependencies.crossterm]
 version = "0.26"
@@ -41,3 +41,6 @@ features = ["use-dev-tty"]
 version = "4"
 features = ["derive"]
 
+[features]
+default = ["sqlite-bundled"]
+sqlite-bundled = ["rusqlite/bundled"]

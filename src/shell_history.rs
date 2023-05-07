@@ -117,7 +117,7 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
     match history_format {
         HistoryFormat::Bash => {
             let history_contents = read_ignoring_utf_errors(path);
-            let zsh_timestamp_and_duration_regex = Regex::new(r"^: \d+:\d+;").unwrap();
+            let zsh_timestamp_and_duration_regex = Regex::new(r"^: [0-9]+:[0-9]+;").unwrap();
             let when = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({})", err))
@@ -131,7 +131,7 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
         }
         HistoryFormat::Zsh { .. } => {
             let history_contents = read_and_unmetafy(path);
-            let zsh_timestamp_and_duration_regex = Regex::new(r"^: \d+:\d+;").unwrap();
+            let zsh_timestamp_and_duration_regex = Regex::new(r"^: [0-9]+:[0-9]+;").unwrap();
             let when = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({})", err))
@@ -192,7 +192,7 @@ pub fn delete_last_history_entry_if_search(
         commands.pop();
     }
 
-    let starts_with_mcfly = Regex::new(r"^(: \d+:\d+;)?#mcfly:").unwrap();
+    let starts_with_mcfly = Regex::new(r"^(: [0-9]+:[0-9]+;)?#mcfly:").unwrap();
 
     if commands.is_empty() || !starts_with_mcfly.is_match(&commands[commands.len() - 1].command) {
         return; // Abort if empty or the last line isn't a comment.
@@ -226,7 +226,7 @@ pub fn delete_last_history_entry_if_search(
 pub fn delete_lines(path: &Path, history_format: HistoryFormat, command: &str) {
     let commands = full_history(path, history_format);
 
-    let zsh_timestamp_and_duration_regex = Regex::new(r"^: \d+:\d+;").unwrap();
+    let zsh_timestamp_and_duration_regex = Regex::new(r"^: [0-9]+:[0-9]+;").unwrap();
 
     let lines = commands
         .into_iter()
