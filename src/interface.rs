@@ -162,24 +162,26 @@ impl<'a> Interface<'a> {
     }
 
     fn menubar<W: Write>(&self, screen: &mut W) {
-        let (width, _height): (u16, u16) = terminal::size().unwrap();
+        if !self.settings.disable_menu {
+            let (width, _height): (u16, u16) = terminal::size().unwrap();
 
-        queue!(
-            screen,
-            cursor::Hide,
-            cursor::MoveTo(0, self.info_line_index()),
-            Clear(ClearType::CurrentLine),
-            SetBackgroundColor(self.menu_mode.bg()),
-            SetForegroundColor(Color::White),
-            cursor::MoveTo(1, self.info_line_index()),
-            Print(format!(
-                "{text:width$}",
-                text = self.menu_mode.text(self),
-                width = width as usize - 1
-            )),
-            SetBackgroundColor(Color::Reset)
-        )
-        .unwrap();
+            queue!(
+                screen,
+                cursor::Hide,
+                cursor::MoveTo(0, self.info_line_index()),
+                Clear(ClearType::CurrentLine),
+                SetBackgroundColor(self.menu_mode.bg()),
+                SetForegroundColor(Color::White),
+                cursor::MoveTo(1, self.info_line_index()),
+                Print(format!(
+                    "{text:width$}",
+                    text = self.menu_mode.text(self),
+                    width = width as usize - 1
+                )),
+                SetBackgroundColor(Color::Reset)
+            )
+            .unwrap();
+        }
     }
 
     fn prompt<W: Write>(&self, screen: &mut W) {
