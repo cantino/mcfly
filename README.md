@@ -271,6 +271,19 @@ fish:
 set -gx MCFLY_RESULTS 50
 ```
 
+### Delete without confirmation
+To delete without confirmation, set `MCFLY_DELETE_WITHOUT_CONFIRM` to true.
+
+bash / zsh:
+```bash
+export MCFLY_DELETE_WITHOUT_CONFIRM=true
+```
+
+fish:
+```bash
+set -gx MCFLY_DELETE_WITHOUT_CONFIRM true
+```
+
 ### Interface view
 To change interface view, set `MCFLY_INTERFACE_VIEW` (default: `TOP`).
 Available options: `TOP` and `BOTTOM`
