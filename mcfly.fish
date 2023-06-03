@@ -31,7 +31,9 @@ if test "$__MCFLY_LOADED" != "loaded"
   end
 
   function __mcfly_add_command -d 'Add run commands to McFly database' -e fish_postexec
-    # First, retain return code of last command before we lose it
+    # Check for the private mode
+    test -n "$fish_private_mode"; and return
+    # Retain return code of last command before we lose it
     set -l last_status $status
     # Handle first call of this function after sourcing mcfly.fish, when the old PWD won't be set
     set -q __MCFLY_OLD_PWD; or set -g __MCFLY_OLD_PWD "$PWD"
