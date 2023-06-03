@@ -1,3 +1,12 @@
+0.8.1 - Jun 3, 2023
+ - Fix use of MCFLY_DISABLE_MENU (thanks @barklan!)
+ - Support Fish private mode support (thanks @Aeron!)
+ - Always set MCFLY_HISTORY in zsh to support subshells (thanks @utkarshgupta137!)
+ - Allow linking mcfly with system-provided sqlite with sqlite-bundled feature flag (thanks @jirutka!)
+ - And allow sourcing in zsh more than once (thanks @ahatzz11 and @deekshithanand!)
+ - Reduce size by removing unnecessary/unused regex features (thanks @jirutka!)
+ - Add per-directory history (thanks @rawkode!)
+
 0.8.0 - Mar 6, 2023
  - Add forward-compatibility check for database schema (thanks @bnprks!)
  - Add MCFLY_DISABLE_RUN_COMMAND option to disable command running (thanks @chaserhkj!)
