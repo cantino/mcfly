@@ -24,9 +24,7 @@ if [[ -o interactive ]]; then
   setopt interactive_comments   # allow comments in interactive shells (like Bash does)
 
   # McFly's temporary, per-session history file.
-  if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-    export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
-  fi
+  export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
 
   # Check if we need to use extended history
   if [[ -o extendedhistory ]]; then
