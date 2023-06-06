@@ -80,7 +80,7 @@ impl History {
         let history = if db_path.exists() {
             History::from_db_path(db_path)
         } else {
-            History::from_shell_history(history_format)
+            History::from_shell_history(db_path, history_format)
         };
         schema::migrate(&history.connection);
         history
@@ -755,8 +755,8 @@ impl History {
         }
     }
 
-    fn from_shell_history(history_format: HistoryFormat) -> History {
-        print!(
+    fn from_shell_history(mcfly_db_path: PathBuf, history_format: HistoryFormat) -> History {
+        println!(
             "McFly: Importing shell history for the first time. This may take a minute or two..."
         );
         io::stdout()
@@ -767,14 +767,11 @@ impl History {
         let commands =
             shell_history::full_history(&shell_history::history_file_path(), history_format);
 
-        // Use ~/.mcfly if it already exists, or create 'mcfly' folder in XDG_DATA_DIR
-        let mcfly_db_path = Settings::mcfly_db_path();
+        // Create 'mcfly' folder in XDG_STATE_DIR, if it doesn't exit
         let mcfly_db_dir = mcfly_db_path.parent().unwrap();
-
         fs::create_dir_all(mcfly_db_dir)
             .unwrap_or_else(|_| panic!("Unable to create {:?}", mcfly_db_dir));
 
-        // Make ~/.mcfly/history.db
         let mut connection = Connection::open(&mcfly_db_path)
             .unwrap_or_else(|_| panic!("Unable to create history DB at {:?}", &mcfly_db_path));
 

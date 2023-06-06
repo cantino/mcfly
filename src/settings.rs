@@ -1,12 +1,13 @@
 use crate::cli::{Cli, SubCommand};
 use crate::shell_history;
 use clap::Parser;
-use directories_next::{ProjectDirs, UserDirs};
-use std::env;
-use std::path::PathBuf;
+use etcetera::base_strategy::Xdg;
+use etcetera::BaseStrategy;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
+use std::{env, fs};
 
 #[derive(Debug)]
 pub enum Mode {
@@ -372,35 +373,56 @@ impl Settings {
         settings
     }
 
-    // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_CACHE_DIR
+    // Use or create the 'mcfly' folder in `$XDG_CACHE_DIR`
     pub fn mcfly_training_cache_path() -> PathBuf {
-        let cache_dir = Settings::mcfly_xdg_dir().cache_dir().to_path_buf();
-
-        Settings::mcfly_base_path(cache_dir).join(PathBuf::from("training-cache.v1.csv"))
+        Settings::xdg_base_strategy()
+            .cache_dir()
+            .join(PathBuf::from("mcfly/training-cache.v1.csv"))
     }
 
-    // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_DATA_DIR
+    // Use or migrate to the 'mcfly' folder in `$XDG_STATE_DIR`
     pub fn mcfly_db_path() -> PathBuf {
-        let data_dir = Settings::mcfly_xdg_dir().data_dir().to_path_buf();
-
-        Settings::mcfly_base_path(data_dir).join(PathBuf::from("history.db"))
-    }
-
-    fn mcfly_xdg_dir() -> ProjectDirs {
-        ProjectDirs::from("", "", "McFly").unwrap()
-    }
-
-    fn mcfly_base_path(base_dir: PathBuf) -> PathBuf {
-        Settings::mcfly_dir_in_home().unwrap_or(base_dir)
-    }
-
-    fn mcfly_dir_in_home() -> Option<PathBuf> {
-        let user_dirs_file = UserDirs::new()
+        let basedirs = Settings::xdg_base_strategy();
+        let path = basedirs
+            .state_dir()
             .unwrap()
-            .home_dir()
-            .join(PathBuf::from(".mcfly"));
+            .join(PathBuf::from("mcfly/history.db"));
+        if !path.exists() {
+            println!("McFly: history.db not found: `{}`", path.display());
+            let old = basedirs.data_dir().join(PathBuf::from("mcfly/history.db"));
+            if !Settings::migrate_old_path(old, &path) {
+                let old = basedirs.home_dir().join(PathBuf::from(".mcfly/history.db"));
+                if !Settings::migrate_old_path(old, &path) {
+                    #[cfg(target_os = "macos")]
+                    {
+                        let old = etcetera::base_strategy::Apple::new()
+                            .unwrap()
+                            .data_dir()
+                            .join(PathBuf::from("McFly/history.db"));
+                        Settings::migrate_old_path(old, &path);
+                    }
+                }
+            }
+        }
+        path
+    }
 
-        user_dirs_file.exists().then_some(user_dirs_file)
+    fn xdg_base_strategy() -> impl BaseStrategy {
+        Xdg::new().unwrap()
+    }
+
+    fn migrate_old_path(old: PathBuf, new: &Path) -> bool {
+        println!("McFly: Checking old history.db: `{}`", old.display());
+        let ret = old.exists();
+        if ret {
+            fs::create_dir_all(new.parent().unwrap()).unwrap();
+            fs::copy(&old, new).unwrap();
+            println!(
+                "McFly: history.db migrated.\nYou can now delete the old directory: `rm -r '{}'`",
+                old.parent().unwrap().display()
+            );
+        }
+        ret
     }
 }
 
