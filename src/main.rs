@@ -1,3 +1,4 @@
+use mcfly::dumper::Dumper;
 use mcfly::fake_typer;
 use mcfly::history::History;
 use mcfly::init::Init;
@@ -94,6 +95,11 @@ fn handle_init(settings: &Settings) {
     Init::new(&settings.init_mode);
 }
 
+fn handle_dump(settings: &Settings) {
+    let history = History::load(settings.history_format);
+    Dumper::new(settings, &history).dump();
+}
+
 fn main() {
     let settings = Settings::parse_args();
 
@@ -112,6 +118,9 @@ fn main() {
         }
         Mode::Init => {
             handle_init(&settings);
+        }
+        Mode::Dump => {
+            handle_dump(&settings);
         }
     }
 }

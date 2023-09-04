@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod command_input;
+pub mod dumper;
 pub mod fake_typer;
 pub mod fixed_length_grapheme_string;
 pub mod history;
@@ -12,6 +13,7 @@ pub mod path_update_helpers;
 pub mod settings;
 pub mod shell_history;
 pub mod simplified_command;
+pub mod time;
 pub mod trainer;
 pub mod training_cache;
 pub mod training_sample_generator;

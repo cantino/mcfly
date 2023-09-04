@@ -17,7 +17,10 @@ debug = true
 
 [dependencies]
 chrono = "0.4"
+chrono-systemd-time-ng = "0.2"
 csv = "1"
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
 humantime = "2.1"
 directories-next = "2.0"
 itertools = "0.10"
@@ -35,7 +38,6 @@ features = ["functions", "unlock_notify"]
 [dependencies.crossterm]
 version = "0.26"
 features = ["use-dev-tty"]
-
 
 [dependencies.clap]
 version = "4"
