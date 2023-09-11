@@ -4,7 +4,7 @@ use crate::history::History;
 use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
 use crate::history::Command;
 use crate::history_cleaner;
-use crate::settings::{InterfaceView, KeyScheme};
+use crate::settings::{InterfaceView, KeyScheme, ResultFilter};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::KeyCode::Char;
@@ -29,6 +29,7 @@ pub struct Interface<'a> {
     menu_mode: MenuMode,
     in_vim_insert_mode: bool,
     result_sort: ResultSort,
+    result_filter: ResultFilter,
 }
 
 pub struct SelectionResult {
@@ -77,11 +78,17 @@ impl MenuMode {
         }
 
         match interface.result_sort {
-            ResultSort::Rank => menu_text.push_str("F1 - Switch Sort to Time | "),
-            ResultSort::LastRun => menu_text.push_str("F1 - Switch Sort to Rank | "),
+            ResultSort::Rank => menu_text.push_str("F1 - Rank Sort | "),
+            ResultSort::LastRun => menu_text.push_str("F1 - Time Sort | "),
         }
 
-        menu_text.push_str("F2 - Delete");
+        menu_text.push_str("F2 - Delete | ");
+
+        match interface.result_filter {
+            ResultFilter::Global => menu_text.push_str("F3 - All Directories"),
+            ResultFilter::CurrentDirectory => menu_text.push_str("F3 - This Directory"),
+        }
+
         menu_text
     }
 
@@ -111,6 +118,7 @@ impl<'a> Interface<'a> {
             menu_mode: MenuMode::Normal,
             in_vim_insert_mode: true,
             result_sort: settings.result_sort.to_owned(),
+            result_filter: settings.result_filter.to_owned(),
         }
     }
 
@@ -144,6 +152,7 @@ impl<'a> Interface<'a> {
     fn build_cache_table(&self) {
         self.history.build_cache_table(
             &self.settings.dir.to_owned(),
+            &self.result_filter,
             &Some(self.settings.session_id.to_owned()),
             None,
             None,
@@ -153,24 +162,26 @@ impl<'a> Interface<'a> {
     }
 
     fn menubar<W: Write>(&self, screen: &mut W) {
-        let (width, _height): (u16, u16) = terminal::size().unwrap();
+        if !self.settings.disable_menu {
+            let (width, _height): (u16, u16) = terminal::size().unwrap();
 
-        queue!(
-            screen,
-            cursor::Hide,
-            cursor::MoveTo(0, self.info_line_index()),
-            Clear(ClearType::CurrentLine),
-            SetBackgroundColor(self.menu_mode.bg()),
-            SetForegroundColor(Color::White),
-            cursor::MoveTo(1, self.info_line_index()),
-            Print(format!(
-                "{text:width$}",
-                text = self.menu_mode.text(self),
-                width = width as usize - 1
-            )),
-            SetBackgroundColor(Color::Reset)
-        )
-        .unwrap();
+            queue!(
+                screen,
+                cursor::Hide,
+                cursor::MoveTo(0, self.info_line_index()),
+                Clear(ClearType::CurrentLine),
+                SetBackgroundColor(self.menu_mode.bg()),
+                SetForegroundColor(Color::White),
+                cursor::MoveTo(1, self.info_line_index()),
+                Print(format!(
+                    "{text:width$}",
+                    text = self.menu_mode.text(self),
+                    width = width as usize - 1
+                )),
+                SetBackgroundColor(Color::Reset)
+            )
+            .unwrap();
+        }
     }
 
     fn prompt<W: Write>(&self, screen: &mut W) {
@@ -416,10 +427,18 @@ impl<'a> Interface<'a> {
         }
     }
 
+    fn switch_result_filter(&mut self) {
+        self.result_filter = match self.result_filter {
+            ResultFilter::Global => ResultFilter::CurrentDirectory,
+            ResultFilter::CurrentDirectory => ResultFilter::Global,
+        };
+        self.build_cache_table();
+    }
+
     fn select(&mut self) {
         let mut screen = stdout();
         terminal::enable_raw_mode().unwrap();
-        queue!(screen, EnterAlternateScreen).unwrap();
+        queue!(screen, EnterAlternateScreen, Clear(ClearType::All)).unwrap();
 
         self.refresh_matches(true);
         self.results(&mut screen);
@@ -491,7 +510,7 @@ impl<'a> Interface<'a> {
     }
 
     fn select_with_emacs_key_scheme(&mut self, event: KeyEvent) -> bool {
-        if event.kind == KeyEventKind::Release {
+        if event.kind != KeyEventKind::Press {
             return false;
         }
         match event {
@@ -665,6 +684,13 @@ impl<'a> Interface<'a> {
                 }
             }
 
+            KeyEvent {
+                code: KeyCode::F(3),
+                ..
+            } => {
+                self.switch_result_filter();
+                self.refresh_matches(true);
+            }
             _ => {}
         }
 
@@ -820,6 +846,7 @@ impl<'a> Interface<'a> {
                     self.input.clear();
                     return true;
                 }
+
                 KeyEvent {
                     code: KeyCode::Left | Char('h'),
                     ..

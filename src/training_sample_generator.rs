@@ -1,7 +1,7 @@
 use crate::history::Command;
 use crate::history::Features;
 use crate::history::History;
-use crate::settings::Settings;
+use crate::settings::{ResultFilter, Settings};
 use crate::training_cache;
 use rand::seq::IteratorRandom;
 use std::fs;
@@ -55,6 +55,7 @@ impl TrainingSampleGenerator {
             // Unwrap is safe here because we check command.dir.is_none() above.
             history.build_cache_table(
                 &command.dir.to_owned().unwrap(),
+                &ResultFilter::Global,
                 &Some(command.session_id.clone()),
                 None,
                 command.when_run,

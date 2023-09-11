@@ -1,6 +1,6 @@
 [package]
 name = "mcfly"
-version = "0.7.1"
+version = "0.8.1"
 authors = ["Andrew Cantino <cantino@users.noreply.github.com>"]
 edition = "2021"
 description = "McFly replaces your default ctrl-r shell history search with an intelligent search engine that takes into account your working directory and the context of recently executed commands. McFly's suggestions are prioritized in real time with a small neural network."
@@ -23,19 +23,19 @@ humantime = "2.1"
 directories-next = "2.0"
 itertools = "0.10"
 rand = "0.8"
-regex = "1"
 path-absolutize = "3.0.13"
+regex = { version = "1", default-features = false, features = ["perf", "std"] }
+relative-path = "1.7"
 shellexpand = "2.1"
 unicode-segmentation = "1.9"
 
 [dependencies.rusqlite]
 version = "0.28"
-features = ["bundled", "functions", "unlock_notify"]
+features = ["functions", "unlock_notify"]
 
 [dependencies.crossterm]
 version = "0.26"
 features = ["use-dev-tty"]
-
 
 [dependencies.clap]
 version = "4"
@@ -45,4 +45,8 @@ features = ["derive"]
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-autopilot = {git="https://github.com/jtschuster/autopilot-rs"}
+autopilot = {git="https://github.com/autopilot-rs/autopilot-rs"}
+
+[features]
+default = ["sqlite-bundled"]
+sqlite-bundled = ["rusqlite/bundled"]

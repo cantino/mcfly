@@ -43,6 +43,12 @@ pub enum ResultSort {
     LastRun,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ResultFilter {
+    Global,
+    CurrentDirectory,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum HistoryFormat {
     /// bash format - commands in plain text, one per line, with multi-line commands joined.
@@ -86,6 +92,7 @@ pub struct Settings {
     pub delete_without_confirm: bool,
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
+    pub result_filter: ResultFilter,
     pub disable_menu: bool,
     pub prompt: String,
     pub disable_run_command: bool,
@@ -117,6 +124,7 @@ impl Default for Settings {
             delete_without_confirm: false,
             interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
+            result_filter: ResultFilter::Global,
             disable_menu: false,
             prompt: String::from("$"),
             disable_run_command: false,
@@ -139,7 +147,7 @@ impl Settings {
             .and_then(|o| o.parse::<i64>().ok());
 
         settings.interface_view = match env::var("MCFLY_INTERFACE_VIEW") {
-            Ok(val) => match val.as_str() {
+            Ok(val) => match val.to_uppercase().as_str() {
                 "TOP" => InterfaceView::Top,
                 "BOTTOM" => InterfaceView::Bottom,
                 _ => InterfaceView::Top,
@@ -148,12 +156,21 @@ impl Settings {
         };
 
         settings.result_sort = match env::var("MCFLY_RESULTS_SORT") {
-            Ok(val) => match val.as_str() {
+            Ok(val) => match val.to_uppercase().as_str() {
                 "RANK" => ResultSort::Rank,
                 "LAST_RUN" => ResultSort::LastRun,
                 _ => ResultSort::Rank,
             },
             _ => ResultSort::Rank,
+        };
+
+        settings.result_filter = match env::var("MCFLY_RESULTS_FILTER") {
+            Ok(val) => match val.to_uppercase().as_str() {
+                "GLOBAL" => ResultFilter::Global,
+                "CURRENT_DIRECTORY" => ResultFilter::CurrentDirectory,
+                _ => ResultFilter::Global,
+            },
+            _ => ResultFilter::Global,
         };
 
         settings.session_id = cli.session_id.unwrap_or_else(||

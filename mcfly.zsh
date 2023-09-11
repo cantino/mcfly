@@ -1,9 +1,7 @@
 #!/bin/zsh
 
 # Ensure stdin is a tty
-# Avoid loading this file more than once
-if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
-  __MCFLY_LOADED="loaded"
+if [[ -o interactive ]]; then
 
   # Setup MCFLY_HISTFILE and make sure it exists.
   export MCFLY_HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
@@ -26,9 +24,7 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   setopt interactive_comments   # allow comments in interactive shells (like Bash does)
 
   # McFly's temporary, per-session history file.
-  if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-    export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
-  fi
+  export MCFLY_HISTORY=$(command mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
 
   # Check if we need to use extended history
   if [[ -o extendedhistory ]]; then
@@ -55,14 +51,24 @@ if [[ -o interactive ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
     $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT add --exit ${exit_code}
     return ${exit_code} # Restore the original exit code by returning it.
   }
-  precmd_functions+=(mcfly_prompt_command)
+
+  if [[ -z $precmd_functions ]] || [[ "${precmd_functions[(ie)mcfly_prompt_command]}" -gt ${#precmd_functions} ]]; then
+    precmd_functions+=(mcfly_prompt_command)
+  else
+    [ -n "$MCFLY_DEBUG" ] && echo "mcfly_prompt_command already in precmd_functions, skipping"
+  fi
 
   # Cleanup $MCFLY_HISTORY tmp files on exit.
-  exit_logger() {
+  mcfly_exit_logger() {
     [ -n "$MCFLY_DEBUG" ] && echo "mcfly.zsh: Exiting and removing $MCFLY_HISTORY"
     command rm -f $MCFLY_HISTORY
   }
-  zshexit_functions+=(exit_logger)
+
+  if [[ -z $zshexit_functions ]] || [[ "${zshexit_functions[(ie)mcfly_exit_logger]}" -gt ${#zshexit_functions} ]]; then
+    zshexit_functions+=(mcfly_exit_logger)
+  else
+    [ -n "$MCFLY_DEBUG" ] && echo "mcfly_exit_logger already in zshexit_functions, skipping"
+  fi
 
   # If this is an interactive shell, take ownership of ctrl-r.
   if [[ $- =~ .*i.* ]]; then

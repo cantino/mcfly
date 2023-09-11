@@ -10,7 +10,7 @@ use std::{fmt, fs, io};
 use crate::history::{db_extensions, schema};
 use crate::network::Network;
 use crate::path_update_helpers;
-use crate::settings::{HistoryFormat, ResultSort, Settings};
+use crate::settings::{HistoryFormat, ResultFilter, ResultSort, Settings};
 use crate::simplified_command::SimplifiedCommand;
 use itertools::Itertools;
 use rusqlite::types::ToSql;
@@ -442,9 +442,11 @@ impl History {
         names
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn build_cache_table(
         &self,
         dir: &str,
+        result_filter: &ResultFilter,
         session_id: &Option<String>,
         start_time: Option<i64>,
         end_time: Option<i64>,
@@ -524,6 +526,11 @@ impl History {
             0
         };
 
+        let dir_filter_off = match &result_filter {
+            ResultFilter::Global => true,
+            ResultFilter::CurrentDirectory => false,
+        };
+
         self.connection.execute(
             "CREATE TEMP TABLE contextual_commands AS SELECT
                   id, cmd, cmd_tpl, session_id, when_run, MAX(when_run) AS last_run, exit_code, selected, dir,
@@ -565,13 +572,14 @@ impl History {
                   COUNT(*) / :max_occurrences AS occurrences_factor
 
                   FROM commands c
-                  WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time
+                  WHERE id > :min_id AND when_run > :start_time AND when_run < :end_time AND (:dir_filter_off OR dir LIKE :directory)
                   GROUP BY cmd
                   ORDER BY id DESC;",
             named_params! {
                 ":when_run_max": &when_run_max,
                 ":history_duration": &(when_run_max - when_run_min),
                 ":directory": &dir.to_owned(),
+                ":dir_filter_off": &dir_filter_off,
                 ":max_occurrences": &max_occurrences,
                 ":max_length": &max_length,
                 ":max_selected_occurrences": &max_selected_occurrences,
