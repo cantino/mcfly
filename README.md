@@ -206,6 +206,41 @@ To avoid McFly's UI messing up your scrollback history in iTerm2, make sure this
 
 <img src="/docs/iterm2.jpeg" alt="iterm2 UI instructions">
 
+## Dump history
+
+McFly can dump the command history into *stdout*.
+
+For example:
+```bash
+mcfly dump --since '2023-01-01' --before '2023-09-12 09:15:30'
+```
+
+It will dump the commands run between *2023-01-01 00:00:00.0* to *2023-09-12 09:15:30*(**exclusive**) as **json**.
+You can specify **csv** as dump format via `--format csv` as well.
+
+Each item in dumped commands has the following fields:
+* `cmd`: The run command.
+* `when_run`: The time when the command ran in your local timezone.
+
+You can dump all the commands history without any arguments:
+```bash
+mcfly dump
+```
+
+### Timestamp format
+
+McFly use [chrono-systemd-time-ng] parsing timestamp.
+
+**chrono-systemd-time-ng** is a non-strict implementation of [systemd.time](https://www.freedesktop.org/software/systemd/man/systemd.time.html), with the following exceptions:
+* time units **must** accompany all time span values.
+* time zone suffixes are **not** supported.
+* weekday prefixes are **not** supported.
+
+**Users of McFly simply need to understand specifying timezone in timestamp isn't allowed**.
+For more details, please refer to [the document of chrono-systemd-time-ng][chrono-systemd-time-ng].
+
+[chrono-systemd-time-ng]: https://docs.rs/chrono-systemd-time-ng/latest/chrono_systemd_time/
+
 ## Settings
 A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
