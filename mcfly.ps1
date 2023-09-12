@@ -1,14 +1,6 @@
 #!/usr/bin/env pwsh
 
-# Ensure stdin is a tty
-# Can't
-
 $null = New-Module mcfly {
-    if ($env:__MCFLY_LOADED -eq "loaded") {
-        return ;
-    }
-    $env:__MCFLY_LOADED = "loaded";
-
     # We need PSReadLine for a number of capabilities
     if ($null -eq (Get-Module -Name PSReadLine)) {
         Write-Host "Installing PSReadLine as McFly dependency"
@@ -29,7 +21,6 @@ $null = New-Module mcfly {
     }
 
     # MCFLY_SESSION_ID is used by McFly internally to keep track of the commands from a particular terminal session.
-
     $MCFLY_SESSION_ID = new-guid
     $env:MCFLY_SESSION_ID = $MCFLY_SESSION_ID
 
@@ -114,7 +105,7 @@ $null = New-Module mcfly {
         $line = $null
         $cursor = $null
         [Microsoft.PowerShell.PSConsoleReadline]::GetBufferState([ref]$line, [ref]$cursor)
-        # "#mcfly: $line" | Out-File -FilePath $env:MCFLY_HISTORY -Append
+        "#mcfly: $line" | Out-File -FilePath $env:MCFLY_HISTORY -Append
         Invoke-McFly -CommandToComplete $line
     }
 
