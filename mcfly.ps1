@@ -49,13 +49,25 @@ $null = New-Module mcfly {
     function Invoke-McFly {
         Param([string]$CommandToComplete)
         $lastExitTmp = $LASTEXITCODE
-        Start-Process -FilePath '::MCFLY::' -ArgumentList "search", "$CommandToComplete" -NoNewWindow -Wait
-        $LASTEXITCODE = $lastExitTmp
-    }
-
-    function Invoke-McFly {
-        $lastExitTmp = $LASTEXITCODE
-        Start-Process -FilePath '::MCFLY::' -ArgumentList "search" -NoNewWindow -Wait
+        $tempFile = New-TemporaryFile
+        Start-Process -FilePath '::MCFLY::' -ArgumentList "search", "$CommandToComplete", -o, "$tempFile" -NoNewWindow -Wait
+        foreach($line in Get-Content $tempFile) {
+            $key, $value = $line -split ' ', 2
+            if ("mode" -eq $key) {
+                $mode = $value
+            }
+            if ("commandline" -eq $key) {
+                $commandline = $value
+            }
+        }
+        if(-not ($null -eq $commandline)) {
+            [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine()
+            [Microsoft.PowerShell.PSConsoleReadline]::Insert($commandline)
+            if("run" -eq $mode) {
+                [Microsoft.PowerShell.PSConsoleReadline]::AcceptLine()
+            }
+        }
+        Remove-Item $tempFile
         $LASTEXITCODE = $lastExitTmp
     }
 
@@ -102,9 +114,8 @@ $null = New-Module mcfly {
         $line = $null
         $cursor = $null
         [Microsoft.PowerShell.PSConsoleReadline]::GetBufferState([ref]$line, [ref]$cursor)
-        [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine()
-        "#mcfly: $line" | Out-File -FilePath $env:MCFLY_HISTORY -Append
-        Invoke-McFly
+        # "#mcfly: $line" | Out-File -FilePath $env:MCFLY_HISTORY -Append
+        Invoke-McFly -CommandToComplete $line
     }
 
     Export-ModuleMember -Function @(
