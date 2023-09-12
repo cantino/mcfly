@@ -407,7 +407,7 @@ impl Settings {
 }
 
 #[cfg(not(windows))]
-fn pwd() -> String {
+pub fn pwd() -> String {
     env::var("PWD").unwrap_or_else(|err| {
         panic!(
             "McFly error: Unable to determine current directory ({})",
@@ -417,7 +417,7 @@ fn pwd() -> String {
 }
 
 #[cfg(windows)]
-fn pwd() -> String {
+pub fn pwd() -> String {
     env::current_dir()
         .unwrap_or_else(|err| {
             panic!(

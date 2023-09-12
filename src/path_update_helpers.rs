@@ -1,3 +1,4 @@
+use crate::settings::pwd;
 use path_absolutize::*;
 use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;
@@ -6,7 +7,7 @@ pub fn normalize_path(incoming_path: &str) -> String {
     let expanded_path = shellexpand::tilde(incoming_path).to_string();
     println!("{}", expanded_path);
     return Path::new(&expanded_path)
-        .absolutize_from(std::env::current_dir().unwrap().as_path())
+        .absolutize_from(pwd())
         .unwrap()
         .to_str()
         .unwrap_or_else(|| panic!("McFly error: Path must be a valid UTF8 string"))
