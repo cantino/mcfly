@@ -9,7 +9,7 @@ pub fn normalize_path(incoming_path: &str) -> String {
         .absolutize_from(std::env::current_dir().unwrap().as_path())
         .unwrap()
         .to_str()
-        .unwrap()
+        .unwrap_or_else(|| panic!("McFly error: Path must be a valid UTF8 string"))
         .to_string();
 }
 
@@ -127,6 +127,7 @@ mod tests {
         assert_eq!(normalize_path("~/foo/bar/../.."), env::var("HOME").unwrap());
     }
 
+    #[cfg(windows)]
     fn windows_home_path() -> String {
         PathBuf::from(env::var("HOMEDRIVE").unwrap())
             .join(env::var("HOMEPATH").unwrap())

@@ -9,7 +9,6 @@ $null = New-Module mcfly {
 
     # Get history file and make a dummy file for psreadline (hopefully after it has loaded the real history file to its in memory history)
     $env:HISTFILE = $null -eq $env:HISTFILE -or "" -eq $env:HISTFILE ? (Get-PSReadLineOption).HistorySavePath : $env:HISTFILE;
-    $_PSREADLINEHISTORY = (Get-PSReadLineOption).HistorySavePath
     $psreadline_dummy = New-TemporaryFile
     Set-PSReadLineOption -HistorySavePath $psreadline_dummy.FullName
 
