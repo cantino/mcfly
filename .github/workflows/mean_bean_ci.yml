@@ -25,7 +25,7 @@ jobs:
         platform: [linux-musl]
 
   macos:
-    runs-on: macos-latest-xlarge
+    runs-on: macos-latest
     strategy:
       fail-fast: true
       matrix:
