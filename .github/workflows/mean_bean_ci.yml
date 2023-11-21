@@ -25,16 +25,14 @@ jobs:
         platform: [linux-musl]
 
   macos:
-    runs-on: macos-latest
+    runs-on: macos-latest-xlarge
     strategy:
       fail-fast: true
       matrix:
         channel: [stable, beta, nightly]
         target:
           - x86_64-apple-darwin
-          ### Disable running tests on M1 target, not currently working
-          ### https://github.com/rust-lang/rust/issues/73908
-          # - aarch64-apple-darwin
+          - aarch64-apple-darwin
     steps:
       - name: Setup | Checkout
         uses: actions/checkout@v2
