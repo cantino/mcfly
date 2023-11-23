@@ -43,13 +43,9 @@ When suggesting a command, McFly takes into consideration:
 
 ### Install with Homebrew (on OS X or Linux)
 
-1. Install the tap:
-    ```bash
-    brew tap cantino/mcfly
-    ```
 1. Install `mcfly`:
     ```bash
-    brew install cantino/mcfly/mcfly
+    brew install mcfly
     ```
 1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file:
 
@@ -74,10 +70,6 @@ When suggesting a command, McFly takes into consideration:
 1. Remove `mcfly`:
     ```bash
     brew uninstall mcfly
-    ```
-1. Remove the tap:
-    ```bash
-    brew untap cantino/mcfly
     ```
 1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
@@ -382,10 +374,5 @@ Contributions and bug fixes are encouraged! However, we may not merge PRs that i
 1. `git push origin head --tags`
 1. Let the build finish.
 1. Edit the new Release on Github.
-1. Edit `pkg/brew/mcfly.rb` and update the version and SHAs. (`shasum -a 256 ...`)
-1. Edit `../homebrew-mcfly/pkg/brew/mcfly.rb` too.
-  1. `cp pkg/brew/mcfly.rb ../homebrew-mcfly/pkg/brew/mcfly.rb`
-  1. Compare with `diff ../homebrew-mcfly/pkg/brew/mcfly.rb ../mcfly/pkg/brew/mcfly.rb ; diff ../homebrew-mcfly/HomebrewFormula/mcfly.rb ../mcfly/HomebrewFormula/mcfly.rb`
-1. `git add -p && git ci -m 'Update homebrew' && git push`
-1. `cd ../homebrew-mcfly && git add -p && git ci -m 'Update homebrew' && git push && cd ../mcfly`
 1. `cargo publish`
+1. TBD: update homebrew-core Formula at https://github.com/Homebrew/homebrew-core/blob/master/Formula/m/mcfly.rb
