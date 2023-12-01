@@ -146,10 +146,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "chrono-systemd-time-ng"
-version = "0.3.1"
+name = "chrono-systemd-time"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cd5f2d9ff06c270311aeb9237e2cda17034ce8219f520069dda169d97a3a55c"
+checksum = "429fae93a2fb86c5028aa38bd4a7c0c47b51eb1e30ce059c96dea25bd570dd6c"
 dependencies = [
  "chrono",
  "once_cell",
@@ -462,7 +462,7 @@ name = "mcfly"
 version = "0.8.1"
 dependencies = [
  "chrono",
- "chrono-systemd-time-ng",
+ "chrono-systemd-time",
  "clap",
  "crossterm",
  "csv",
