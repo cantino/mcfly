@@ -7,7 +7,7 @@ description = "McFly replaces your default ctrl-r shell history search with an i
 license = "MIT"
 repository = "https://github.com/cantino/mcfly"
 categories = ["command-line-utilities"]
-exclude = ["docs/*"]
+exclude = ["HomebrewFormula", "HomebrewFormula/*", "pkg/*", "docs/*"]
 
 [profile.release]
 lto = true
