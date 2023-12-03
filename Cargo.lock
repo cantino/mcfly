@@ -693,7 +693,6 @@ dependencies = [
  "directories-next",
  "humantime",
  "itertools",
- "libc",
  "path-absolutize",
  "rand 0.8.5",
  "regex",

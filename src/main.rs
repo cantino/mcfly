@@ -1,5 +1,4 @@
 use mcfly::dumper::Dumper;
-use mcfly::fake_typer;
 use mcfly::history::History;
 use mcfly::init::Init;
 use mcfly::interface::Interface;
@@ -72,10 +71,10 @@ fn handle_search(settings: &Settings) {
             fs::write(path, &out)
                 .unwrap_or_else(|err| panic!("McFly error: unable to write to {}: {}", path, err));
         } else {
-            fake_typer::use_tiocsti(&cmd);
+            autopilot::key::type_string(&cmd, &[], 0.0, 0.0);
 
             if result.run {
-                fake_typer::use_tiocsti("\n");
+                autopilot::key::type_string("\n", &[], 0.0, 0.0);
             }
         }
     }
