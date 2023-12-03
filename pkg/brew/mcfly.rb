@@ -25,20 +25,12 @@ class Mcfly < Formula
 
   def caveats
     <<~EOS
-      ONE MORE STEP!
+      DEPRECATED! mcfly is now in the core homebrew repository and you don't need this tap.
+      Please run:
 
-      Add the following to the end of your ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish file.
-
-      Bash:
-        eval "$(mcfly init bash)"
-
-      Zsh:
-        eval "$(mcfly init zsh)"
-
-      Fish:
-        mcfly init fish | source
-
-      You will need to restart your terminal when first installing and on some updates. If you receive a McFly error when running commands, try restarting your terminal.
+      brew uninstall mcfly
+      brew untap cantino/mcfly
+      brew install mcfly
     EOS
   end
 end

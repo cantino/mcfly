@@ -1,5 +1,7 @@
-0.8.2 - Dec 3, 2023
+0.8.3 - Dec 3, 2023
  - Add support for exporting command history matching a regex or date range (thanks @TD-Sky!)
+ - Add Windows and Powershell support (thanks @jtschuster!)
+ - Add deprecation warning on brew tap.
 
 0.8.1 - Jun 3, 2023
  - Fix use of MCFLY_DISABLE_MENU (thanks @barklan!)
