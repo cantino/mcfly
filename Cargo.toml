@@ -46,7 +46,7 @@ features = ["derive"]
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-autopilot = {git="https://github.com/autopilot-rs/autopilot-rs"}
+autopilot = "0.4.0"
 
 [features]
 default = ["sqlite-bundled"]
