@@ -267,13 +267,13 @@ mod tests {
 
     #[test]
     fn has_leading_timestamp_works() {
-        assert_eq!(false, has_leading_timestamp("abc"));
-        assert_eq!(false, has_leading_timestamp("#abc"));
-        assert_eq!(false, has_leading_timestamp("#123456"));
-        assert_eq!(true, has_leading_timestamp("#1234567890"));
-        assert_eq!(false, has_leading_timestamp("#123456789"));
-        assert_eq!(false, has_leading_timestamp("# 1234567890"));
-        assert_eq!(false, has_leading_timestamp("1234567890"));
-        assert_eq!(false, has_leading_timestamp("hello 1234567890"));
+        assert!(!has_leading_timestamp("abc"));
+        assert!(!has_leading_timestamp("#abc"));
+        assert!(!has_leading_timestamp("#123456"));
+        assert!(has_leading_timestamp("#1234567890"));
+        assert!(!has_leading_timestamp("#123456789"));
+        assert!(!has_leading_timestamp("# 1234567890"));
+        assert!(!has_leading_timestamp("1234567890"));
+        assert!(!has_leading_timestamp("hello 1234567890"));
     }
 }

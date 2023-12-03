@@ -1,7 +1,9 @@
-use crate::cli::{Cli, SubCommand};
+use crate::cli::{Cli, DumpFormat, SortOrder, SubCommand};
 use crate::shell_history;
+use crate::time::parse_timestamp;
 use clap::Parser;
 use directories_next::{ProjectDirs, UserDirs};
+use regex::Regex;
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -15,6 +17,7 @@ pub enum Mode {
     Train,
     Move,
     Init,
+    Dump,
 }
 
 #[derive(Debug)]
@@ -66,6 +69,17 @@ pub enum HistoryFormat {
     Fish,
 }
 
+/// Time range, it can be:
+/// - `..`
+/// - `since..before`
+/// - `since..`
+/// - `..before`
+#[derive(Debug, Clone, Default)]
+pub struct TimeRange {
+    pub since: Option<i64>,
+    pub before: Option<i64>,
+}
+
 #[derive(Debug)]
 pub struct Settings {
     pub mode: Mode,
@@ -95,6 +109,10 @@ pub struct Settings {
     pub disable_menu: bool,
     pub prompt: String,
     pub disable_run_command: bool,
+    pub time_range: TimeRange,
+    pub sort_order: SortOrder,
+    pub pattern: Option<Regex>,
+    pub dump_format: DumpFormat,
 }
 
 impl Default for Settings {
@@ -127,6 +145,10 @@ impl Default for Settings {
             disable_menu: false,
             prompt: String::from("$"),
             disable_run_command: false,
+            time_range: TimeRange::default(),
+            sort_order: SortOrder::default(),
+            pattern: None,
+            dump_format: DumpFormat::default(),
         }
     }
 }
@@ -350,6 +372,22 @@ impl Settings {
                     Fish => InitMode::Fish,
                 };
             }
+
+            SubCommand::Dump {
+                since,
+                before,
+                sort,
+                regex,
+                format,
+            } => {
+                settings.mode = Mode::Dump;
+
+                settings.time_range.since = since.as_ref().map(|s| parse_timestamp(s));
+                settings.time_range.before = before.as_ref().map(|s| parse_timestamp(s));
+                settings.sort_order = sort;
+                settings.pattern = regex;
+                settings.dump_format = format;
+            }
         }
 
         settings.lightmode = is_env_var_truthy("MCFLY_LIGHT");
@@ -424,5 +462,13 @@ fn is_env_var_truthy(name: &str) -> bool {
                 && val != "0"
         }
         Err(_) => false,
+    }
+}
+
+impl TimeRange {
+    /// Determine the range is full (`..`)
+    #[inline]
+    pub fn is_full(&self) -> bool {
+        self.since.is_none() && self.before.is_none()
     }
 }
