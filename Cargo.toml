@@ -24,10 +24,9 @@ serde = { version = "1", features = ["derive"] }
 humantime = "2.1"
 directories-next = "2.0"
 itertools = "0.10"
-libc = "0.2"
 rand = "0.8"
+path-absolutize = "3.0.13"
 regex = { version = "1", default-features = false, features = ["perf", "std"] }
-relative-path = "1.7"
 shellexpand = "2.1"
 unicode-segmentation = "1.9"
 
@@ -42,6 +41,12 @@ features = ["use-dev-tty"]
 [dependencies.clap]
 version = "4"
 features = ["derive"]
+
+[target.'cfg(not(windows))'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+autopilot = {git="https://github.com/autopilot-rs/autopilot-rs"}
 
 [features]
 default = ["sqlite-bundled"]

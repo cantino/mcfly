@@ -1,11 +1,13 @@
+#[cfg(not(windows))]
 use libc;
-use std::convert::TryInto;
 
 // Should we be using https://docs.rs/libc/0.2.44/libc/fn.ioctl.html instead?
+#[cfg(not(windows))]
 extern "C" {
     pub fn ioctl(fd: libc::c_int, request: libc::c_ulong, arg: ...) -> libc::c_int;
 }
 
+#[cfg(not(windows))]
 #[allow(clippy::useless_conversion)]
 pub fn use_tiocsti(string: &str) {
     for byte in string.as_bytes() {
@@ -14,4 +16,9 @@ pub fn use_tiocsti(string: &str) {
             panic!("Error encountered when calling ioctl");
         }
     }
+}
+
+#[cfg(windows)]
+pub fn use_tiocsti(string: &str) {
+    autopilot::key::type_string(string, &[], 0.0, 0.0);
 }

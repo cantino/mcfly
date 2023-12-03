@@ -31,6 +31,7 @@ pub enum InitMode {
     Bash,
     Zsh,
     Fish,
+    Powershell,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -370,6 +371,7 @@ impl Settings {
                     Bash => InitMode::Bash,
                     Zsh => InitMode::Zsh,
                     Fish => InitMode::Fish,
+                    Powershell => InitMode::Powershell,
                 };
             }
 
@@ -442,13 +444,27 @@ impl Settings {
     }
 }
 
-fn pwd() -> String {
+#[cfg(not(windows))]
+pub fn pwd() -> String {
     env::var("PWD").unwrap_or_else(|err| {
         panic!(
             "McFly error: Unable to determine current directory ({})",
             err
         )
     })
+}
+
+#[cfg(windows)]
+pub fn pwd() -> String {
+    env::current_dir()
+        .unwrap_or_else(|err| {
+            panic!(
+                "McFly error: Unable to determine current directory ({})",
+                err
+            )
+        })
+        .display()
+        .to_string()
 }
 
 fn is_env_var_truthy(name: &str) -> bool {

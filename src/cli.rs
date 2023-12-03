@@ -155,6 +155,7 @@ pub enum InitMode {
     Bash,
     Zsh,
     Fish,
+    Powershell,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, Default)]

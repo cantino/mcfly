@@ -8,7 +8,7 @@ use crate::settings::{InterfaceView, KeyScheme, ResultFilter};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::KeyCode::Char;
-use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use crossterm::style::{Color, Print, SetBackgroundColor, SetForegroundColor};
 use crossterm::terminal::{self, LeaveAlternateScreen};
 use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen};
@@ -448,7 +448,6 @@ impl<'a> Interface<'a> {
         screen.flush().unwrap();
 
         loop {
-            terminal::enable_raw_mode().unwrap();
             let event =
                 read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
             self.debug_cursor(&mut screen);
@@ -511,6 +510,9 @@ impl<'a> Interface<'a> {
     }
 
     fn select_with_emacs_key_scheme(&mut self, event: KeyEvent) -> bool {
+        if event.kind != KeyEventKind::Press {
+            return false;
+        }
         match event {
             KeyEvent {
                 code: KeyCode::Enter,
