@@ -43,27 +43,23 @@ When suggesting a command, McFly takes into consideration:
 
 ### Install with Homebrew (on OS X or Linux)
 
-1. Install the tap:
-    ```bash
-    brew tap cantino/mcfly
-    ```
 1. Install `mcfly`:
     ```bash
-    brew install cantino/mcfly/mcfly
+    brew install mcfly
     ```
 1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file:
 
-    Bash:
+   Bash:
     ```bash
     eval "$(mcfly init bash)"
     ```
 
-    Zsh:
+   Zsh:
     ```bash
     eval "$(mcfly init zsh)"
     ```
 
-    Fish:
+   Fish:
     ```bash
     mcfly init fish | source
     ```
@@ -74,10 +70,6 @@ When suggesting a command, McFly takes into consideration:
 1. Remove `mcfly`:
     ```bash
     brew uninstall mcfly
-    ```
-1. Remove the tap:
-    ```bash
-    brew untap cantino/mcfly
     ```
 1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
@@ -93,17 +85,17 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, as appropriate:
 
-    Bash:
+   Bash:
     ```bash
     eval "$(mcfly init bash)"
     ```
 
-    Zsh:
+   Zsh:
     ```bash
     eval "$(mcfly init zsh)"
     ```
 
-    Fish:
+   Fish:
     ```bash
     mcfly init fish | source
     ```
@@ -149,17 +141,17 @@ When suggesting a command, McFly takes into consideration:
 1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc` / `.zshrc`, or run `set -Ua fish_user_paths "$HOME/bin"` for fish.)
 1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
 
-    Bash:
+   Bash:
     ```bash
     eval "$(mcfly init bash)"
     ```
 
-    Zsh:
+   Zsh:
     ```bash
     eval "$(mcfly init zsh)"
     ```
 
-    Fish:
+   Fish:
     ```bash
     mcfly init fish | source
     ```
@@ -173,17 +165,17 @@ When suggesting a command, McFly takes into consideration:
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
 1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
 
-    Bash:
+   Bash:
     ```bash
     eval "$(mcfly init bash)"
     ```
 
-    Zsh:
+   Zsh:
     ```bash
     eval "$(mcfly init zsh)"
     ```
 
-    Fish:
+   Fish:
     ```bash
     mcfly init fish | source
     ```
@@ -410,8 +402,8 @@ McFly currently doesn't parse or use `HISTTIMEFORMAT`.
 * Learn common command options and autocomplete them in the suggestion UI?
 * Sort command line args when coming up with the template matching string.
 * Possible prioritization improvements:
-  * Cross validation & explicit training set selection.
-  * Learn command embeddings
+   * Cross validation & explicit training set selection.
+   * Learn command embeddings
 
 ## Development
 
@@ -435,10 +427,5 @@ Contributions and bug fixes are encouraged! However, we may not merge PRs that i
 1. `git push origin head --tags`
 1. Let the build finish.
 1. Edit the new Release on Github.
-1. Edit `pkg/brew/mcfly.rb` and update the version and SHAs. (`shasum -a 256 ...`)
-1. Edit `../homebrew-mcfly/pkg/brew/mcfly.rb` too.
-  1. `cp pkg/brew/mcfly.rb ../homebrew-mcfly/pkg/brew/mcfly.rb`
-  1. Compare with `diff ../homebrew-mcfly/pkg/brew/mcfly.rb ../mcfly/pkg/brew/mcfly.rb ; diff ../homebrew-mcfly/HomebrewFormula/mcfly.rb ../mcfly/HomebrewFormula/mcfly.rb`
-1. `git add -p && git ci -m 'Update homebrew' && git push`
-1. `cd ../homebrew-mcfly && git add -p && git ci -m 'Update homebrew' && git push && cd ../mcfly`
 1. `cargo publish`
+1. TBD: update homebrew-core Formula at https://github.com/Homebrew/homebrew-core/blob/master/Formula/m/mcfly.rb
