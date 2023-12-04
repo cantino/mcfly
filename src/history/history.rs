@@ -1,20 +1,22 @@
 #![allow(clippy::module_inception)]
-use crate::shell_history;
-use rusqlite::named_params;
-use rusqlite::{Connection, MappedRows, Row};
-use std::cmp::Ordering;
-use std::io::Write;
-use std::path::PathBuf;
-use std::{fmt, fs, io};
-//use std::time::Instant;
+use crate::cli::SortOrder;
 use crate::history::{db_extensions, schema};
 use crate::network::Network;
 use crate::path_update_helpers;
-use crate::settings::{HistoryFormat, ResultFilter, ResultSort, Settings};
+use crate::settings::{HistoryFormat, ResultFilter, ResultSort, Settings, TimeRange};
+use crate::shell_history;
 use crate::simplified_command::SimplifiedCommand;
+use crate::time::to_datetime;
 use itertools::Itertools;
+use rusqlite::named_params;
 use rusqlite::types::ToSql;
+use rusqlite::{Connection, MappedRows, Row};
+use serde::{Serialize, Serializer};
+use std::cmp::Ordering;
+use std::io::Write;
+use std::path::PathBuf;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::{fmt, fs, io};
 
 #[derive(Debug, Clone, Default)]
 pub struct Features {
@@ -46,6 +48,13 @@ pub struct Command {
     pub match_bounds: Vec<(usize, usize)>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct DumpCommand {
+    pub cmd: String,
+    #[serde(serialize_with = "ser_to_datetime")]
+    pub when_run: i64,
+}
+
 impl fmt::Display for Command {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.cmd.fmt(f)
@@ -56,6 +65,14 @@ impl From<Command> for String {
     fn from(command: Command) -> Self {
         command.cmd
     }
+}
+
+#[inline]
+fn ser_to_datetime<S>(when_run: &i64, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(&to_datetime(*when_run))
 }
 
 #[derive(Debug)]
@@ -631,24 +648,7 @@ impl History {
             format!("SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir FROM commands WHERE session_id = :session_id ORDER BY {} DESC LIMIT :limit OFFSET :offset", order)
         };
 
-        if session_id.is_none() {
-            self.run_query(&query, &[(":limit", &num), (":offset", &offset)])
-        } else {
-            self.run_query(
-                &query,
-                &[
-                    (":session_id", &session_id.to_owned().unwrap()),
-                    (":limit", &num),
-                    (":offset", &offset),
-                ],
-            )
-        }
-    }
-
-    fn run_query(&self, query: &str, params: &[(&str, &dyn ToSql)]) -> Vec<Command> {
-        let mut statement = self.connection.prepare(query).unwrap();
-
-        let closure: fn(&Row) -> Result<Command, _> = |row| {
+        let closure: fn(&Row) -> rusqlite::Result<Command> = |row| {
             Ok(Command {
                 id: row.get(0)?,
                 cmd: row.get(1)?,
@@ -662,13 +662,34 @@ impl History {
             })
         };
 
-        let command_iter: MappedRows<_> = statement
-            .query_map(params, closure)
+        if session_id.is_none() {
+            self.run_query(&query, &[(":limit", &num), (":offset", &offset)], closure)
+        } else {
+            self.run_query(
+                &query,
+                &[
+                    (":session_id", &session_id.to_owned().unwrap()),
+                    (":limit", &num),
+                    (":offset", &offset),
+                ],
+                closure,
+            )
+        }
+    }
+
+    fn run_query<T, F>(&self, query: &str, params: &[(&str, &dyn ToSql)], f: F) -> Vec<T>
+    where
+        F: FnMut(&Row<'_>) -> rusqlite::Result<T>,
+    {
+        let mut statement = self.connection.prepare(query).unwrap();
+
+        let rows: MappedRows<_> = statement
+            .query_map(params, f)
             .unwrap_or_else(|err| panic!("McFly error: Query Map to work ({})", err));
 
-        let mut vec = Vec::new();
-        for command in command_iter.flatten() {
-            vec.push(command);
+        let mut vec: Vec<T> = Vec::new();
+        for row in rows.flatten() {
+            vec.push(row);
         }
 
         vec
@@ -753,6 +774,44 @@ impl History {
         } else if print_output {
             println!("McFly: Not updating paths due to invalid options.");
         }
+    }
+
+    pub fn dump(&self, time_range: &TimeRange, order: &SortOrder) -> Vec<DumpCommand> {
+        let mut where_clause = String::new();
+        // Were there condtions in where clause?
+        let mut has_conds = false;
+        let mut params: Vec<(&str, &dyn ToSql)> = Vec::with_capacity(2);
+
+        if !time_range.is_full() {
+            where_clause.push_str("WHERE");
+
+            if let Some(since) = &time_range.since {
+                where_clause.push_str(" :since <= when_run");
+                has_conds = true;
+                params.push((":since", since));
+            }
+
+            if let Some(before) = &time_range.before {
+                if has_conds {
+                    where_clause.push_str(" AND");
+                }
+
+                where_clause.push_str(" when_run < :before");
+                params.push((":before", before));
+            }
+        }
+
+        let query = format!(
+            "SELECT cmd, when_run FROM commands {} ORDER BY when_run {}",
+            where_clause,
+            order.to_str()
+        );
+        self.run_query(&query, params.as_slice(), |row| {
+            Ok(DumpCommand {
+                cmd: row.get(0)?,
+                when_run: row.get(1)?,
+            })
+        })
     }
 
     fn from_shell_history(history_format: HistoryFormat) -> History {

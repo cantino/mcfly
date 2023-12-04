@@ -1,32 +1,17 @@
-use relative_path::RelativePath;
-use std::env;
-use std::path::{Path, PathBuf};
+use crate::settings::pwd;
+use path_absolutize::*;
+use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;
 
 pub fn normalize_path(incoming_path: &str) -> String {
-    let expanded_path = shellexpand::tilde(incoming_path);
-
-    let current_dir = env::var("PWD").unwrap_or_else(|err| {
-        panic!(
-            "McFly error: Unable to determine current directory ({})",
-            err
-        )
-    });
-    let current_dir_path = Path::new(&current_dir);
-
-    let path_buf = if expanded_path.starts_with('/') {
-        PathBuf::from("/").join(RelativePath::new(&expanded_path).normalize().to_path(""))
-    } else {
-        let to_current_dir = RelativePath::new(&expanded_path).to_path(current_dir_path);
-        RelativePath::new(to_current_dir.to_str().unwrap())
-            .normalize()
-            .to_path("/")
-    };
-
-    path_buf
+    let expanded_path = shellexpand::tilde(incoming_path).to_string();
+    println!("{}", expanded_path);
+    return Path::new(&expanded_path)
+        .absolutize_from(pwd())
+        .unwrap()
         .to_str()
         .unwrap_or_else(|| panic!("McFly error: Path must be a valid UTF8 string"))
-        .to_string()
+        .to_string();
 }
 
 pub fn parse_mv_command(command: &str) -> Vec<String> {
@@ -108,6 +93,7 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
+    #[cfg(not(windows))]
     fn normalize_path_works_absolute_paths() {
         assert_eq!(normalize_path("/foo/bar/baz"), String::from("/foo/bar/baz"));
         assert_eq!(normalize_path("/"), String::from("/"));
@@ -115,6 +101,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(windows))]
     fn normalize_path_works_with_tilda() {
         assert_eq!(normalize_path("~/"), env::var("HOME").unwrap());
         assert_eq!(
@@ -126,6 +113,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(windows))]
     fn normalize_path_works_with_double_dots() {
         assert_eq!(normalize_path("/foo/bar/../baz"), String::from("/foo/baz"));
         assert_eq!(normalize_path("/foo/bar/../../baz"), String::from("/baz"));
@@ -138,6 +126,63 @@ mod tests {
                 .to_string_lossy()
         );
         assert_eq!(normalize_path("~/foo/bar/../.."), env::var("HOME").unwrap());
+    }
+
+    #[cfg(windows)]
+    fn windows_home_path() -> String {
+        PathBuf::from(env::var("HOMEDRIVE").unwrap())
+            .join(env::var("HOMEPATH").unwrap())
+            .to_str()
+            .unwrap()
+            .to_string()
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn normalize_path_works_absolute_paths() {
+        assert_eq!(
+            normalize_path("C:\\foo\\bar\\baz"),
+            String::from("C:\\foo\\bar\\baz")
+        );
+        assert_eq!(normalize_path("C:\\"), String::from("C:\\"));
+        assert_eq!(normalize_path("C:\\\\\\\\"), String::from("C:\\"));
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn normalize_path_works_with_tilda() {
+        assert_eq!(normalize_path("~\\"), windows_home_path());
+        assert_eq!(
+            normalize_path("~\\foo"),
+            PathBuf::from(windows_home_path())
+                .join("foo")
+                .to_string_lossy()
+        );
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn normalize_path_works_with_double_dots() {
+        assert_eq!(
+            normalize_path("C:\\foo\\bar\\..\\baz"),
+            String::from("C:\\foo\\baz")
+        );
+        assert_eq!(
+            normalize_path("C:\\foo\\bar\\..\\..\\baz"),
+            String::from("C:\\baz")
+        );
+        assert_eq!(
+            normalize_path("C:\\foo\\bar\\..\\..\\"),
+            String::from("C:\\")
+        );
+        assert_eq!(normalize_path("C:\\foo\\bar\\..\\.."), String::from("C:\\"));
+        assert_eq!(
+            normalize_path("~\\foo\\bar\\..\\baz"),
+            PathBuf::from(windows_home_path())
+                .join("foo\\baz")
+                .to_string_lossy()
+        );
+        assert_eq!(normalize_path("~\\foo\\bar\\..\\.."), windows_home_path());
     }
 
     #[test]

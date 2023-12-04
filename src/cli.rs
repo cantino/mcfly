@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand, ValueEnum};
+use regex::Regex;
 use std::path::PathBuf;
 
 /// Fly through your shell history
@@ -108,6 +109,36 @@ pub enum SubCommand {
         #[arg(value_enum)]
         shell: InitMode,
     },
+
+    /// Dump history into stdout; the results are sorted by timestamp
+    Dump {
+        /// Select all commands ran since the point
+        #[arg(long)]
+        since: Option<String>,
+
+        /// Select all commands ran before the point
+        #[arg(long)]
+        before: Option<String>,
+
+        /// Sort order [case ignored]
+        #[arg(
+            long,
+            short,
+            value_name = "ORDER",
+            value_enum,
+            default_value_t,
+            ignore_case = true
+        )]
+        sort: SortOrder,
+
+        /// Require commands to match the pattern
+        #[arg(long, short)]
+        regex: Option<Regex>,
+
+        /// The format to dump in
+        #[arg(long, short, value_enum, default_value_t)]
+        format: DumpFormat,
+    },
 }
 
 #[derive(Clone, Copy, ValueEnum, Default)]
@@ -124,10 +155,38 @@ pub enum InitMode {
     Bash,
     Zsh,
     Fish,
+    Powershell,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, Default)]
+#[value(rename_all = "UPPER")]
+pub enum SortOrder {
+    #[default]
+    #[value(alias = "asc")]
+    Asc,
+    #[value(alias = "desc")]
+    Desc,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, Default)]
+pub enum DumpFormat {
+    #[default]
+    Json,
+    Csv,
 }
 
 impl Cli {
     pub fn is_init(&self) -> bool {
         matches!(self.command, SubCommand::Init { .. })
+    }
+}
+
+impl SortOrder {
+    #[inline]
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            Self::Asc => "ASC",
+            Self::Desc => "DESC",
+        }
     }
 }

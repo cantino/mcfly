@@ -1,6 +1,6 @@
 [package]
 name = "mcfly"
-version = "0.8.1"
+version = "0.8.3"
 authors = ["Andrew Cantino <cantino@users.noreply.github.com>"]
 edition = "2021"
 description = "McFly replaces your default ctrl-r shell history search with an intelligent search engine that takes into account your working directory and the context of recently executed commands. McFly's suggestions are prioritized in real time with a small neural network."
@@ -17,14 +17,16 @@ debug = true
 
 [dependencies]
 chrono = "0.4"
+chrono-systemd-time = "0.3"
 csv = "1"
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
 humantime = "2.1"
 directories-next = "2.0"
 itertools = "0.10"
-libc = "0.2"
 rand = "0.8"
+path-absolutize = "3.0.13"
 regex = { version = "1", default-features = false, features = ["perf", "std"] }
-relative-path = "1.7"
 shellexpand = "2.1"
 unicode-segmentation = "1.9"
 
@@ -36,10 +38,15 @@ features = ["functions", "unlock_notify"]
 version = "0.26"
 features = ["use-dev-tty"]
 
-
 [dependencies.clap]
 version = "4"
 features = ["derive"]
+
+[target.'cfg(not(windows))'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+autopilot = "0.4.0"
 
 [features]
 default = ["sqlite-bundled"]
