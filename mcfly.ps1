@@ -105,7 +105,7 @@ $null = New-Module mcfly {
         $cursor = $null
         [Microsoft.PowerShell.PSConsoleReadline]::GetBufferState([ref]$line, [ref]$cursor)
         "#mcfly: $line" | Out-File -FilePath $env:MCFLY_HISTORY -Append
-        Invoke-McFly -CommandToComplete $line
+        Invoke-McFly -CommandToComplete "`"$line`""
     }
 
     Export-ModuleMember -Function @(
