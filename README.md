@@ -111,9 +111,9 @@ When suggesting a command, McFly takes into consideration:
 
 ### Installing using our install script
 
-1. `curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly`
+1. `curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly` (or, if the current user doesn't have permissions to '/usr/local/bin/', `sudo sh -s`.)
 
-2. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
+3. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
 
    Bash:
 
@@ -133,7 +133,7 @@ When suggesting a command, McFly takes into consideration:
    mcfly init fish | source
    ```
 
-3. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
+4. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
 ### Installing manually from GitHub
 
