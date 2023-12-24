@@ -5,7 +5,6 @@ use unicode_segmentation::UnicodeSegmentation;
 
 pub fn normalize_path(incoming_path: &str) -> String {
     let expanded_path = shellexpand::tilde(incoming_path).to_string();
-    println!("{}", expanded_path);
     return Path::new(&expanded_path)
         .absolutize_from(pwd())
         .unwrap()
