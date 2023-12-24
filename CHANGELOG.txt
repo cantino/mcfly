@@ -1,3 +1,7 @@
+0.8.4 - Dec 24, 2023
+ - Remove spurious print when moving files.
+ - PowerShell improvements (thanks @Namorzyny and @YoshidaRyoko!)
+
 0.8.3 - Dec 3, 2023
  - Add support for exporting command history matching a regex or date range (thanks @TD-Sky!)
  - Add Windows and Powershell support (thanks @jtschuster!)
