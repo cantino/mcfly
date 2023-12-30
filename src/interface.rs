@@ -452,43 +452,52 @@ impl<'a> Interface<'a> {
                 read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
             self.debug_cursor(&mut screen);
 
-            if let Event::Key(key_event) = event {
-                if self.menu_mode != MenuMode::Normal {
-                    match key_event {
-                        KeyEvent {
-                            modifiers: KeyModifiers::CONTROL,
-                            code: Char('c') | Char('d') | Char('g') | Char('z') | Char('r'),
-                            ..
-                        } => {
-                            self.run = false;
-                            self.input.clear();
-                            break;
-                        }
-                        KeyEvent {
-                            code: Char('y') | Char('Y'),
-                            ..
-                        } => {
-                            self.confirm(true);
-                        }
-                        KeyEvent {
-                            code: Char('n') | Char('N'),
-                            ..
-                        }
-                        | KeyEvent {
-                            code: KeyCode::Esc, ..
-                        } => {
-                            self.confirm(false);
-                        }
-                        _ => {}
-                    };
-                } else {
+            match self.menu_mode {
+                MenuMode::Normal => {
                     let early_out = match self.settings.key_scheme {
-                        KeyScheme::Emacs => self.select_with_emacs_key_scheme(key_event),
-                        KeyScheme::Vim => self.select_with_vim_key_scheme(key_event),
+                        KeyScheme::Emacs => self.select_with_emacs_key_scheme(event),
+                        KeyScheme::Vim => {
+                            if let Event::Key(key_event) = event {
+                                self.select_with_vim_key_scheme(key_event)
+                            } else {
+                                false
+                            }
+                        }
                     };
 
                     if early_out {
                         break;
+                    }
+                }
+                MenuMode::ConfirmDelete => {
+                    if let Event::Key(key_event) = event {
+                        match key_event {
+                            KeyEvent {
+                                modifiers: KeyModifiers::CONTROL,
+                                code: Char('c') | Char('d') | Char('g') | Char('z') | Char('r'),
+                                ..
+                            } => {
+                                self.run = false;
+                                self.input.clear();
+                                break;
+                            }
+                            KeyEvent {
+                                code: Char('y') | Char('Y'),
+                                ..
+                            } => {
+                                self.confirm(true);
+                            }
+                            KeyEvent {
+                                code: Char('n') | Char('N'),
+                                ..
+                            }
+                            | KeyEvent {
+                                code: KeyCode::Esc, ..
+                            } => {
+                                self.confirm(false);
+                            }
+                            _ => {}
+                        }
                     }
                 }
             }
@@ -509,7 +518,21 @@ impl<'a> Interface<'a> {
         terminal::disable_raw_mode().unwrap();
     }
 
-    fn select_with_emacs_key_scheme(&mut self, event: KeyEvent) -> bool {
+    fn select_with_emacs_key_scheme(&mut self, event: Event) -> bool {
+        match event {
+            Event::Key(event) => self.handle_emacs_keyevent(event),
+            Event::Paste(s) => {
+                for i in s.chars() {
+                    self.input.insert(i);
+                }
+                self.refresh_matches(true);
+                false
+            }
+            _ => false,
+        }
+    }
+
+    fn handle_emacs_keyevent(&mut self, event: KeyEvent) -> bool {
         if event.kind != KeyEventKind::Press {
             return false;
         }
