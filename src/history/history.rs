@@ -696,7 +696,7 @@ impl History {
     }
 
     pub fn last_command(&self, session_id: &Option<String>) -> Option<Command> {
-        self.commands(session_id, 1, 0, false).get(0).cloned()
+        self.commands(session_id, 1, 0, false).first().cloned()
     }
 
     pub fn last_command_templates(
