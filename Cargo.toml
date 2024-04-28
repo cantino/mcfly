@@ -30,7 +30,6 @@ path-absolutize = "3.0.13"
 regex = { version = "1", default-features = false, features = ["perf", "std"] }
 shellexpand = "2.1"
 unicode-segmentation = "1.9"
-dirs = "5.0.1"
 
 [dependencies.rusqlite]
 version = "0.28"
