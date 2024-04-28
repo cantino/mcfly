@@ -1,4 +1,4 @@
-use chrono::{Local, NaiveDateTime, TimeZone};
+use chrono::{DateTime, Local, TimeZone};
 
 pub fn parse_timestamp(s: &str) -> i64 {
     chrono_systemd_time::parse_timestamp_tz(s, Local)
@@ -9,6 +9,6 @@ pub fn parse_timestamp(s: &str) -> i64 {
 
 #[inline]
 pub fn to_datetime(timestamp: i64) -> String {
-    let utc = NaiveDateTime::from_timestamp_opt(timestamp, 0).unwrap();
-    Local.from_utc_datetime(&utc).to_rfc3339()
+    let utc = DateTime::from_timestamp(timestamp, 0).unwrap();
+    Local.from_utc_datetime(&utc.naive_utc()).to_rfc3339()
 }

@@ -1,5 +1,3 @@
-use config;
-use config::Source;
 use mcfly::dumper::Dumper;
 use mcfly::fake_typer;
 use mcfly::history::History;
@@ -105,16 +103,7 @@ fn handle_dump(settings: &Settings) {
 fn main() {
     let mut settings = Settings::parse_args();
 
-    // load ~/.config/mcfly/config.toml
-    let configpath = dirs::home_dir()
-        .expect("Homedir not found")
-        .join(".config/mcfly/config.toml");
-    let config = config::File::from(configpath);
-    let config_map = config.collect();
-
-    if let Some(config_map) = config_map.ok() {
-        settings.merge_config(config_map);
-    }
+    settings.load_config();
 
     match settings.mode {
         Mode::Add => {

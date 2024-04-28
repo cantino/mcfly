@@ -242,7 +242,6 @@ pub fn delete_lines(path: &Path, history_format: HistoryFormat, command: &str) {
 
 pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) {
     let mut file = OpenOptions::new()
-        .write(true)
         .append(true)
         .open(path)
         .unwrap_or_else(|err| {

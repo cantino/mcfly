@@ -2,6 +2,7 @@ use crate::cli::{Cli, DumpFormat, SortOrder, SubCommand};
 use crate::shell_history;
 use crate::time::parse_timestamp;
 use clap::Parser;
+use config::Source;
 use config::Value;
 use crossterm::style::Color;
 use directories_next::{ProjectDirs, UserDirs};
@@ -215,157 +216,6 @@ impl Default for Settings {
 }
 
 impl Settings {
-    pub fn merge_config(&mut self, config_map: HashMap<String, Value>) {
-        let color_config = config_map.get("colors");
-
-        let menubar_config = color_config
-            .and_then(|v| v.clone().into_table().ok())
-            .and_then(|v| v.get("menubar").and_then(|v| v.clone().into_table().ok()));
-
-        if let Some(menubar_config) = menubar_config {
-            if let Some(menubar_bg) = menubar_config
-                .get("bg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.menubar_bg = menubar_bg;
-            }
-            if let Some(menubar_fg) = menubar_config
-                .get("fg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.menubar_fg = menubar_fg;
-            }
-        }
-
-        let darkmode_config = color_config
-            .and_then(|v| v.clone().into_table().ok())
-            .and_then(|v| v.get("darkmode").and_then(|v| v.clone().into_table().ok()));
-
-        if let Some(darkmode_config) = darkmode_config {
-            if let Some(prompt) = darkmode_config
-                .get("prompt")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.prompt = prompt;
-            }
-            if let Some(timing) = darkmode_config
-                .get("timing")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.timing = timing;
-            }
-            if let Some(results_fg) = darkmode_config
-                .get("results_fg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_fg = results_fg;
-            }
-            if let Some(results_bg) = darkmode_config
-                .get("results_bg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_bg = results_bg;
-            }
-            if let Some(results_hl) = darkmode_config
-                .get("results_hl")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_hl = results_hl;
-            }
-            if let Some(results_selection_fg) = darkmode_config
-                .get("results_selection_fg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_selection_fg = results_selection_fg;
-            }
-            if let Some(results_selection_bg) = darkmode_config
-                .get("results_selection_bg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_selection_bg = results_selection_bg;
-            }
-            if let Some(results_selection_hl) = darkmode_config
-                .get("results_selection_hl")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_selection_hl = results_selection_hl;
-            }
-        }
-
-        let lightmode_config = color_config
-            .and_then(|v| v.clone().into_table().ok())
-            .and_then(|v| v.get("lightmode").and_then(|v| v.clone().into_table().ok()));
-
-        if let Some(lightmode_config) = lightmode_config {
-            if let Some(prompt) = lightmode_config
-                .get("prompt")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.prompt = prompt;
-            }
-            if let Some(timing) = lightmode_config
-                .get("timing")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.timing = timing;
-            }
-            if let Some(results_fg) = lightmode_config
-                .get("results_fg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_fg = results_fg;
-            }
-            if let Some(results_bg) = lightmode_config
-                .get("results_bg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_bg = results_bg;
-            }
-            if let Some(results_hl) = lightmode_config
-                .get("results_hl")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_hl = results_hl;
-            }
-            if let Some(results_selection_fg) = lightmode_config
-                .get("results_selection_fg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_selection_fg = results_selection_fg;
-            }
-            if let Some(results_selection_bg) = lightmode_config
-                .get("results_selection_bg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_selection_bg = results_selection_bg;
-            }
-            if let Some(results_selection_hl) = lightmode_config
-                .get("results_selection_hl")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_selection_hl = results_selection_hl;
-            }
-        }
-    }
-
     pub fn parse_args() -> Settings {
         let cli = Cli::parse();
 
@@ -623,6 +473,167 @@ impl Settings {
         settings
     }
 
+    pub fn load_config(&mut self) {
+        let config_path = Settings::mcfly_config_path();
+        if config_path.exists() {
+            let config = config::File::from(config_path);
+            if let Ok(config_map) = config.collect() {
+                self.merge_config(config_map);
+            }
+        };
+    }
+
+    pub fn merge_config(&mut self, config_map: HashMap<String, Value>) {
+        let color_config = config_map.get("colors");
+
+        let menubar_config = color_config
+            .and_then(|v| v.clone().into_table().ok())
+            .and_then(|v| v.get("menubar").and_then(|v| v.clone().into_table().ok()));
+
+        if let Some(menubar_config) = menubar_config {
+            if let Some(menubar_bg) = menubar_config
+                .get("bg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.menubar_bg = menubar_bg;
+            }
+            if let Some(menubar_fg) = menubar_config
+                .get("fg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.menubar_fg = menubar_fg;
+            }
+        }
+
+        let darkmode_config = color_config
+            .and_then(|v| v.clone().into_table().ok())
+            .and_then(|v| v.get("darkmode").and_then(|v| v.clone().into_table().ok()));
+
+        if let Some(darkmode_config) = darkmode_config {
+            if let Some(prompt) = darkmode_config
+                .get("prompt")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.prompt = prompt;
+            }
+            if let Some(timing) = darkmode_config
+                .get("timing")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.timing = timing;
+            }
+            if let Some(results_fg) = darkmode_config
+                .get("results_fg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.results_fg = results_fg;
+            }
+            if let Some(results_bg) = darkmode_config
+                .get("results_bg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.results_bg = results_bg;
+            }
+            if let Some(results_hl) = darkmode_config
+                .get("results_hl")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.results_hl = results_hl;
+            }
+            if let Some(results_selection_fg) = darkmode_config
+                .get("results_selection_fg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.results_selection_fg = results_selection_fg;
+            }
+            if let Some(results_selection_bg) = darkmode_config
+                .get("results_selection_bg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.results_selection_bg = results_selection_bg;
+            }
+            if let Some(results_selection_hl) = darkmode_config
+                .get("results_selection_hl")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.results_selection_hl = results_selection_hl;
+            }
+        }
+
+        let lightmode_config = color_config
+            .and_then(|v| v.clone().into_table().ok())
+            .and_then(|v| v.get("lightmode").and_then(|v| v.clone().into_table().ok()));
+
+        if let Some(lightmode_config) = lightmode_config {
+            if let Some(prompt) = lightmode_config
+                .get("prompt")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.prompt = prompt;
+            }
+            if let Some(timing) = lightmode_config
+                .get("timing")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.timing = timing;
+            }
+            if let Some(results_fg) = lightmode_config
+                .get("results_fg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.results_fg = results_fg;
+            }
+            if let Some(results_bg) = lightmode_config
+                .get("results_bg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.results_bg = results_bg;
+            }
+            if let Some(results_hl) = lightmode_config
+                .get("results_hl")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.results_hl = results_hl;
+            }
+            if let Some(results_selection_fg) = lightmode_config
+                .get("results_selection_fg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.results_selection_fg = results_selection_fg;
+            }
+            if let Some(results_selection_bg) = lightmode_config
+                .get("results_selection_bg")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.results_selection_bg = results_selection_bg;
+            }
+            if let Some(results_selection_hl) = lightmode_config
+                .get("results_selection_hl")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.results_selection_hl = results_selection_hl;
+            }
+        }
+    }
+
     // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_CACHE_DIR
     pub fn mcfly_training_cache_path() -> PathBuf {
         let cache_dir = Settings::mcfly_xdg_dir().cache_dir().to_path_buf();
@@ -635,6 +646,13 @@ impl Settings {
         let data_dir = Settings::mcfly_xdg_dir().data_dir().to_path_buf();
 
         Settings::mcfly_base_path(data_dir).join(PathBuf::from("history.db"))
+    }
+
+    // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_DATA_DIR
+    pub fn mcfly_config_path() -> PathBuf {
+        let data_dir = Settings::mcfly_xdg_dir().data_dir().to_path_buf();
+
+        Settings::mcfly_base_path(data_dir).join(PathBuf::from("config.toml"))
     }
 
     fn mcfly_xdg_dir() -> ProjectDirs {
