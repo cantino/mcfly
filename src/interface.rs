@@ -808,6 +808,13 @@ impl<'a> Interface<'a> {
                         }
                     }
                 }
+                KeyEvent {
+                    code: KeyCode::F(3),
+                    ..
+                } => {
+                    self.switch_result_filter();
+                    self.refresh_matches(true);
+                }
                 _ => {}
             }
         } else {
@@ -936,6 +943,13 @@ impl<'a> Interface<'a> {
                             self.menu_mode = MenuMode::ConfirmDelete;
                         }
                     }
+                }
+                KeyEvent {
+                    code: KeyCode::F(3),
+                    ..
+                } => {
+                    self.switch_result_filter();
+                    self.refresh_matches(true);
                 }
                 _ => {}
             }
