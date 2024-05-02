@@ -16,6 +16,7 @@ lto = true
 debug = true
 
 [dependencies]
+config = "0.14.0"
 chrono = "0.4"
 chrono-systemd-time = "0.3"
 csv = "1"

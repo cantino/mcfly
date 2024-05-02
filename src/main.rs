@@ -101,7 +101,9 @@ fn handle_dump(settings: &Settings) {
 }
 
 fn main() {
-    let settings = Settings::parse_args();
+    let mut settings = Settings::parse_args();
+
+    settings.load_config();
 
     match settings.mode {
         Mode::Add => {
