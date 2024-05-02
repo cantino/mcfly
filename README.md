@@ -273,6 +273,11 @@ fish:
 set -gx MCFLY_LIGHT TRUE
 ```
 
+powershell:
+```powershell
+$env:MCFLY_LIGHT = "TRUE"
+```
+
 Tip: on macOS you can use the following snippet for color scheme to be configured based on system-wide settings:
 
 bash / zsh:
@@ -280,10 +285,6 @@ bash / zsh:
 if [[ "$(defaults read -g AppleInterfaceStyle 2&>/dev/null)" != "Dark" ]]; then
     export MCFLY_LIGHT=TRUE
 fi
-```
-
-```powershell
-$env:MCFLY_LIGHT = "TRUE"
 ```
 
 ### VIM Key Scheme
@@ -299,7 +300,7 @@ fish:
 set -gx MCFLY_KEY_SCHEME vim
 ```
 
-powershell
+powershell:
 ```powershell
 $env:MCFLY_KEY_SCHEME="vim"
 ```
@@ -317,6 +318,7 @@ fish:
 set -gx MCFLY_FUZZY 2
 ```
 
+powershell:
 ```powershell
 $env:MCFLY_FUZZY=2
 ```
@@ -334,6 +336,7 @@ fish:
 set -gx MCFLY_RESULTS 50
 ```
 
+powershell:
 ```powershell
 $env:MCFLY_RESULTS=50
 ```
@@ -351,6 +354,7 @@ fish:
 set -gx MCFLY_DELETE_WITHOUT_CONFIRM true
 ```
 
+powershell:
 ```powershell
 $env:MCFLY_DELETE_WITHOUT_CONFIRM="true"
 ```
@@ -369,6 +373,7 @@ fish:
 set -gx MCFLY_INTERFACE_VIEW BOTTOM
 ```
 
+powershell:
 ```powershell
 $env:MCFLY_INTERFACE_VIEW="BOTTOM"
 ```
@@ -386,6 +391,7 @@ fish:
 set -gx MCFLY_DISABLE_MENU TRUE
 ```
 
+powershell:
 ```powershell
 $env:MCFLY_DISABLE_MENU=true
  ```
@@ -404,6 +410,7 @@ fish:
 set -gx MCFLY_RESULTS_SORT LAST_RUN
 ```
 
+powershell:
 ```powershell
 $env:MCFLY_RESULTS_SORT="LAST_RUN"
  ```
@@ -421,6 +428,7 @@ fish:
 set -gx MCFLY_PROMPT "❯"
 ```
 
+powershell:
 ```powershell
 $env:MCFLY_PROMPT=">"
  ```
