@@ -139,7 +139,7 @@ When suggesting a command, McFly takes into consideration:
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
 1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc` / `.zshrc`, or run `set -Ua fish_user_paths "$HOME/bin"` for fish.)
-1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, `~/.config/fish/config.fish`, or Powershell profile file, respectively:
 
    Bash:
     ```bash
@@ -155,6 +155,12 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     mcfly init fish | source
     ```
+
+    Powershell Core (pwsh)
+    ```powershell
+    Invoke-Expression -Command $(mcfly init powershell | out-string)
+    ```
+
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
 ### Install manually from source
@@ -179,7 +185,12 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     mcfly init fish | source
     ```
-1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
+
+    Powershell Core (pwsh)
+    ```powershell
+    Invoke-Expression -Command $(mcfly init powershell | out-string)
+    ```
+1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` / `. $PROFILE` or restart your terminal emulator.
 
 ### Install by [Zinit](https://github.com/zdharma-continuum/zinit)
 
@@ -276,6 +287,11 @@ if [[ "$(defaults read -g AppleInterfaceStyle 2&>/dev/null)" != "Dark" ]]; then
 fi
 ```
 
+```powershell
+$env:MCFLY_LIGHT = "TRUE"
+```
+
+
 
 ### VIM Key Scheme
 By default Mcfly uses an `emacs` inspired key scheme. If you would like to switch to the `vim` inspired key scheme, set the environment variable `MCFLY_KEY_SCHEME`.
@@ -288,6 +304,11 @@ export MCFLY_KEY_SCHEME=vim
 fish:
 ```bash
 set -gx MCFLY_KEY_SCHEME vim
+```
+
+powershell
+```powershell
+$env:MCFLY_KEY_SCHEME="vim"
 ```
 
 ### Fuzzy Searching
@@ -303,6 +324,10 @@ fish:
 set -gx MCFLY_FUZZY 2
 ```
 
+```powershell
+$env:MCFLY_FUZZY=2
+```
+
 ### Results Count
 To change the maximum number of results shown, set `MCFLY_RESULTS` (default: 10).
 
@@ -316,6 +341,10 @@ fish:
 set -gx MCFLY_RESULTS 50
 ```
 
+```powershell
+$env:MCFLY_RESULTS=50
+```
+
 ### Delete without confirmation
 To delete without confirmation, set `MCFLY_DELETE_WITHOUT_CONFIRM` to true.
 
@@ -327,6 +356,10 @@ export MCFLY_DELETE_WITHOUT_CONFIRM=true
 fish:
 ```bash
 set -gx MCFLY_DELETE_WITHOUT_CONFIRM true
+```
+
+```powershell
+$env:MCFLY_DELETE_WITHOUT_CONFIRM="true"
 ```
 
 ### Interface view
@@ -343,6 +376,10 @@ fish:
 set -gx MCFLY_INTERFACE_VIEW BOTTOM
 ```
 
+```powershell
+$env:MCFLY_INTERFACE_VIEW="BOTTOM"
+```
+
 ### Disable menu interface
 To disable the menu interface, set the environment variable `MCFLY_DISABLE_MENU`.
 
@@ -355,6 +392,11 @@ fish:
 ```bash
 set -gx MCFLY_DISABLE_MENU TRUE
 ```
+
+```powershell
+$env:MCFLY_DISABLE_MENU=true
+ ```
+
 
 ### Results sorting
 To change the sorting of results shown, set `MCFLY_RESULTS_SORT` (default: RANK).
