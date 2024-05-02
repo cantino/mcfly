@@ -138,7 +138,7 @@ When suggesting a command, McFly takes into consideration:
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
 1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc` / `.zshrc`, or run `set -Ua fish_user_paths "$HOME/bin"` for fish.)
-1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, `~/.config/fish/config.fish`, or Powershell profile script, respectively:
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish`, respectively:
 
    Bash:
     ```bash
@@ -155,12 +155,7 @@ When suggesting a command, McFly takes into consideration:
     mcfly init fish | source
     ```
 
-   Powershell Core (pwsh)
-    ```powershell
-    Invoke-Expression -Command $(mcfly init powershell | out-string)
-    ```
-
-1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` / `. $PROFILE` or restart your terminal emulator.
+1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
 ### Install manually from source (macOS, Linux, or Windows)
 
@@ -168,7 +163,7 @@ When suggesting a command, McFly takes into consideration:
 1. Run `git clone https://github.com/cantino/mcfly` and `cd mcfly`
 1. Run `cargo install --path .`
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
-1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, `~/.config/fish/config.fish`, or powershell `$PROFILE`, respectively:
 
    Bash:
     ```bash
