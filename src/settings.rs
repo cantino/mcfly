@@ -643,10 +643,8 @@ impl Settings {
 
     // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_DATA_DIR
     pub fn mcfly_db_path() -> PathBuf {
-
         let data_dir = Settings::mcfly_xdg_dir().data_dir().to_path_buf();
-        if data_dir.exists()
-        {
+        if data_dir.exists() {
             return Settings::mcfly_base_path(data_dir).join(PathBuf::from("history.db"));
         };
 
