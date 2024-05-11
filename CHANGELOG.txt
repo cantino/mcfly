@@ -1,3 +1,9 @@
+0.8.5 - May 11, 2024
+ - Use C:\Users\username\AppData\Local instead of C:\Users\username\AppData\Roaming (thanks @jtschuster)
+ - Fix Fish return codes (thanks @manfredlotz)
+ - Allow colors to be configured in a new optional config.toml (thanks @exokernel)
+ - Paste in emacs mode (thanks @eatradish)
+
 0.8.4 - Dec 24, 2023
  - Remove spurious print when moving files.
  - PowerShell improvements (thanks @Namorzyny and @YoshidaRyoko!)
