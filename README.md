@@ -480,3 +480,11 @@ Contributions and bug fixes are encouraged! However, we may not merge PRs that i
 1. Edit the new Release on Github.
 1. `cargo publish`
 1. TBD: update homebrew-core Formula at https://github.com/Homebrew/homebrew-core/blob/master/Formula/m/mcfly.rb
+
+Old:
+1. Edit `pkg/brew/mcfly.rb` and update the version and SHAs. (`shasum -a 256 ...`)
+1. Edit `../homebrew-mcfly/pkg/brew/mcfly.rb` too.
+  1. `cp pkg/brew/mcfly.rb ../homebrew-mcfly/pkg/brew/mcfly.rb`
+  1. Compare with `diff ../homebrew-mcfly/pkg/brew/mcfly.rb ../mcfly/pkg/brew/mcfly.rb ; diff ../homebrew-mcfly/HomebrewFormula/mcfly.rb ../mcfly/HomebrewFormula/mcfly.rb`
+1. `git add -p && git ci -m 'Update homebrew' && git push`
+1. `cd ../homebrew-mcfly && git add -p && git ci -m 'Update homebrew' && git push && cd ../mcfly`
