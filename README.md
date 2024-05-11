@@ -41,7 +41,7 @@ When suggesting a command, McFly takes into consideration:
 
 ## Installation
 
-### Install with Homebrew (on OS X or Linux)
+### Install with Homebrew (on macOS or Linux)
 
 1. Install `mcfly`:
     ```bash
@@ -73,7 +73,7 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
-### Install with MacPorts (on OS X)
+### Install with MacPorts (on macOS)
 
 1. Update the ports tree
     ```bash
@@ -109,7 +109,7 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
-### Installing using our install script
+### Installing using our install script (macOS or Linux)
 
 1. `curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly` (or, if the current user doesn't have permissions to edit /usr/local/bin, then use `sudo sh -s`.)
 
@@ -128,18 +128,17 @@ When suggesting a command, McFly takes into consideration:
    ```
 
    Fish:
-
    ```bash
    mcfly init fish | source
    ```
 
 3. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
-### Installing manually from GitHub
+### Installing manually from GitHub (macOS or Linux)
 
 1. Download the [latest release from GitHub](https://github.com/cantino/mcfly/releases).
 1. Install to a location in your `$PATH`. (For example, you could create a directory at `~/bin`, copy `mcfly` to this location, and add `export PATH="$PATH:$HOME/bin"` to your `.bashrc` / `.zshrc`, or run `set -Ua fish_user_paths "$HOME/bin"` for fish.)
-1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish`, respectively:
 
    Bash:
     ```bash
@@ -155,15 +154,16 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     mcfly init fish | source
     ```
+
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
-### Install manually from source
+### Install manually from source (macOS, Linux, or Windows)
 
 1. [Install Rust 1.40 or later](https://www.rust-lang.org/tools/install)
 1. Run `git clone https://github.com/cantino/mcfly` and `cd mcfly`
 1. Run `cargo install --path .`
 1. Ensure `~/.cargo/bin` is in your `$PATH`.
-1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish` file, respectively:
+1. Add the following to the end of your `~/.bashrc`, `~/.zshrc`, `~/.config/fish/config.fish`, or powershell `$PROFILE`, respectively:
 
    Bash:
     ```bash
@@ -179,7 +179,13 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     mcfly init fish | source
     ```
-1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
+
+    Powershell Core (pwsh)
+    ```powershell
+    Invoke-Expression -Command $(mcfly init powershell | out-string)
+    ```
+
+1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` / `. $PROFILE` or restart your terminal emulator.
 
 ### Install by [Zinit](https://github.com/zdharma-continuum/zinit)
 
@@ -267,6 +273,11 @@ fish:
 set -gx MCFLY_LIGHT TRUE
 ```
 
+powershell:
+```powershell
+$env:MCFLY_LIGHT = "TRUE"
+```
+
 Tip: on macOS you can use the following snippet for color scheme to be configured based on system-wide settings:
 
 bash / zsh:
@@ -275,7 +286,6 @@ if [[ "$(defaults read -g AppleInterfaceStyle 2&>/dev/null)" != "Dark" ]]; then
     export MCFLY_LIGHT=TRUE
 fi
 ```
-
 
 ### VIM Key Scheme
 By default Mcfly uses an `emacs` inspired key scheme. If you would like to switch to the `vim` inspired key scheme, set the environment variable `MCFLY_KEY_SCHEME`.
@@ -288,6 +298,11 @@ export MCFLY_KEY_SCHEME=vim
 fish:
 ```bash
 set -gx MCFLY_KEY_SCHEME vim
+```
+
+powershell:
+```powershell
+$env:MCFLY_KEY_SCHEME="vim"
 ```
 
 ### Fuzzy Searching
@@ -303,6 +318,11 @@ fish:
 set -gx MCFLY_FUZZY 2
 ```
 
+powershell:
+```powershell
+$env:MCFLY_FUZZY=2
+```
+
 ### Results Count
 To change the maximum number of results shown, set `MCFLY_RESULTS` (default: 10).
 
@@ -316,6 +336,11 @@ fish:
 set -gx MCFLY_RESULTS 50
 ```
 
+powershell:
+```powershell
+$env:MCFLY_RESULTS=50
+```
+
 ### Delete without confirmation
 To delete without confirmation, set `MCFLY_DELETE_WITHOUT_CONFIRM` to true.
 
@@ -327,6 +352,11 @@ export MCFLY_DELETE_WITHOUT_CONFIRM=true
 fish:
 ```bash
 set -gx MCFLY_DELETE_WITHOUT_CONFIRM true
+```
+
+powershell:
+```powershell
+$env:MCFLY_DELETE_WITHOUT_CONFIRM="true"
 ```
 
 ### Interface view
@@ -343,6 +373,11 @@ fish:
 set -gx MCFLY_INTERFACE_VIEW BOTTOM
 ```
 
+powershell:
+```powershell
+$env:MCFLY_INTERFACE_VIEW="BOTTOM"
+```
+
 ### Disable menu interface
 To disable the menu interface, set the environment variable `MCFLY_DISABLE_MENU`.
 
@@ -355,6 +390,11 @@ fish:
 ```bash
 set -gx MCFLY_DISABLE_MENU TRUE
 ```
+
+powershell:
+```powershell
+$env:MCFLY_DISABLE_MENU=true
+ ```
 
 ### Results sorting
 To change the sorting of results shown, set `MCFLY_RESULTS_SORT` (default: RANK).
@@ -370,6 +410,11 @@ fish:
 set -gx MCFLY_RESULTS_SORT LAST_RUN
 ```
 
+powershell:
+```powershell
+$env:MCFLY_RESULTS_SORT="LAST_RUN"
+ ```
+
 ### Custom Prompt
 To change the prompt, set `MCFLY_PROMPT` (default: `$`).
 
@@ -382,11 +427,17 @@ fish:
 ```bash
 set -gx MCFLY_PROMPT "❯"
 ```
+
+powershell:
+```powershell
+$env:MCFLY_PROMPT=">"
+ ```
+
 Note that only single-character-prompts are allowed. setting `MCFLY_PROMPT` to `"<str>"` will reset it to the default prompt.
 
 ### Database Location
 
-McFly stores its SQLite database in the standard location for the OS. On OS X, this is in `~/Library/Application Support/McFly` and on Linux it is in `$XDG_DATA_DIR/mcfly/history.db` (default would be `~/.local/share/mcfly/history.db`). For legacy support, if `~/.mcfly/` exists, it is used instead.
+McFly stores its SQLite database in the standard location for the OS. On OS X, this is in `~/Library/Application Support/McFly`, on Linux it is in `$XDG_DATA_DIR/mcfly/history.db` (default would be `~/.local/share/mcfly/history.db`), and on Windows, it is `%LOCALAPPDATA%\McFly\data\history.db`. For legacy support, if `~/.mcfly/` exists, it is used instead.
 
 ### Slow startup
 
