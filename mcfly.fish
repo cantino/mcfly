@@ -24,7 +24,8 @@ if test "$__MCFLY_LOADED" != "loaded"
     exit 1
   end
   # We don't need a MCFLY_HISTORY file because we can get the last command in fish_postexec.
-  set -g __MCFLY_CMD $MCFLY_PATH --mcfly_history /dev/null --history_format fish
+  set -gx MCFLY_HISTORY /dev/null
+  set -g __MCFLY_CMD $MCFLY_PATH --mcfly_history $MCFLY_HISTORY --history_format fish
 
   function __mcfly_save_old_pwd -d 'Save PWD before running command' -e fish_preexec
     set -g __MCFLY_OLD_PWD "$PWD"
