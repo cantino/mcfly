@@ -1,3 +1,7 @@
+0.8.6 - May 18, 2024
+ - Add windows asset generation (thanks @jtschuster)
+ - Fix init issue for fish (thanks @4t8dd)
+
 0.8.5 - May 11, 2024
  - Use C:\Users\username\AppData\Local instead of C:\Users\username\AppData\Roaming (thanks @jtschuster)
  - Fix Fish return codes (thanks @manfredlotz)
