@@ -98,7 +98,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   if [[ $- =~ .*i.* ]]; then
     if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
       # shellcheck disable=SC2016
-      if [ $MCFLY_USE_TIOCSTI -ne "" ]; then
+      if [ $MCFLY_BASH_USE_TIOCSTI = 1 ]; then
         bind -x '"\C-r": "echo \#mcfly: ${READLINE_LINE[@]} >> $MCFLY_HISTORY ; READLINE_LINE= ; mcfly search"'
       else
         # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
