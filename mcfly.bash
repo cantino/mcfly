@@ -7,8 +7,8 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
 
   # Setup MCFLY_HISTFILE and make sure it exists.
   export MCFLY_HISTFILE="${HISTFILE:-$HOME/.bash_history}"
-  export MCFLY_BASH_SEARCH_KEY=${MCFLY_BASH_SEARCH_KEY:-"\M-1"}
-  export MCFLY_BASH_ACCEPT_LINE_KEY=${MCFLY_BASH_ACCEPT_LINE_KEY:-"\M-2"}
+  export MCFLY_BASH_SEARCH_KEYBINDING=${MCFLY_BASH_SEARCH_KEYBINDING:-"\M-1"}
+  export MCFLY_BASH_ACCEPT_LINE_KEYBINDING=${MCFLY_BASH_ACCEPT_LINE_KEYBINDING:-"\M-2"}
   if [[ ! -r "${MCFLY_HISTFILE}" ]]; then
     echo "McFly: ${MCFLY_HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
     return 1
@@ -64,7 +64,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
     # If the file doesn't exist, nothing was selected from mcfly, exit without binding accept-line
     if [ ! -f $MCFLY_OUTPUT ];
     then
-      bind "\"$MCFLY_BASH_ACCEPT_LINE_KEY\":\"\""
+      bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":\"\""
       return
     fi;
     # Get the command and set the bash text to it, and move the cursor to the end of the line.
@@ -76,9 +76,9 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
     MCFLY_MODE=$(awk 'NR==1{$1=a; print substr($0, 2)}' $MCFLY_OUTPUT)
     if [ $MCFLY_MODE = run ];
     then
-      bind "\"$MCFLY_BASH_ACCEPT_LINE_KEY\":accept-line"
+      bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":accept-line"
     else
-      bind "\"$MCFLY_BASH_ACCEPT_LINE_KEY\":\"\""
+      bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":\"\""
     fi;
 
     rm -f $MCFLY_OUTPUT
@@ -98,9 +98,13 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   if [[ $- =~ .*i.* ]]; then
     if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
       # shellcheck disable=SC2016
-      # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
-      bind -x "\"$MCFLY_BASH_SEARCH_KEY\":\"mcfly_search\""
-      bind "\"\C-r\":\"$MCFLY_BASH_SEARCH_KEY$MCFLY_BASH_ACCEPT_LINE_KEY\""
+      if [ $MCFLY_USE_TIOCSTI -ne "" ]; then
+        bind -x '"\C-r": "echo \#mcfly: ${READLINE_LINE[@]} >> $MCFLY_HISTORY ; READLINE_LINE= ; mcfly search"'
+      else
+        # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
+        bind -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
+        bind "\"\C-r\":\"$MCFLY_BASH_SEARCH_KEYBINDING$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\""
+      fi
     else
       # The logic here is:
       #   1. Jump to the beginning of the edit buffer, add 'mcfly: ', and comment out the current line. We comment out the line
