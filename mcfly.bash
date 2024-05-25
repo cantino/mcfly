@@ -62,7 +62,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
     echo \#mcfly: ${READLINE_LINE[@]} >> $MCFLY_HISTORY
     mcfly search -o $MCFLY_OUTPUT
     # If the file doesn't exist, nothing was selected from mcfly, exit without binding accept-line
-    if [ ! -f $MCFLY_OUTPUT ];
+    if [[ ! -f $MCFLY_OUTPUT ]];
     then
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":\"\""
       return
@@ -74,7 +74,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
 
     # Get the mode and bind the accept-line key if the mode is run.
     MCFLY_MODE=$(awk 'NR==1{$1=a; print substr($0, 2)}' $MCFLY_OUTPUT)
-    if [ $MCFLY_MODE = run ];
+    if [[ $MCFLY_MODE == "run" ]];
     then
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":accept-line"
     else
@@ -98,7 +98,7 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
   if [[ $- =~ .*i.* ]]; then
     if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
       # shellcheck disable=SC2016
-      if [ $MCFLY_BASH_USE_TIOCSTI = 1 ]; then
+      if [[ $MCFLY_BASH_USE_TIOCSTI = 1 ]]; then
         bind -x '"\C-r": "echo \#mcfly: ${READLINE_LINE[@]} >> $MCFLY_HISTORY ; READLINE_LINE= ; mcfly search"'
       else
         # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
