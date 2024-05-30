@@ -1,3 +1,7 @@
+use std::fs;
+use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use mcfly::dumper::Dumper;
 use mcfly::fake_typer;
 use mcfly::history::History;
@@ -6,10 +10,8 @@ use mcfly::interface::Interface;
 use mcfly::settings::Mode;
 use mcfly::settings::Settings;
 use mcfly::shell_history;
+use mcfly::stats_generator::StatsGenerator;
 use mcfly::trainer::Trainer;
-use std::fs;
-use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 fn handle_addition(settings: &Settings) {
     let history = History::load(settings.history_format);
@@ -100,6 +102,12 @@ fn handle_dump(settings: &Settings) {
     Dumper::new(settings, &history).dump();
 }
 
+fn handle_stats(settings: &Settings) {
+    let history = History::load(settings.history_format);
+    let stats = StatsGenerator::new(&history).generate_stats(10);
+    println!("{}", stats);
+}
+
 fn main() {
     let mut settings = Settings::parse_args();
 
@@ -124,5 +132,6 @@ fn main() {
         Mode::Dump => {
             handle_dump(&settings);
         }
+        Mode::Stats => handle_stats(&settings),
     }
 }

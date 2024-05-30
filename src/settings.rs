@@ -22,6 +22,7 @@ pub enum Mode {
     Move,
     Init,
     Dump,
+    Stats,
 }
 
 #[derive(Debug)]
@@ -450,6 +451,10 @@ impl Settings {
                 settings.sort_order = sort;
                 settings.pattern = regex;
                 settings.dump_format = format;
+            }
+
+            SubCommand::Stats {} => {
+                settings.mode = Mode::Stats;
             }
         }
 

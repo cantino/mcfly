@@ -139,6 +139,9 @@ pub enum SubCommand {
         #[arg(long, short, value_enum, default_value_t)]
         format: DumpFormat,
     },
+
+    /// Prints stats
+    Stats {},
 }
 
 #[derive(Clone, Copy, ValueEnum, Default)]

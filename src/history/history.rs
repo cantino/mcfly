@@ -677,7 +677,7 @@ impl History {
         }
     }
 
-    fn run_query<T, F>(&self, query: &str, params: &[(&str, &dyn ToSql)], f: F) -> Vec<T>
+    pub fn run_query<T, F>(&self, query: &str, params: &[(&str, &dyn ToSql)], f: F) -> Vec<T>
     where
         F: FnMut(&Row<'_>) -> rusqlite::Result<T>,
     {
