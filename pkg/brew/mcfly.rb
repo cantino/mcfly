@@ -8,7 +8,7 @@
 
 class Mcfly < Formula
   version 'v0.8.6'
-  deprecate! date: "2024-05-18", because: "mcfly is now in the core homebrew repository and you don't need this tap"
+  deprecate! date: "2024-05-18", because: "is now in the core homebrew repository and you don't need this tap"
   desc "McFly"
   homepage "https://github.com/cantino/mcfly"
 

@@ -1,3 +1,6 @@
+0.9.0 - May 31, 2024
+ - Make bash no longer use TIOCSTI by default (thanks @jtschuster)
+
 0.8.6 - May 18, 2024
  - Add windows asset generation (thanks @jtschuster)
  - Fix init issue for fish (thanks @4t8dd)
