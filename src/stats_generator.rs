@@ -23,10 +23,10 @@ impl<'a> StatsGenerator<'a> {
         if count_history == 0 {
             return "No history, no stats!".to_string();
         }
-        lines.push_str(format!("📊 Quick stats:\n").as_mut_str());
+        lines.push_str("📊 Quick stats:\n");
         lines.push_str(format!("  - history has {:?} items ;\n", count_history).as_mut_str());
         let most_used_commands = self.most_used_commands(&limit);
-        lines.push_str(&*Self::generate_command_stats(
+        lines.push_str(&Self::generate_command_stats(
             self,
             limit,
             most_used_commands,
@@ -79,7 +79,7 @@ impl<'a> StatsGenerator<'a> {
             .run_query("select count(1) as n from commands", &[], |row| {
                 Ok(Count { count: row.get(0)? })
             });
-        vec.get(0).unwrap().count
+        vec.first().unwrap().count
     }
 }
 
