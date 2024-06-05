@@ -85,13 +85,18 @@ impl<'a> StatsGenerator<'a> {
 
 #[cfg(test)]
 mod tests {
+    use rusqlite::Connection;
+
     use crate::history::History;
-    use crate::settings::HistoryFormat;
+    use crate::network::Network;
     use crate::stats_generator::StatItem;
 
     #[test]
     fn empty_history() {
-        let history = History::load(HistoryFormat::Bash);
+        let history = History {
+            connection: Connection::open_in_memory().unwrap(),
+            network: Network::random(),
+        };
         let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
         let lines = stats_generator.generate_command_stats(10, Vec::new());
         assert_eq!(lines, "");
@@ -99,7 +104,10 @@ mod tests {
 
     #[test]
     fn partial_history() {
-        let history = History::load(HistoryFormat::Bash);
+        let history = History {
+            connection: Connection::open_in_memory().unwrap(),
+            network: Network::random(),
+        };
         let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
         let lines = stats_generator.generate_command_stats(
             3,
@@ -122,7 +130,10 @@ mod tests {
 
     #[test]
     fn full_history() {
-        let history = History::load(HistoryFormat::Bash);
+        let history = History {
+            connection: Connection::open_in_memory().unwrap(),
+            network: Network::random(),
+        };
         let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
         let lines = stats_generator.generate_command_stats(
             2,
