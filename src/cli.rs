@@ -141,7 +141,16 @@ pub enum SubCommand {
     },
 
     /// Prints stats
-    Stats {},
+    Stats {
+        /// The minimum command size to be listed in the "top-n" commands
+        #[arg(
+            value_name = "TOP_COMMAND_MIN_SIZE",
+            short,
+            long,
+            value_name = "top_cmd_min_size"
+        )]
+        command_limit: Option<i16>,
+    },
 }
 
 #[derive(Clone, Copy, ValueEnum, Default)]

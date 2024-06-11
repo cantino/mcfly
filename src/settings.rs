@@ -152,6 +152,7 @@ pub struct Settings {
     pub pattern: Option<Regex>,
     pub dump_format: DumpFormat,
     pub colors: Colors,
+    pub stats_command_limit: Option<i16>,
 }
 
 impl Default for Settings {
@@ -212,6 +213,7 @@ impl Default for Settings {
                     results_selection_hl: Color::Grey,
                 },
             },
+            stats_command_limit: None,
         }
     }
 }
@@ -453,8 +455,9 @@ impl Settings {
                 settings.dump_format = format;
             }
 
-            SubCommand::Stats {} => {
+            SubCommand::Stats { command_limit } => {
                 settings.mode = Mode::Stats;
+                settings.stats_command_limit = command_limit;
             }
         }
 

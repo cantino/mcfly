@@ -18,7 +18,7 @@ struct StatItem {
 }
 
 impl<'a> StatsGenerator<'a> {
-    pub fn generate_stats(&self, limit: i32) -> String {
+    pub fn generate_stats(&self, limit: i32, command_limit: Option<i16>) -> String {
         let mut lines = "".to_owned();
         let count_history = Self::count_commands_from_db_history(self);
         if count_history == 0 {
@@ -31,11 +31,17 @@ impl<'a> StatsGenerator<'a> {
             self,
             limit,
             most_used_commands,
+            command_limit,
         ));
         lines
     }
 
-    fn generate_command_stats(&self, limit: i32, stats: Vec<StatItem>) -> String {
+    fn generate_command_stats(
+        &self,
+        limit: i32,
+        stats: Vec<StatItem>,
+        command_limit: Option<i16>,
+    ) -> String {
         let mut lines = "".to_owned();
         if !stats.is_empty() {
             lines.push_str(
@@ -49,6 +55,9 @@ impl<'a> StatsGenerator<'a> {
             for item in stats {
                 let cmd = item.cmd;
                 if !cmd.trim().is_empty() {
+                    if command_limit.is_some() && cmd.len() < command_limit.unwrap() as usize {
+                        continue;
+                    }
                     let relative_cmd = re.captures(&cmd).map(|dir_and_cmd| {
                         format!(
                             "{0} ({1})",
@@ -112,7 +121,7 @@ mod tests {
             network: Network::random(),
         };
         let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
-        let lines = stats_generator.generate_command_stats(10, Vec::new());
+        let lines = stats_generator.generate_command_stats(10, Vec::new(), None);
         assert_eq!(lines, "");
     }
 
@@ -135,6 +144,7 @@ mod tests {
                     count: 9,
                 },
             ]),
+            None,
         );
         assert_eq!(
             lines,
@@ -161,6 +171,7 @@ mod tests {
                     count: 9,
                 },
             ]),
+            None,
         );
         assert_eq!(
             lines,
@@ -187,10 +198,46 @@ mod tests {
                     count: 9,
                 },
             ]),
+            None,
         );
         assert_eq!(
             lines,
             "  - 2 first commands, sorted by occurrences:\n    docker (./bin) (10)\n    docker (/opt/local/share) (9)\n"
+        );
+    }
+
+    #[test]
+    fn history_can_be_filtered_by_command_size() {
+        let history = History {
+            connection: Connection::open_in_memory().unwrap(),
+            network: Network::random(),
+        };
+        let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
+        let lines = stats_generator.generate_command_stats(
+            2,
+            Vec::from([
+                StatItem {
+                    cmd: "a".to_string(),
+                    count: 1,
+                },
+                StatItem {
+                    cmd: "be".to_string(),
+                    count: 2,
+                },
+                StatItem {
+                    cmd: "bee".to_string(),
+                    count: 3,
+                },
+                StatItem {
+                    cmd: "bees".to_string(),
+                    count: 4,
+                },
+            ]),
+            Option::from(3),
+        );
+        assert_eq!(
+            lines,
+            "  - 2 first commands, sorted by occurrences:\n    bee (3)\n    bees (4)\n"
         );
     }
 }
