@@ -18,7 +18,7 @@ struct StatItem {
 }
 
 impl<'a> StatsGenerator<'a> {
-    pub fn generate_stats(&self, limit: i32, command_limit: Option<i16>) -> String {
+    pub fn generate_stats(&self, limit: i16, command_limit: Option<i16>) -> String {
         let mut lines = "".to_owned();
         let count_history = Self::count_commands_from_db_history(self);
         if count_history == 0 {
@@ -30,30 +30,30 @@ impl<'a> StatsGenerator<'a> {
         lines.push_str(&Self::generate_command_stats(
             self,
             limit,
-            most_used_commands,
             command_limit,
+            most_used_commands,
         ));
         lines
     }
 
     fn generate_command_stats(
         &self,
-        limit: i32,
-        stats: Vec<StatItem>,
+        limit: i16,
         command_limit: Option<i16>,
+        stats: Vec<StatItem>,
     ) -> String {
         let mut lines = "".to_owned();
         if !stats.is_empty() {
             lines.push_str(
                 format!(
                     "  - {:?} first commands, sorted by occurrences:\n",
-                    min(limit, stats.len() as i32)
+                    min(limit, stats.len() as i16)
                 )
                 .as_mut_str(),
             );
             let re = Regex::new("^(.*)/(.*)$").unwrap();
-            for item in stats {
-                let cmd = item.cmd;
+            for item in &stats[..min(limit as usize, stats.len())] {
+                let cmd = item.clone().cmd;
                 if !cmd.trim().is_empty() {
                     if command_limit.is_some() && cmd.len() < command_limit.unwrap() as usize {
                         continue;
@@ -76,7 +76,7 @@ impl<'a> StatsGenerator<'a> {
         lines
     }
 
-    fn most_used_commands(&self, limit: &i32) -> Vec<StatItem> {
+    fn most_used_commands(&self, limit: &i16) -> Vec<StatItem> {
         self
             .history
             .run_query("select substr(cmd,1,instr(cmd,' ')-1), count(1) as n from commands group by 1 order by 2 desc limit :limit ", &[
@@ -121,7 +121,7 @@ mod tests {
             network: Network::random(),
         };
         let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
-        let lines = stats_generator.generate_command_stats(10, Vec::new(), None);
+        let lines = stats_generator.generate_command_stats(10, None, Vec::new());
         assert_eq!(lines, "");
     }
 
@@ -134,6 +134,7 @@ mod tests {
         let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
         let lines = stats_generator.generate_command_stats(
             3,
+            None,
             Vec::from([
                 StatItem {
                     cmd: "git".to_string(),
@@ -144,7 +145,6 @@ mod tests {
                     count: 9,
                 },
             ]),
-            None,
         );
         assert_eq!(
             lines,
@@ -160,7 +160,8 @@ mod tests {
         };
         let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
         let lines = stats_generator.generate_command_stats(
-            2,
+            10,
+            None,
             Vec::from([
                 StatItem {
                     cmd: "git".to_string(),
@@ -171,7 +172,6 @@ mod tests {
                     count: 9,
                 },
             ]),
-            None,
         );
         assert_eq!(
             lines,
@@ -187,7 +187,8 @@ mod tests {
         };
         let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
         let lines = stats_generator.generate_command_stats(
-            2,
+            10,
+            None,
             Vec::from([
                 StatItem {
                     cmd: "./bin/docker".to_string(),
@@ -198,7 +199,6 @@ mod tests {
                     count: 9,
                 },
             ]),
-            None,
         );
         assert_eq!(
             lines,
@@ -207,14 +207,15 @@ mod tests {
     }
 
     #[test]
-    fn history_can_be_filtered_by_command_size() {
+    fn command_stats_can_be_filtered_by_command_size() {
         let history = History {
             connection: Connection::open_in_memory().unwrap(),
             network: Network::random(),
         };
         let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
         let lines = stats_generator.generate_command_stats(
-            2,
+            10,
+            Option::from(3),
             Vec::from([
                 StatItem {
                     cmd: "a".to_string(),
@@ -233,11 +234,37 @@ mod tests {
                     count: 4,
                 },
             ]),
-            Option::from(3),
         );
         assert_eq!(
             lines,
-            "  - 2 first commands, sorted by occurrences:\n    bee (3)\n    bees (4)\n"
+            "  - 4 first commands, sorted by occurrences:\n    bee (3)\n    bees (4)\n"
+        );
+    }
+
+    #[test]
+    fn command_stats_can_be_limited() {
+        let history = History {
+            connection: Connection::open_in_memory().unwrap(),
+            network: Network::random(),
+        };
+        let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
+        let lines = stats_generator.generate_command_stats(
+            2,
+            None,
+            Vec::from([
+                StatItem {
+                    cmd: "a".to_string(),
+                    count: 1,
+                },
+                StatItem {
+                    cmd: "be".to_string(),
+                    count: 2,
+                },
+            ]),
+        );
+        assert_eq!(
+            lines,
+            "  - 2 first commands, sorted by occurrences:\n    a (1)\n    be (2)\n"
         );
     }
 }

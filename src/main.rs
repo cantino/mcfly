@@ -104,7 +104,10 @@ fn handle_dump(settings: &Settings) {
 
 fn handle_stats(settings: &Settings) {
     let history = History::load(settings.history_format);
-    let stats = StatsGenerator::new(&history).generate_stats(10, settings.stats_command_limit);
+    let stats = StatsGenerator::new(&history).generate_stats(
+        settings.stats_top_command_limit,
+        settings.stats_command_limit,
+    );
     println!("{}", stats);
 }
 

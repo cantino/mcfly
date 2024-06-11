@@ -150,6 +150,16 @@ pub enum SubCommand {
             value_name = "top_cmd_min_size"
         )]
         command_limit: Option<i16>,
+
+        /// The number of "top-n" commands
+        #[arg(
+            value_name = "TOP_COMMAND_SIZE",
+            short,
+            long,
+            value_name = "top_cmd_size",
+            default_value_t = 10
+        )]
+        limit: i16,
     },
 }
 
