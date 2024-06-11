@@ -1,6 +1,7 @@
 use std::cmp::min;
 use std::ops::Add;
 
+use regex::Regex;
 use serde::Serialize;
 
 use crate::history::History;
@@ -44,9 +45,22 @@ impl<'a> StatsGenerator<'a> {
                 )
                 .as_mut_str(),
             );
+            let re = Regex::new("^(.*)/(.*)$").unwrap();
             for item in stats {
-                if !item.cmd.trim().is_empty() {
-                    lines = lines.add(&*format!("    {:#} ({:?})\n", item.cmd, item.count));
+                let cmd = item.cmd;
+                if !cmd.trim().is_empty() {
+                    let relative_cmd = re.captures(&cmd).map(|dir_and_cmd| {
+                        format!(
+                            "{0} ({1})",
+                            dir_and_cmd.get(2).unwrap().as_str(),
+                            dir_and_cmd.get(1).unwrap().as_str()
+                        )
+                    });
+                    lines = lines.add(&*format!(
+                        "    {:#} ({:?})\n",
+                        relative_cmd.unwrap_or(cmd),
+                        item.count
+                    ));
                 }
             }
         }
@@ -129,7 +143,7 @@ mod tests {
     }
 
     #[test]
-    fn full_history() {
+    fn full_history_with_simple_commands() {
         let history = History {
             connection: Connection::open_in_memory().unwrap(),
             network: Network::random(),
@@ -151,6 +165,32 @@ mod tests {
         assert_eq!(
             lines,
             "  - 2 first commands, sorted by occurrences:\n    git (10)\n    cargo (9)\n"
+        );
+    }
+
+    #[test]
+    fn history_with_relative_and_full_path_commands() {
+        let history = History {
+            connection: Connection::open_in_memory().unwrap(),
+            network: Network::random(),
+        };
+        let stats_generator = crate::stats_generator::StatsGenerator::new(&history);
+        let lines = stats_generator.generate_command_stats(
+            2,
+            Vec::from([
+                StatItem {
+                    cmd: "./bin/docker".to_string(),
+                    count: 10,
+                },
+                StatItem {
+                    cmd: "/opt/local/share/docker".to_string(),
+                    count: 9,
+                },
+            ]),
+        );
+        assert_eq!(
+            lines,
+            "  - 2 first commands, sorted by occurrences:\n    docker (./bin) (10)\n    docker (/opt/local/share) (9)\n"
         );
     }
 }
