@@ -22,6 +22,7 @@ pub enum Mode {
     Move,
     Init,
     Dump,
+    Stats,
 }
 
 #[derive(Debug)]
@@ -151,6 +152,8 @@ pub struct Settings {
     pub pattern: Option<Regex>,
     pub dump_format: DumpFormat,
     pub colors: Colors,
+    pub stats_command_limit: Option<i16>,
+    pub stats_top_command_limit: i16,
 }
 
 impl Default for Settings {
@@ -211,6 +214,8 @@ impl Default for Settings {
                     results_selection_hl: Color::Grey,
                 },
             },
+            stats_command_limit: None,
+            stats_top_command_limit: 10,
         }
     }
 }
@@ -450,6 +455,15 @@ impl Settings {
                 settings.sort_order = sort;
                 settings.pattern = regex;
                 settings.dump_format = format;
+            }
+
+            SubCommand::Stats {
+                command_limit,
+                limit,
+            } => {
+                settings.mode = Mode::Stats;
+                settings.stats_command_limit = command_limit;
+                settings.stats_top_command_limit = limit;
             }
         }
 

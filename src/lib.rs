@@ -13,6 +13,7 @@ pub mod path_update_helpers;
 pub mod settings;
 pub mod shell_history;
 pub mod simplified_command;
+pub mod stats_generator;
 pub mod time;
 pub mod trainer;
 pub mod training_cache;
