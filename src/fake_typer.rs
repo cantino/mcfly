@@ -12,9 +12,10 @@ extern "C" {
 pub fn use_tiocsti(string: &str) {
     for byte in string.as_bytes() {
         let a: *const u8 = byte;
-        if unsafe { ioctl(0, libc::TIOCSTI.try_into().unwrap(), a) } < 0 {
-            panic!("Error encountered when calling ioctl");
-        }
+        assert!(
+            unsafe { ioctl(0, libc::TIOCSTI.try_into().unwrap(), a) } >= 0,
+            "Error encountered when calling ioctl"
+        );
     }
 }
 

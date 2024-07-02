@@ -70,6 +70,7 @@ impl Default for Network {
 }
 
 impl Network {
+    #[must_use]
     pub fn random() -> Network {
         let mut rng = rand::thread_rng();
 
@@ -98,6 +99,7 @@ impl Network {
         self.final_output = self.final_sum.tanh();
     }
 
+    #[must_use]
     pub fn dot(&self, features: &Features) -> f64 {
         let mut network_output = self.final_bias;
         for (node, output_weight) in self.hidden_nodes.iter().zip(self.final_weights.iter()) {
@@ -107,10 +109,12 @@ impl Network {
         network_output
     }
 
+    #[must_use]
     pub fn output(&self, features: &Features) -> f64 {
         self.dot(features).tanh()
     }
 
+    #[must_use]
     pub fn average_error(&self, generator: &TrainingSampleGenerator, records: usize) -> f64 {
         let mut error = 0.0;
         let mut samples = 0.0;

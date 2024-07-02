@@ -18,14 +18,15 @@ struct StatItem {
 }
 
 impl<'a> StatsGenerator<'a> {
+    #[must_use]
     pub fn generate_stats(&self, limit: i16, command_limit: Option<i16>) -> String {
-        let mut lines = "".to_owned();
+        let mut lines = String::new();
         let count_history = Self::count_commands_from_db_history(self);
         if count_history == 0 {
             return "No history, no stats!".to_string();
         }
         lines.push_str("📊 Quick stats:\n");
-        lines.push_str(format!("  - history has {:?} items ;\n", count_history).as_mut_str());
+        lines.push_str(format!("  - history has {count_history:?} items ;\n").as_mut_str());
         let most_used_commands = self.most_used_commands(&limit, command_limit.unwrap_or(1));
         lines.push_str(&Self::generate_command_stats(
             self,
@@ -36,7 +37,7 @@ impl<'a> StatsGenerator<'a> {
     }
 
     fn generate_command_stats(&self, limit: i16, stats: Vec<StatItem>) -> String {
-        let mut lines = "".to_owned();
+        let mut lines = String::new();
         if !stats.is_empty() {
             lines.push_str(
                 format!(

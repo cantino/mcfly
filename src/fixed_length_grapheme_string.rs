@@ -21,6 +21,7 @@ impl Write for FixedLengthGraphemeString {
 }
 
 impl FixedLengthGraphemeString {
+    #[must_use]
     pub fn empty(max_grapheme_length: u16) -> FixedLengthGraphemeString {
         FixedLengthGraphemeString {
             string: String::new(),

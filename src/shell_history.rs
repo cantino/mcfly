@@ -54,22 +54,19 @@ fn has_leading_timestamp(line: &str) -> bool {
     matched_chars == 11
 }
 
+#[must_use]
 pub fn history_file_path() -> PathBuf {
     let path = PathBuf::from(
         env::var("HISTFILE")
             .or_else(|_| env::var("MCFLY_HISTFILE"))
             .unwrap_or_else(|err| {
                 panic!(
-            "McFly error: Please ensure HISTFILE or MCFLY_HISTFILE is set for your shell ({})",
-            err
+            "McFly error: Please ensure HISTFILE or MCFLY_HISTFILE is set for your shell ({err})"
         )
             }),
     );
     fs::canonicalize(path).unwrap_or_else(|err| {
-        panic!(
-            "McFly error: The contents of $HISTFILE/$MCFLY_HISTFILE appears invalid ({})",
-            err
-        )
+        panic!("McFly error: The contents of $HISTFILE/$MCFLY_HISTFILE appears invalid ({err})")
     })
 }
 
@@ -113,6 +110,7 @@ impl fmt::Display for HistoryCommand {
     }
 }
 
+#[must_use]
 pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCommand> {
     match history_format {
         HistoryFormat::Bash => {
@@ -120,7 +118,7 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
             let zsh_timestamp_and_duration_regex = Regex::new(r"^: [0-9]+:[0-9]+;").unwrap();
             let when = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({})", err))
+                .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
                 .as_secs() as i64;
             history_contents
                 .split('\n')
@@ -134,7 +132,7 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
             let zsh_timestamp_and_duration_regex = Regex::new(r"^: [0-9]+:[0-9]+;").unwrap();
             let when = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({})", err))
+                .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
                 .as_secs() as i64;
             history_contents
                 .split('\n')
@@ -174,6 +172,7 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
     }
 }
 
+#[must_use]
 pub fn last_history_line(path: &Path, history_format: HistoryFormat) -> Option<String> {
     // Could switch to https://github.com/mikeycgto/rev_lines
     full_history(path, history_format)
@@ -216,7 +215,7 @@ pub fn delete_last_history_entry_if_search(
         .into_iter()
         .map(|cmd| cmd.to_string())
         // Newline at end of file.
-        .chain(Some(String::from("")))
+        .chain(Some(String::new()))
         .collect::<Vec<String>>();
 
     fs::write(path, lines.join("\n"))
@@ -233,7 +232,7 @@ pub fn delete_lines(path: &Path, history_format: HistoryFormat, command: &str) {
         .filter(|cmd| !command.eq(&zsh_timestamp_and_duration_regex.replace(&cmd.command, "")))
         .map(|cmd| cmd.to_string())
         // Newline at end of file.
-        .chain(Some(String::from("")))
+        .chain(Some(String::new()))
         .collect::<Vec<String>>();
 
     fs::write(path, lines.join("\n"))
@@ -246,8 +245,7 @@ pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) 
         .open(path)
         .unwrap_or_else(|err| {
             panic!(
-                "McFly error: please make sure the specified --append-to-histfile file ({:?}) exists ({})",
-                path, err
+                "McFly error: please make sure the specified --append-to-histfile file ({path:?}) exists ({err})"
             )
         });
 
@@ -255,7 +253,7 @@ pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) 
         println!("McFly: Appended to file '{:?}': {}", &path, command);
     }
 
-    if let Err(e) = writeln!(file, "{}", command) {
+    if let Err(e) = writeln!(file, "{command}") {
         eprintln!("Couldn't append to file '{}': {}", path.display(), e);
     }
 }

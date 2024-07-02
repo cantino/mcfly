@@ -21,12 +21,11 @@ pub fn clean(settings: &Settings, history: &History, command: &str) {
                     .or_else(|_| env::var("MCFLY_HISTFILE"))
                     .unwrap_or_else(|err| {
                         panic!(
-                            "McFly error: Please ensure that HISTFILE/MCFLY_HISTFILE is set ({})",
-                            err
+                            "McFly error: Please ensure that HISTFILE/MCFLY_HISTFILE is set ({err})"
                         )
                     }),
             );
-            shell_history::delete_lines(&histfile, settings.history_format, command)
+            shell_history::delete_lines(&histfile, settings.history_format, command);
         }
         // Fish integration does not use a MCFLY_HISTORY file because we can get the last command
         // during a fish_postexec function.
@@ -40,10 +39,7 @@ fn clean_temporary_files(mcfly_history: &Path, history_format: HistoryFormat, co
     let path = mcfly_history;
     if let Some(directory) = path.parent() {
         let expanded_path = fs::canonicalize(directory).unwrap_or_else(|err| {
-            panic!(
-                "McFly error: The contents of $MCFLY_HISTORY appear invalid ({})",
-                err
-            )
+            panic!("McFly error: The contents of $MCFLY_HISTORY appear invalid ({err})")
         });
         let paths = fs::read_dir(expanded_path).unwrap();
 

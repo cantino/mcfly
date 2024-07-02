@@ -109,7 +109,7 @@ impl<'a> Interface<'a> {
         Interface {
             history,
             settings,
-            input: CommandInput::from(settings.command.to_owned()),
+            input: CommandInput::from(settings.command.clone()),
             selection: 0,
             matches: Vec::new(),
             debug: settings.debug,
@@ -117,8 +117,8 @@ impl<'a> Interface<'a> {
             delete_requests: Vec::new(),
             menu_mode: MenuMode::Normal,
             in_vim_insert_mode: true,
-            result_sort: settings.result_sort.to_owned(),
-            result_filter: settings.result_filter.to_owned(),
+            result_sort: settings.result_sort.clone(),
+            result_filter: settings.result_filter.clone(),
         }
     }
 
@@ -126,7 +126,7 @@ impl<'a> Interface<'a> {
         self.build_cache_table();
         self.select();
 
-        let command = self.input.command.to_owned();
+        let command = self.input.command.clone();
 
         if command.chars().any(|c| !c.is_whitespace()) {
             self.history.record_selected_from_ui(
@@ -151,13 +151,13 @@ impl<'a> Interface<'a> {
 
     fn build_cache_table(&self) {
         self.history.build_cache_table(
-            &self.settings.dir.to_owned(),
+            &self.settings.dir.clone(),
             &self.result_filter,
-            &Some(self.settings.session_id.to_owned()),
+            &Some(self.settings.session_id.clone()),
             None,
             None,
             None,
-            self.settings.limit.to_owned(),
+            self.settings.limit,
         );
     }
 
@@ -224,7 +224,7 @@ impl<'a> Interface<'a> {
         }
 
         let mut index: usize = 0;
-        for command in self.matches.iter() {
+        for command in &self.matches {
             let mut fg = if self.settings.lightmode {
                 self.settings.colors.lightmode_colors.results_fg
             } else {
@@ -321,7 +321,7 @@ impl<'a> Interface<'a> {
                         (command_line_index + self.result_top_index() as i16) as u16
                     ),
                     SetForegroundColor(timing_color),
-                    Print(format!("{:>9}", duration)),
+                    Print(format!("{duration:>9}")),
                     SetForegroundColor(Color::Reset),
                     SetBackgroundColor(Color::Reset)
                 )
@@ -390,7 +390,7 @@ impl<'a> Interface<'a> {
     fn confirm(&mut self, confirmation: bool) {
         if confirmation {
             if let MenuMode::ConfirmDelete = self.menu_mode {
-                self.delete_selection()
+                self.delete_selection();
             }
         }
         self.menu_mode = MenuMode::Normal;
@@ -474,7 +474,7 @@ impl<'a> Interface<'a> {
                         match key_event {
                             KeyEvent {
                                 modifiers: KeyModifiers::CONTROL,
-                                code: Char('c') | Char('d') | Char('g') | Char('z') | Char('r'),
+                                code: Char('c' | 'd' | 'g' | 'z' | 'r'),
                                 ..
                             } => {
                                 self.run = false;
@@ -482,17 +482,14 @@ impl<'a> Interface<'a> {
                                 break;
                             }
                             KeyEvent {
-                                code: Char('y') | Char('Y'),
+                                code: Char('y' | 'Y'),
                                 ..
                             } => {
                                 self.confirm(true);
                             }
                             KeyEvent {
-                                code: Char('n') | Char('N'),
+                                code: Char('n' | 'N') | KeyCode::Esc,
                                 ..
-                            }
-                            | KeyEvent {
-                                code: KeyCode::Esc, ..
                             } => {
                                 self.confirm(false);
                             }
@@ -538,19 +535,13 @@ impl<'a> Interface<'a> {
         }
         match event {
             KeyEvent {
-                code: KeyCode::Enter,
+                code: KeyCode::Enter | Char('\r' | '\n'),
                 ..
             }
             | KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
                 code: Char('j'),
                 ..
-            }
-            | KeyEvent {
-                code: Char('\r'), ..
-            }
-            | KeyEvent {
-                code: Char('\n'), ..
             } => {
                 self.run = !self.settings.disable_run_command;
                 self.accept_selection();
@@ -567,7 +558,7 @@ impl<'a> Interface<'a> {
 
             KeyEvent {
                 modifiers: KeyModifiers::CONTROL,
-                code: Char('c') | Char('g') | Char('z') | Char('r'),
+                code: Char('c' | 'g' | 'z' | 'r'),
                 ..
             }
             | KeyEvent {
@@ -615,7 +606,7 @@ impl<'a> Interface<'a> {
 
             KeyEvent {
                 modifiers: KeyModifiers::ALT,
-                code: Char('\x08') | Char('\x7f'),
+                code: Char('\x08' | '\x7f'),
                 ..
             } => {
                 self.input.delete(Move::BackwardWord);
@@ -747,7 +738,7 @@ impl<'a> Interface<'a> {
 
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
-                    code: Char('c') | Char('g') | Char('z') | Char('r'),
+                    code: Char('c' | 'g' | 'z' | 'r'),
                     ..
                 } => {
                     self.run = false;
@@ -770,7 +761,7 @@ impl<'a> Interface<'a> {
                 }
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
-                    code: Char('u') | Char('p'),
+                    code: Char('u' | 'p'),
                     ..
                 } => self.move_selection(MoveSelection::Up),
 
@@ -780,7 +771,7 @@ impl<'a> Interface<'a> {
                 }
                 | KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
-                    code: Char('d') | Char('n'),
+                    code: Char('d' | 'n'),
                     ..
                 } => self.move_selection(MoveSelection::Down),
 
@@ -866,7 +857,7 @@ impl<'a> Interface<'a> {
 
                 KeyEvent {
                     modifiers: KeyModifiers::CONTROL,
-                    code: Char('c') | Char('g') | Char('z') | Char('r'), // TODO add ZZ as shortcut
+                    code: Char('c' | 'g' | 'z' | 'r'),
                     ..
                 }
                 | KeyEvent {
@@ -907,14 +898,14 @@ impl<'a> Interface<'a> {
                 } => self.move_selection(MoveSelection::Down),
 
                 KeyEvent {
-                    code: Char('b') | Char('e'),
+                    code: Char('b' | 'e'),
                     ..
                 } => self.input.move_cursor(Move::BackwardWord),
                 KeyEvent {
                     code: Char('w'), ..
                 } => self.input.move_cursor(Move::ForwardWord),
                 KeyEvent {
-                    code: Char('0') | Char('^'),
+                    code: Char('0' | '^'),
                     ..
                 } => self.input.move_cursor(Move::BOL),
                 KeyEvent {
@@ -922,7 +913,7 @@ impl<'a> Interface<'a> {
                 } => self.input.move_cursor(Move::EOL),
 
                 KeyEvent {
-                    code: Char('i') | Char('a'),
+                    code: Char('i' | 'a'),
                     ..
                 } => self.in_vim_insert_mode = true,
 

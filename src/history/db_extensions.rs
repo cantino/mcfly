@@ -37,5 +37,5 @@ pub fn add_db_functions(db: &Connection) {
             Ok(network.output(&features))
         },
     )
-    .unwrap_or_else(|err| panic!("McFly error: Successful create_scalar_function ({})", err));
+    .unwrap_or_else(|err| panic!("McFly error: Successful create_scalar_function ({err})"));
 }

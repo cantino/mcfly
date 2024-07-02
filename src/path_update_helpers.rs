@@ -1,8 +1,9 @@
 use crate::settings::pwd;
-use path_absolutize::*;
+use path_absolutize::Absolutize;
 use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;
 
+#[must_use]
 pub fn normalize_path(incoming_path: &str) -> String {
     let expanded_path = shellexpand::tilde(incoming_path).to_string();
     return Path::new(&expanded_path)
@@ -13,6 +14,7 @@ pub fn normalize_path(incoming_path: &str) -> String {
         .to_string();
 }
 
+#[must_use]
 pub fn parse_mv_command(command: &str) -> Vec<String> {
     let mut in_double_quote = false;
     let mut in_single_quote = false;
@@ -81,7 +83,7 @@ pub fn parse_mv_command(command: &str) -> Vec<String> {
         .iter()
         .skip(1)
         .filter(|s| !s.starts_with('-'))
-        .map(|s| s.to_owned())
+        .map(std::borrow::ToOwned::to_owned)
         .collect()
 }
 

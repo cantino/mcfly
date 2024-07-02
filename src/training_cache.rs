@@ -6,7 +6,7 @@ use std::path::Path;
 
 pub fn write(data_set: &[(Features, bool)], cache_path: &Path) {
     let mut writer = Writer::from_path(cache_path)
-        .unwrap_or_else(|err| panic!("McFly error: Expected to be able to write a CSV ({})", err));
+        .unwrap_or_else(|err| panic!("McFly error: Expected to be able to write a CSV ({err})"));
     output_header(&mut writer);
 
     for (features, correct) in data_set {
@@ -14,22 +14,16 @@ pub fn write(data_set: &[(Features, bool)], cache_path: &Path) {
     }
 }
 
+#[must_use]
 pub fn read(cache_path: &Path) -> Vec<(Features, bool)> {
     let mut data_set: Vec<(Features, bool)> = Vec::new();
 
-    let mut reader = Reader::from_path(cache_path).unwrap_or_else(|err| {
-        panic!(
-            "McFly error: Expected to be able to read from CSV ({})",
-            err
-        )
-    });
+    let mut reader = Reader::from_path(cache_path)
+        .unwrap_or_else(|err| panic!("McFly error: Expected to be able to read from CSV ({err})"));
 
     for result in reader.records() {
         let record = result.unwrap_or_else(|err| {
-            panic!(
-                "McFly error: Expected to be able to unwrap cached result ({})",
-                err
-            )
+            panic!("McFly error: Expected to be able to unwrap cached result ({err})")
         });
 
         let features = Features {
@@ -66,10 +60,10 @@ fn output_header(writer: &mut Writer<File>) {
             "occurrences_factor",
             "correct",
         ])
-        .unwrap_or_else(|err| panic!("McFly error: Expected to write to CSV ({})", err));
+        .unwrap_or_else(|err| panic!("McFly error: Expected to write to CSV ({err})"));
     writer
         .flush()
-        .unwrap_or_else(|err| panic!("McFly error: Expected to flush CSV ({})", err));
+        .unwrap_or_else(|err| panic!("McFly error: Expected to flush CSV ({err})"));
 }
 
 fn output_row(writer: &mut Writer<File>, features: &Features, correct: bool) {
@@ -91,8 +85,8 @@ fn output_row(writer: &mut Writer<File>, features: &Features, correct: bool) {
                 String::from("f")
             },
         ])
-        .unwrap_or_else(|err| panic!("McFly error: Expected to write to CSV ({})", err));
+        .unwrap_or_else(|err| panic!("McFly error: Expected to write to CSV ({err})"));
     writer
         .flush()
-        .unwrap_or_else(|err| panic!("McFly error: Expected to flush CSV ({})", err));
+        .unwrap_or_else(|err| panic!("McFly error: Expected to flush CSV ({err})"));
 }
