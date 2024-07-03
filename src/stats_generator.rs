@@ -21,29 +21,29 @@ struct StatItem {
 impl<'a> StatsGenerator<'a> {
     pub fn generate_stats(&self, settings: &Settings) -> String {
         let mut lines = "".to_owned();
-        let count_history = Self::count_commands_from_db_history(self, &settings.stats_only_dir);
+        let count_history = Self::count_commands_from_db_history(self, &None);
         if count_history == 0 {
-            return if settings.stats_only_dir.is_some() {
-                format!(
-                    "No history found in {:?}",
-                    &settings.stats_only_dir.as_ref().unwrap()
-                )
-            } else {
-                "No history found in the database".to_string()
-            };
+            return "No history found in the database".to_string();
         }
         lines.push_str("📊 Quick stats:\n");
         if settings.stats_only_dir.is_some() {
             lines.push_str(
                 format!(
-                    "  - history has {:?} items in {:?}\n",
+                    "  - your history database contains {:?} items total and {:?} in {:?}\n",
                     count_history,
+                    Self::count_commands_from_db_history(self, &settings.stats_only_dir),
                     &settings.stats_only_dir.as_ref().unwrap()
                 )
                 .as_mut_str(),
             );
         } else {
-            lines.push_str(format!("  - history has {:?} items\n", count_history).as_mut_str());
+            lines.push_str(
+                format!(
+                    "  - your history database contains {:?} items\n",
+                    count_history
+                )
+                .as_mut_str(),
+            );
         }
         let most_used_commands = self.most_used_commands(
             settings.stats_cmds,
@@ -74,10 +74,14 @@ impl<'a> StatsGenerator<'a> {
 
         for (dir, items) in directory_map.iter() {
             if let Some(dir_name) = dir {
-                lines.push_str(&format!("  - Directory: {}\n", dir_name));
+                lines.push_str(&format!(
+                    "  - top {:?} matching commands in directory {:?}, sorted by occurrence:\n",
+                    min(cmds, items.len() as i16),
+                    dir_name
+                ));
             } else {
                 lines.push_str(&format!(
-                    "  - {:?} top filtered commands, sorted by occurrence:\n",
+                    "  - top {:?} matching commands, sorted by occurrence:\n",
                     min(cmds, items.len() as i16)
                 ));
             }
