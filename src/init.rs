@@ -4,6 +4,7 @@ use std::env;
 pub struct Init {}
 
 impl Init {
+    #[must_use]
     pub fn new(init_mode: &InitMode) -> Self {
         match init_mode {
             InitMode::Bash => {

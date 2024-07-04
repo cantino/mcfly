@@ -21,7 +21,7 @@ struct StatItem {
 impl<'a> StatsGenerator<'a> {
     #[must_use]
     pub fn generate_stats(&self, settings: &Settings) -> String {
-        let mut lines = "".to_owned();
+        let mut lines = String::new();
         let count_history = Self::count_commands_from_db_history(self, &None);
         if count_history == 0 {
             return "No history found in the database".to_string();
@@ -39,11 +39,8 @@ impl<'a> StatsGenerator<'a> {
             );
         } else {
             lines.push_str(
-                format!(
-                    "  - your history database contains {:?} items\n",
-                    count_history
-                )
-                .as_mut_str(),
+                format!("  - your history database contains {count_history:?} items\n")
+                    .as_mut_str(),
             );
         }
         let most_used_commands = self.most_used_commands(
@@ -73,7 +70,7 @@ impl<'a> StatsGenerator<'a> {
                 .push(item);
         }
 
-        for (dir, items) in directory_map.iter() {
+        for (dir, items) in &directory_map {
             if let Some(dir_name) = dir {
                 lines.push_str(&format!(
                     "  - top {:?} matching commands in directory {:?}, sorted by occurrence:\n",
@@ -171,7 +168,7 @@ impl<'a> StatsGenerator<'a> {
                 query,
                 &[
                     (":dir_filter_off", &only_dir.is_none()),
-                    (":only_dir", &only_dir.as_ref().unwrap_or(&"".to_string())),
+                    (":only_dir", &only_dir.as_ref().unwrap_or(&String::new())),
                     (":min_cmd_length", &min_cmd_length.to_owned()),
                     (":cmds", &cmds.to_owned()),
                     (
@@ -227,7 +224,7 @@ impl<'a> StatsGenerator<'a> {
             "SELECT count(1) AS n FROM commands WHERE (:dir_filter_off OR dir = :directory)",
             &[
                 (":dir_filter_off", &dir.is_none()),
-                (":directory", &dir.as_ref().unwrap_or(&"".to_string())),
+                (":directory", &dir.as_ref().unwrap_or(&String::new())),
             ],
             |row| Ok(Count { count: row.get(0)? }),
         );

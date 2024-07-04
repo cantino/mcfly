@@ -105,7 +105,7 @@ fn handle_dump(settings: &Settings) {
 fn handle_stats(settings: &Settings) {
     let history = History::load(settings.history_format);
     let stats = StatsGenerator::new(&history).generate_stats(settings);
-    println!("{}", stats);
+    println!("{stats}");
 }
 
 fn main() {
