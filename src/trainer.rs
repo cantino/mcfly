@@ -32,7 +32,7 @@ impl<'a> Trainer<'a> {
             .history
             .network
             .average_error(&generator, batch_size * 10);
-        println!("Current network error rate is {}", best_overall_error);
+        println!("Current network error rate is {best_overall_error}");
 
         loop {
             let mut best_restart_network = Network::random();
@@ -272,13 +272,11 @@ impl<'a> Trainer<'a> {
                             best_overall_network = best_restart_network;
 
                             println!(
-                                "New best overall for {:#?} with error {} (new best)",
-                                best_overall_network, best_overall_error
+                                "New best overall for {best_overall_network:#?} with error {best_overall_error} (new best)"
                             );
                         } else {
                             println!(
-                                "Best overall remains {:#?} with error {} (old)",
-                                best_overall_network, best_overall_error
+                                "Best overall remains {best_overall_network:#?} with error {best_overall_error} (old)"
                             );
                         }
                         break;

@@ -18,6 +18,7 @@ pub struct Node {
 }
 
 impl Node {
+    #[must_use]
     pub fn random() -> Node {
         let mut rng = rand::thread_rng();
 
@@ -36,6 +37,7 @@ impl Node {
         }
     }
 
+    #[must_use]
     pub fn dot(&self, features: &Features) -> f64 {
         self.offset
             + features.age_factor * self.age
@@ -50,6 +52,7 @@ impl Node {
             + features.occurrences_factor * self.occurrences
     }
 
+    #[must_use]
     pub fn output(&self, features: &Features) -> f64 {
         self.dot(features).tanh()
     }

@@ -32,12 +32,12 @@ fn handle_addition(settings: &Settings) {
                 settings.when_run.unwrap_or(
                     SystemTime::now()
                         .duration_since(UNIX_EPOCH)
-                        .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({})", err))
+                        .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
                         .as_secs() as i64,
                 ),
                 settings.history_format,
             );
-            shell_history::append_history_entry(&command, &histfile, settings.debug)
+            shell_history::append_history_entry(&command, &histfile, settings.debug);
         }
     }
 }
@@ -72,7 +72,7 @@ fn handle_search(settings: &Settings) {
             }
 
             fs::write(path, &out)
-                .unwrap_or_else(|err| panic!("McFly error: unable to write to {}: {}", path, err));
+                .unwrap_or_else(|err| panic!("McFly error: unable to write to {path}: {err}"));
         } else {
             fake_typer::use_tiocsti(&cmd);
 

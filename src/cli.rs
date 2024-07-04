@@ -13,11 +13,11 @@ pub struct Cli {
     #[arg(short, long)]
     pub debug: bool,
 
-    /// Session ID to record or search under (defaults to $MCFLY_SESSION_ID)
+    /// Session ID to record or search under (defaults to $`MCFLY_SESSION_ID`)
     #[arg(long = "session_id")]
     pub session_id: Option<String>,
 
-    /// Shell history file to read from when adding or searching (defaults to $MCFLY_HISTORY)
+    /// Shell history file to read from when adding or searching (defaults to $`MCFLY_HISTORY`)
     #[arg(long = "mcfly_history")]
     pub mcfly_history: Option<PathBuf>,
 
@@ -36,14 +36,14 @@ pub enum SubCommand {
     /// Add commands to the history
     #[command(alias = "a")]
     Add {
-        /// The command that was run (default last line of $MCFLY_HISTORY file)
+        /// The command that was run (default last line of $`MCFLY_HISTORY` file)
         command: Vec<String>,
 
         /// Exit code of command
         #[arg(value_name = "EXIT_CODE", short, long)]
         exit: Option<i32>,
 
-        /// Also append command to the given file (e.q., .bash_history)
+        /// Also append command to the given file (e.q., .`bash_history`)
         #[arg(value_name = "HISTFILE", short, long)]
         append_to_histfile: Option<String>,
 
@@ -223,6 +223,7 @@ pub enum DumpFormat {
 }
 
 impl Cli {
+    #[must_use]
     pub fn is_init(&self) -> bool {
         matches!(self.command, SubCommand::Init { .. })
     }
@@ -230,6 +231,7 @@ impl Cli {
 
 impl SortOrder {
     #[inline]
+    #[must_use]
     pub fn to_str(&self) -> &'static str {
         match self {
             Self::Asc => "ASC",

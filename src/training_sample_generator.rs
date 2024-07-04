@@ -19,7 +19,7 @@ impl TrainingSampleGenerator {
             let mcfly_cache_dir = cache_path.parent().unwrap();
 
             fs::create_dir_all(mcfly_cache_dir)
-                .unwrap_or_else(|_| panic!("Unable to create {:?}", mcfly_cache_dir));
+                .unwrap_or_else(|_| panic!("Unable to create {mcfly_cache_dir:?}"));
 
             training_cache::write(&ds, &cache_path);
             ds
@@ -48,13 +48,13 @@ impl TrainingSampleGenerator {
             }
 
             if i % 100 == 0 {
-                println!("Done with {}", i);
+                println!("Done with {i}");
             }
 
             // Setup the cache for the time this command was recorded.
             // Unwrap is safe here because we check command.dir.is_none() above.
             history.build_cache_table(
-                &command.dir.to_owned().unwrap(),
+                &command.dir.clone().unwrap(),
                 &ResultFilter::Global,
                 &Some(command.session_id.clone()),
                 None,

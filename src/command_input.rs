@@ -21,7 +21,7 @@ pub enum Move {
 }
 
 #[derive(Debug)]
-/// CommandInput data structure
+/// `CommandInput` data structure
 pub struct CommandInput {
     /// The command itself
     pub command: String,
@@ -82,7 +82,7 @@ impl CommandInput {
 
     pub fn delete(&mut self, cmd: Move) {
         let mut new_command = String::with_capacity(self.command.len());
-        let command_copy = self.command.to_owned();
+        let command_copy = self.command.clone();
         let vec = command_copy.grapheme_indices(true);
 
         match cmd {
@@ -229,7 +229,7 @@ impl CommandInput {
 
         let mut word_index: usize = 0;
         let mut found_word: bool = false;
-        let command_copy = self.command.to_owned();
+        let command_copy = self.command.clone();
         let vec = command_copy
             .grapheme_indices(true)
             .enumerate()
@@ -264,7 +264,7 @@ impl CommandInput {
     /// Return the index of the grapheme cluster that represents the start of the next word after
     /// the cursor.
     fn next_word_boundary(&self) -> usize {
-        let command_copy = self.command.to_owned();
+        let command_copy = self.command.clone();
 
         let grapheme_indices = command_copy.grapheme_indices(true);
 
@@ -309,7 +309,7 @@ mod tests {
     #[test]
     fn display_works() {
         let input = CommandInput::from("foo bar baz");
-        assert_eq!(format!("{}", input), "foo bar baz");
+        assert_eq!(format!("{input}"), "foo bar baz");
     }
 
     #[test]

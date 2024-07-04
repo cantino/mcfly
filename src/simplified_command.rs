@@ -10,7 +10,7 @@ pub struct SimplifiedCommand {
 }
 
 #[allow(clippy::collapsible_if)]
-/// The goal of SimplifiedCommand is to produce a reduced approximation of the given command for template matching. It may
+/// The goal of `SimplifiedCommand` is to produce a reduced approximation of the given command for template matching. It may
 /// not produce an exact simplification. (For example, it does not handle deeply nested escaping, and it drops escape characters.)
 /// Possible enhancements:
 /// - Sort and expand command line options.

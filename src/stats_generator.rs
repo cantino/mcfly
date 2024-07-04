@@ -19,6 +19,7 @@ struct StatItem {
 }
 
 impl<'a> StatsGenerator<'a> {
+    #[must_use]
     pub fn generate_stats(&self, settings: &Settings) -> String {
         let mut lines = "".to_owned();
         let count_history = Self::count_commands_from_db_history(self, &None);

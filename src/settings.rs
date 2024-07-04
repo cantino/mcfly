@@ -64,7 +64,7 @@ pub enum HistoryFormat {
     Bash,
 
     /// zsh format - commands in plain text, with multiline commands on multiple lines.
-    /// McFly does not currently handle joining these lines; they're treated as separate commands.
+    /// `McFly` does not currently handle joining these lines; they're treated as separate commands.
     /// If --zsh-extended-history was given, `extended_history` will be true, and we'll strip the
     /// timestamp from the beginning of each command.
     Zsh { extended_history: bool },
@@ -272,8 +272,7 @@ impl Settings {
                 .unwrap_or_else(|err| {
                     if !settings.skip_environment_check {
                         panic!(
-                            "McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({})",
-                            err
+                            "McFly error: Please ensure that MCFLY_SESSION_ID contains a random session ID ({err})"
                         )
                     } else {
                         String::new()
@@ -286,10 +285,7 @@ impl Settings {
             {
                 env::var("MCFLY_HISTORY").unwrap_or_else(|err| {
                     if !settings.skip_environment_check {
-                        panic!(
-                            "McFly error: Please ensure that MCFLY_HISTORY is set ({})",
-                            err
-                        )
+                        panic!("McFly error: Please ensure that MCFLY_HISTORY is set ({err})")
                     } else {
                         String::new()
                     }
@@ -299,7 +295,7 @@ impl Settings {
         });
 
         {
-            use crate::cli::HistoryFormat::*;
+            use crate::cli::HistoryFormat::{Bash, Fish, Zsh, ZshExtended};
             settings.history_format = match cli.history_format {
                 Bash => HistoryFormat::Bash,
                 Zsh => HistoryFormat::Zsh {
@@ -328,7 +324,7 @@ impl Settings {
                         SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .unwrap_or_else(|err| {
-                                panic!("McFly error: Time went backwards ({})", err)
+                                panic!("McFly error: Time went backwards ({err})")
                             })
                             .as_secs() as i64,
                     )
@@ -438,7 +434,7 @@ impl Settings {
             SubCommand::Init { shell } => {
                 settings.mode = Mode::Init;
 
-                use crate::cli::InitMode::*;
+                use crate::cli::InitMode::{Bash, Fish, Powershell, Zsh};
                 settings.init_mode = match shell {
                     Bash => InitMode::Bash,
                     Zsh => InitMode::Zsh,
@@ -661,6 +657,7 @@ impl Settings {
     }
 
     // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_CACHE_DIR
+    #[must_use]
     pub fn mcfly_training_cache_path() -> PathBuf {
         let cache_dir = Settings::mcfly_xdg_dir().cache_dir().to_path_buf();
 
@@ -668,6 +665,7 @@ impl Settings {
     }
 
     // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_DATA_DIR
+    #[must_use]
     pub fn mcfly_db_path() -> PathBuf {
         let data_dir = Settings::mcfly_xdg_dir().data_dir().to_path_buf();
         if data_dir.exists() {
@@ -679,6 +677,7 @@ impl Settings {
     }
 
     // Use ~/.mcfly only if it already exists, otherwise create 'mcfly' folder in XDG_DATA_DIR
+    #[must_use]
     pub fn mcfly_config_path() -> PathBuf {
         let data_dir = Settings::mcfly_xdg_dir().data_dir().to_path_buf();
 
@@ -704,13 +703,10 @@ impl Settings {
 }
 
 #[cfg(not(windows))]
+#[must_use]
 pub fn pwd() -> String {
-    env::var("PWD").unwrap_or_else(|err| {
-        panic!(
-            "McFly error: Unable to determine current directory ({})",
-            err
-        )
-    })
+    env::var("PWD")
+        .unwrap_or_else(|err| panic!("McFly error: Unable to determine current directory ({err})"))
 }
 
 #[cfg(windows)]
@@ -743,6 +739,7 @@ fn is_env_var_truthy(name: &str) -> bool {
 impl TimeRange {
     /// Determine the range is full (`..`)
     #[inline]
+    #[must_use]
     pub fn is_full(&self) -> bool {
         self.since.is_none() && self.before.is_none()
     }
