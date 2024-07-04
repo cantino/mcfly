@@ -142,24 +142,49 @@ pub enum SubCommand {
 
     /// Prints stats
     Stats {
-        /// The minimum command size to be listed in the "top-n" commands
+        /// The minimum command length to be listed in the "top-n" commands
         #[arg(
-            value_name = "TOP_COMMAND_MIN_SIZE",
+            value_name = "MIN_CMD_LENGTH",
             short,
             long,
-            value_name = "top_cmd_min_size"
+            value_name = "min_cmd_length",
+            default_value_t = 0
         )]
-        command_limit: Option<i16>,
+        min_cmd_length: i16,
 
         /// The number of "top-n" commands
         #[arg(
-            value_name = "TOP_COMMAND_SIZE",
+            value_name = "CMDS",
             short,
             long,
-            value_name = "top_cmd_size",
+            value_name = "cmds",
             default_value_t = 10
         )]
-        limit: i16,
+        cmds: i16,
+
+        /// Break down by top directories - defaults to 0, which doesn't limit by directory
+        #[arg(
+            value_name = "DIRS",
+            short,
+            long,
+            value_name = "dirs",
+            default_value_t = 0
+        )]
+        dirs: i16,
+
+        // Skip the top n commands when breaking down by directory
+        #[arg(
+            value_name = "GLOBAL_CMDS_TO_IGNORE",
+            short,
+            long,
+            value_name = "global_cmds_to_ignore",
+            default_value_t = 10
+        )]
+        global_commands_to_ignore: i16,
+
+        /// Only show commands from a given directory
+        #[arg(value_name = "ONLY_DIR", short, long)]
+        only_dir: Option<String>,
     },
 }
 
