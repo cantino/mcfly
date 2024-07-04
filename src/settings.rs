@@ -152,8 +152,11 @@ pub struct Settings {
     pub pattern: Option<Regex>,
     pub dump_format: DumpFormat,
     pub colors: Colors,
-    pub stats_command_limit: Option<i16>,
-    pub stats_top_command_limit: i16,
+    pub stats_min_cmd_length: i16,
+    pub stats_cmds: i16,
+    pub stats_dirs: i16,
+    pub stats_global_commands_to_ignore: i16,
+    pub stats_only_dir: Option<String>,
 }
 
 impl Default for Settings {
@@ -214,8 +217,11 @@ impl Default for Settings {
                     results_selection_hl: Color::Grey,
                 },
             },
-            stats_command_limit: None,
-            stats_top_command_limit: 10,
+            stats_min_cmd_length: 0,
+            stats_cmds: 10,
+            stats_dirs: 0,
+            stats_global_commands_to_ignore: 10,
+            stats_only_dir: None,
         }
     }
 }
@@ -458,12 +464,18 @@ impl Settings {
             }
 
             SubCommand::Stats {
-                command_limit,
-                limit,
+                min_cmd_length,
+                cmds,
+                dirs,
+                global_commands_to_ignore,
+                only_dir,
             } => {
                 settings.mode = Mode::Stats;
-                settings.stats_command_limit = command_limit;
-                settings.stats_top_command_limit = limit;
+                settings.stats_min_cmd_length = min_cmd_length;
+                settings.stats_cmds = cmds;
+                settings.stats_dirs = dirs;
+                settings.stats_global_commands_to_ignore = global_commands_to_ignore;
+                settings.stats_only_dir = only_dir;
             }
         }
 
