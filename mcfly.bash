@@ -64,6 +64,7 @@ function mcfly_initialize {
   function mcfly_search {
     local LAST_EXIT_CODE=$?
     # Get a temp file name but don't create the file - mcfly will create the file for us.
+    local MCFLY_OUTPUT
     MCFLY_OUTPUT=$(mktemp --dry-run "${TMPDIR:-/tmp}"/mcfly.output.XXXXXXXX)
     # shellcheck disable=SC2145
     echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY"
@@ -75,11 +76,13 @@ function mcfly_initialize {
       return
     fi;
     # Get the command and set the bash text to it, and move the cursor to the end of the line.
+    local MCFLY_COMMAND
     MCFLY_COMMAND=$(awk 'NR==2{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
     READLINE_LINE=$MCFLY_COMMAND
     READLINE_POINT=${#READLINE_LINE}
 
     # Get the mode and bind the accept-line key if the mode is run.
+    local MCFLY_MODE
     MCFLY_MODE=$(awk 'NR==1{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
     if [[ $MCFLY_MODE == "run" ]];
     then
