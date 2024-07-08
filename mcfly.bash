@@ -62,6 +62,7 @@ function mcfly_initialize {
   # Runs mcfly search with output to file, reads the output, and sets READLINE_LINE to the command.
   # If the command is to be run, binds the MCFLY_KEYSTROKE2 to accept-line, otherwise binds it to nothing.
   function mcfly_search {
+    local LAST_EXIT_CODE=$?
     # Get a temp file name but don't create the file - mcfly will create the file for us.
     MCFLY_OUTPUT=$(mktemp --dry-run ${TMPDIR:-/tmp}/mcfly.output.XXXXXXXX)
     echo \#mcfly: ${READLINE_LINE[@]} >> $MCFLY_HISTORY
