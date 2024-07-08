@@ -45,7 +45,7 @@ function mcfly_initialize {
 
     # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
     if [[ ! -f ${MCFLY_HISTORY-} ]]; then
-      MCFLY_HISTORY=$(mktemp "${TMPDIR:-/tmp}"/mcfly.XXXXXXXX)
+      MCFLY_HISTORY=$(command mktemp "${TMPDIR:-/tmp}"/mcfly.XXXXXXXX)
       export MCFLY_HISTORY
       command tail -n100 "${MCFLY_HISTFILE}" >| "${MCFLY_HISTORY}"
     fi
@@ -76,7 +76,7 @@ function mcfly_initialize {
     local LAST_EXIT_CODE=$? IFS=$' \t\n'
     # Get a temp file name but don't create the file - mcfly will create the file for us.
     local MCFLY_OUTPUT
-    MCFLY_OUTPUT=$(mktemp --dry-run "${TMPDIR:-/tmp}"/mcfly.output.XXXXXXXX)
+    MCFLY_OUTPUT=$(command mktemp --dry-run "${TMPDIR:-/tmp}"/mcfly.output.XXXXXXXX)
     echo "#mcfly: ${READLINE_LINE[*]}" >> "$MCFLY_HISTORY"
     "$MCFLY_PATH" search -o "$MCFLY_OUTPUT"
     # If the file doesn't exist, nothing was selected from mcfly, exit without binding accept-line
@@ -86,20 +86,20 @@ function mcfly_initialize {
     fi
     # Get the command and set the bash text to it, and move the cursor to the end of the line.
     local MCFLY_COMMAND
-    MCFLY_COMMAND=$(awk 'NR==2{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
+    MCFLY_COMMAND=$(command awk 'NR==2{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
     READLINE_LINE=$MCFLY_COMMAND
     READLINE_POINT=${#READLINE_LINE}
 
     # Get the mode and bind the accept-line key if the mode is run.
     local MCFLY_MODE
-    MCFLY_MODE=$(awk 'NR==1{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
+    MCFLY_MODE=$(command awk 'NR==1{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
     if [[ $MCFLY_MODE == "run" ]]; then
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":accept-line"
     else
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":\"\""
     fi
 
-    rm -f "$MCFLY_OUTPUT"
+    command rm -f "$MCFLY_OUTPUT"
     return "$LAST_EXIT_CODE"
   }
 
