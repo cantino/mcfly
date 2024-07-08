@@ -67,6 +67,25 @@ function mcfly_initialize {
     return "${exit_code}" # Restore the original exit code by returning it.
   }
 
+  function mcfly_add_prompt_command {
+    local command=$1 IFS=$' \t\n'
+    if ((BASH_VERSINFO[0] > 5 || BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1)); then
+      # Bash 5.1 supports array PROMPT_COMMAND, where we register our prompt
+      # command to a new element PROMPT_COMMAND[i] (with i >= 1) to avoid
+      # conflicts with other frameworks.
+      if [[ " ${PROMPT_COMMAND[*]-} " != *" $command "* ]]; then
+        PROMPT_COMMAND[0]=${PROMPT_COMMAND[0]:-}
+        PROMPT_COMMAND+=("$command")
+      fi
+    elif [[ -z ${PROMPT_COMMAND-} ]]; then
+      PROMPT_COMMAND="$command"
+    elif [[ $PROMPT_COMMAND != *"mcfly_prompt_command"* ]]; then
+      PROMPT_COMMAND="$command;${PROMPT_COMMAND#;}"
+    fi
+  }
+  # Set $PROMPT_COMMAND run mcfly_prompt_command, preserving any existing $PROMPT_COMMAND.
+  mcfly_add_prompt_command "mcfly_prompt_command"
+
   function mcfly_search_with_tiocsti {
     local LAST_EXIT_CODE=$? IFS=$' \t\n'
     echo "#mcfly: ${READLINE_LINE[*]}" >> "$MCFLY_HISTORY"
@@ -107,13 +126,6 @@ function mcfly_initialize {
     command rm -f "$MCFLY_OUTPUT"
     return "$LAST_EXIT_CODE"
   }
-
-  # Set $PROMPT_COMMAND run mcfly_prompt_command, preserving any existing $PROMPT_COMMAND.
-  if [[ -z ${PROMPT_COMMAND-} ]]; then
-    PROMPT_COMMAND="mcfly_prompt_command"
-  elif [[ $PROMPT_COMMAND != *"mcfly_prompt_command"* ]]; then
-    PROMPT_COMMAND="mcfly_prompt_command;${PROMPT_COMMAND#;}"
-  fi
 
   # Take ownership of ctrl-r.
   if ((BASH_VERSINFO[0] >= 4)); then
