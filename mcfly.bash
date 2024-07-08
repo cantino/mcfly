@@ -10,14 +10,14 @@ function mcfly_initialize {
   [[ $- =~ .*i.* ]] || return 0
 
   # Avoid loading this file more than once
-  [[ "${__MCFLY_LOADED-}" != "loaded" ]] || return 0
+  [[ ${__MCFLY_LOADED-} != "loaded" ]] || return 0
   __MCFLY_LOADED="loaded"
 
   # Setup MCFLY_HISTFILE and make sure it exists.
   export MCFLY_HISTFILE="${HISTFILE:-$HOME/.bash_history}"
   export MCFLY_BASH_SEARCH_KEYBINDING=${MCFLY_BASH_SEARCH_KEYBINDING:-"\C-x1"}
   export MCFLY_BASH_ACCEPT_LINE_KEYBINDING=${MCFLY_BASH_ACCEPT_LINE_KEYBINDING:-"\C-x2"}
-  if [[ ! -r "${MCFLY_HISTFILE}" ]]; then
+  if [[ ! -r ${MCFLY_HISTFILE} ]]; then
     echo "McFly: ${MCFLY_HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
     return 1
   fi
@@ -28,7 +28,7 @@ function mcfly_initialize {
 
   # Find the binary
   MCFLY_PATH=${MCFLY_PATH:-$(command which mcfly)}
-  if [ -z "$MCFLY_PATH" ]; then
+  if [[ -z $MCFLY_PATH ]]; then
     echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.bash."
     return 1
   fi
@@ -44,7 +44,7 @@ function mcfly_initialize {
     local exit_code=$? # Record exit status of previous command.
 
     # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
-    if [[ ! -f "${MCFLY_HISTORY-}" ]]; then
+    if [[ ! -f ${MCFLY_HISTORY-} ]]; then
       MCFLY_HISTORY=$(mktemp "${TMPDIR:-/tmp}"/mcfly.XXXXXXXX)
       export MCFLY_HISTORY
       command tail -n100 "${MCFLY_HISTFILE}" >| "${MCFLY_HISTORY}"
@@ -82,11 +82,10 @@ function mcfly_initialize {
     echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY"
     "$MCFLY_PATH" search -o "$MCFLY_OUTPUT"
     # If the file doesn't exist, nothing was selected from mcfly, exit without binding accept-line
-    if [[ ! -f $MCFLY_OUTPUT ]];
-    then
+    if [[ ! -f $MCFLY_OUTPUT ]]; then
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":\"\""
       return
-    fi;
+    fi
     # Get the command and set the bash text to it, and move the cursor to the end of the line.
     local MCFLY_COMMAND
     MCFLY_COMMAND=$(awk 'NR==2{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
@@ -96,30 +95,27 @@ function mcfly_initialize {
     # Get the mode and bind the accept-line key if the mode is run.
     local MCFLY_MODE
     MCFLY_MODE=$(awk 'NR==1{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
-    if [[ $MCFLY_MODE == "run" ]];
-    then
+    if [[ $MCFLY_MODE == "run" ]]; then
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":accept-line"
     else
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":\"\""
-    fi;
+    fi
 
     rm -f "$MCFLY_OUTPUT"
     return "$LAST_EXIT_CODE"
   }
 
   # Set $PROMPT_COMMAND run mcfly_prompt_command, preserving any existing $PROMPT_COMMAND.
-  if [ -z "${PROMPT_COMMAND-}" ]
-  then
+  if [[ -z ${PROMPT_COMMAND-} ]]; then
     PROMPT_COMMAND="mcfly_prompt_command"
-  elif [[ "$PROMPT_COMMAND" != *"mcfly_prompt_command"* ]]
-  then
+  elif [[ $PROMPT_COMMAND != *"mcfly_prompt_command"* ]]; then
     PROMPT_COMMAND="mcfly_prompt_command;${PROMPT_COMMAND#;}"
   fi
 
   # Take ownership of ctrl-r.
   if ((BASH_VERSINFO[0] >= 4)); then
     # shellcheck disable=SC2016
-    if [[ ${MCFLY_BASH_USE_TIOCSTI-} = 1 ]]; then
+    if [[ ${MCFLY_BASH_USE_TIOCSTI-} == 1 ]]; then
       bind -x '"\C-r": "mcfly_search_with_tiocsti"'
     else
       # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
