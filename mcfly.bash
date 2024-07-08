@@ -7,7 +7,7 @@ function mcfly_initialize {
   [[ -t 0 ]] || return 0
 
   # Avoid loading this file more than once
-  [[ "$__MCFLY_LOADED" != "loaded" ]] || return 0
+  [[ "${__MCFLY_LOADED-}" != "loaded" ]] || return 0
   __MCFLY_LOADED="loaded"
 
   # Setup MCFLY_HISTFILE and make sure it exists.
@@ -41,7 +41,7 @@ function mcfly_initialize {
     local exit_code=$? # Record exit status of previous command.
 
     # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
-    if [[ ! -f "${MCFLY_HISTORY}" ]]; then
+    if [[ ! -f "${MCFLY_HISTORY-}" ]]; then
       MCFLY_HISTORY=$(mktemp "${TMPDIR:-/tmp}"/mcfly.XXXXXXXX)
       export MCFLY_HISTORY
       command tail -n100 "${MCFLY_HISTFILE}" >| "${MCFLY_HISTORY}"
@@ -96,7 +96,7 @@ function mcfly_initialize {
   }
 
   # Set $PROMPT_COMMAND run mcfly_prompt_command, preserving any existing $PROMPT_COMMAND.
-  if [ -z "$PROMPT_COMMAND" ]
+  if [ -z "${PROMPT_COMMAND-}" ]
   then
     PROMPT_COMMAND="mcfly_prompt_command"
   elif [[ ! "$PROMPT_COMMAND" =~ "mcfly_prompt_command" ]]
@@ -108,7 +108,7 @@ function mcfly_initialize {
   if [[ $- =~ .*i.* ]]; then
     if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
       # shellcheck disable=SC2016
-      if [[ $MCFLY_BASH_USE_TIOCSTI = 1 ]]; then
+      if [[ ${MCFLY_BASH_USE_TIOCSTI-} = 1 ]]; then
         bind -x '"\C-r": echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY" ; READLINE_LINE= ; mcfly search'
       else
         # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
