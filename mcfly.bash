@@ -33,7 +33,7 @@ function mcfly_initialize {
     # produce a relative path.  We convert relative paths to the absolute ones.
     MCFLY_PATH=$PWD/$MCFLY_PATH
   fi
-  if [[ -z $MCFLY_PATH ]]; then
+  if [[ ! -x $MCFLY_PATH ]]; then
     echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.bash."
     return 1
   fi
