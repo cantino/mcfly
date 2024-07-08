@@ -59,6 +59,15 @@ function mcfly_initialize {
     return "${exit_code}" # Restore the original exit code by returning it.
   }
 
+  function mcfly_search_with_tiocsti {
+    local LAST_EXIT_CODE=$?
+    # shellcheck disable=SC2145
+    echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY"
+    READLINE_LINE=
+    mcfly search
+    return "$LAST_EXIT_CODE"
+  }
+
   # Runs mcfly search with output to file, reads the output, and sets READLINE_LINE to the command.
   # If the command is to be run, binds the MCFLY_KEYSTROKE2 to accept-line, otherwise binds it to nothing.
   function mcfly_search {
@@ -109,7 +118,7 @@ function mcfly_initialize {
     if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
       # shellcheck disable=SC2016
       if [[ ${MCFLY_BASH_USE_TIOCSTI-} = 1 ]]; then
-        bind -x '"\C-r": echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY" ; READLINE_LINE= ; mcfly search'
+        bind -x '"\C-r": "mcfly_search_with_tiocsti"'
       else
         # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
         bind -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
