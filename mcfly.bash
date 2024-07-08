@@ -67,7 +67,7 @@ function mcfly_initialize {
     # shellcheck disable=SC2145
     echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY"
     READLINE_LINE=
-    mcfly search
+    "$MCFLY_PATH" search
     return "$LAST_EXIT_CODE"
   }
 
@@ -80,7 +80,7 @@ function mcfly_initialize {
     MCFLY_OUTPUT=$(mktemp --dry-run "${TMPDIR:-/tmp}"/mcfly.output.XXXXXXXX)
     # shellcheck disable=SC2145
     echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY"
-    mcfly search -o "$MCFLY_OUTPUT"
+    "$MCFLY_PATH" search -o "$MCFLY_OUTPUT"
     # If the file doesn't exist, nothing was selected from mcfly, exit without binding accept-line
     if [[ ! -f $MCFLY_OUTPUT ]];
     then
