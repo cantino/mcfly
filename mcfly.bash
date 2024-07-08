@@ -63,9 +63,8 @@ function mcfly_initialize {
   }
 
   function mcfly_search_with_tiocsti {
-    local LAST_EXIT_CODE=$?
-    # shellcheck disable=SC2145
-    echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY"
+    local LAST_EXIT_CODE=$? IFS=$' \t\n'
+    echo "#mcfly: ${READLINE_LINE[*]}" >> "$MCFLY_HISTORY"
     READLINE_LINE=
     "$MCFLY_PATH" search
     return "$LAST_EXIT_CODE"
@@ -74,12 +73,11 @@ function mcfly_initialize {
   # Runs mcfly search with output to file, reads the output, and sets READLINE_LINE to the command.
   # If the command is to be run, binds the MCFLY_KEYSTROKE2 to accept-line, otherwise binds it to nothing.
   function mcfly_search {
-    local LAST_EXIT_CODE=$?
+    local LAST_EXIT_CODE=$? IFS=$' \t\n'
     # Get a temp file name but don't create the file - mcfly will create the file for us.
     local MCFLY_OUTPUT
     MCFLY_OUTPUT=$(mktemp --dry-run "${TMPDIR:-/tmp}"/mcfly.output.XXXXXXXX)
-    # shellcheck disable=SC2145
-    echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY"
+    echo "#mcfly: ${READLINE_LINE[*]}" >> "$MCFLY_HISTORY"
     "$MCFLY_PATH" search -o "$MCFLY_OUTPUT"
     # If the file doesn't exist, nothing was selected from mcfly, exit without binding accept-line
     if [[ ! -f $MCFLY_OUTPUT ]]; then
