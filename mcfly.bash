@@ -111,13 +111,13 @@ function mcfly_initialize {
   if [ -z "${PROMPT_COMMAND-}" ]
   then
     PROMPT_COMMAND="mcfly_prompt_command"
-  elif [[ ! "$PROMPT_COMMAND" =~ "mcfly_prompt_command" ]]
+  elif [[ "$PROMPT_COMMAND" != *"mcfly_prompt_command"* ]]
   then
     PROMPT_COMMAND="mcfly_prompt_command;${PROMPT_COMMAND#;}"
   fi
 
   # Take ownership of ctrl-r.
-  if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+  if ((BASH_VERSINFO[0] >= 4)); then
     # shellcheck disable=SC2016
     if [[ ${MCFLY_BASH_USE_TIOCSTI-} = 1 ]]; then
       bind -x '"\C-r": "mcfly_search_with_tiocsti"'
