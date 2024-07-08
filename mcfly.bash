@@ -42,7 +42,7 @@ function mcfly_initialize {
 
     # Populate McFly's temporary, per-session history file from recent commands in the shell's primary HISTFILE.
     if [[ ! -f "${MCFLY_HISTORY}" ]]; then
-      MCFLY_HISTORY=$(mktemp ${TMPDIR:-/tmp}/mcfly.XXXXXXXX)
+      MCFLY_HISTORY=$(mktemp "${TMPDIR:-/tmp}"/mcfly.XXXXXXXX)
       export MCFLY_HISTORY
       command tail -n100 "${MCFLY_HISTFILE}" >| "${MCFLY_HISTORY}"
     fi
@@ -52,11 +52,11 @@ function mcfly_initialize {
     # * append commands to $HISTFILE, (~/.bash_history by default)
     #   for backwards compatibility and to load in new terminal sessions;
     # * find the text of the last command in $MCFLY_HISTORY and save it to the database.
-    $MCFLY_PATH add --exit ${exit_code} --append-to-histfile "${MCFLY_HISTFILE}"
+    "$MCFLY_PATH" add --exit "${exit_code}" --append-to-histfile "${MCFLY_HISTFILE}"
     # Clear the in-memory history and reload it from $MCFLY_HISTORY
     # (to remove instances of '#mcfly: ' from the local session history).
     history -cr "${MCFLY_HISTORY}"
-    return ${exit_code} # Restore the original exit code by returning it.
+    return "${exit_code}" # Restore the original exit code by returning it.
   }
 
   # Runs mcfly search with output to file, reads the output, and sets READLINE_LINE to the command.
@@ -64,9 +64,10 @@ function mcfly_initialize {
   function mcfly_search {
     local LAST_EXIT_CODE=$?
     # Get a temp file name but don't create the file - mcfly will create the file for us.
-    MCFLY_OUTPUT=$(mktemp --dry-run ${TMPDIR:-/tmp}/mcfly.output.XXXXXXXX)
-    echo \#mcfly: ${READLINE_LINE[@]} >> $MCFLY_HISTORY
-    mcfly search -o $MCFLY_OUTPUT
+    MCFLY_OUTPUT=$(mktemp --dry-run "${TMPDIR:-/tmp}"/mcfly.output.XXXXXXXX)
+    # shellcheck disable=SC2145
+    echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY"
+    mcfly search -o "$MCFLY_OUTPUT"
     # If the file doesn't exist, nothing was selected from mcfly, exit without binding accept-line
     if [[ ! -f $MCFLY_OUTPUT ]];
     then
@@ -74,12 +75,12 @@ function mcfly_initialize {
       return
     fi;
     # Get the command and set the bash text to it, and move the cursor to the end of the line.
-    MCFLY_COMMAND=$(awk 'NR==2{$1=a; print substr($0, 2)}' $MCFLY_OUTPUT)
+    MCFLY_COMMAND=$(awk 'NR==2{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
     READLINE_LINE=$MCFLY_COMMAND
     READLINE_POINT=${#READLINE_LINE}
 
     # Get the mode and bind the accept-line key if the mode is run.
-    MCFLY_MODE=$(awk 'NR==1{$1=a; print substr($0, 2)}' $MCFLY_OUTPUT)
+    MCFLY_MODE=$(awk 'NR==1{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
     if [[ $MCFLY_MODE == "run" ]];
     then
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":accept-line"
@@ -87,8 +88,8 @@ function mcfly_initialize {
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":\"\""
     fi;
 
-    rm -f $MCFLY_OUTPUT
-    return $LAST_EXIT_CODE
+    rm -f "$MCFLY_OUTPUT"
+    return "$LAST_EXIT_CODE"
   }
 
   # Set $PROMPT_COMMAND run mcfly_prompt_command, preserving any existing $PROMPT_COMMAND.
@@ -105,7 +106,7 @@ function mcfly_initialize {
     if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
       # shellcheck disable=SC2016
       if [[ $MCFLY_BASH_USE_TIOCSTI = 1 ]]; then
-        bind -x '"\C-r": "echo \#mcfly: ${READLINE_LINE[@]} >> $MCFLY_HISTORY ; READLINE_LINE= ; mcfly search"'
+        bind -x '"\C-r": echo "#mcfly: ${READLINE_LINE[@]}" >> "$MCFLY_HISTORY" ; READLINE_LINE= ; mcfly search'
       else
         # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
         bind -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
