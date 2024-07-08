@@ -27,7 +27,12 @@ function mcfly_initialize {
   export MCFLY_SESSION_ID
 
   # Find the binary
-  MCFLY_PATH=${MCFLY_PATH:-$(command which mcfly)}
+  MCFLY_PATH=${MCFLY_PATH:-$(builtin type -P mcfly)}
+  if [[ $MCFLY_PATH != /* ]]; then
+    # When the user include a relative path in PATH, "builtin type -P" may
+    # produce a relative path.  We convert relative paths to the absolute ones.
+    MCFLY_PATH=$PWD/$MCFLY_PATH
+  fi
   if [[ -z $MCFLY_PATH ]]; then
     echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.bash."
     return 1
