@@ -141,11 +141,14 @@ function mcfly_initialize {
   if ((BASH_VERSINFO[0] >= 4)); then
     # shellcheck disable=SC2016
     if [[ ${MCFLY_BASH_USE_TIOCSTI-} == 1 ]]; then
-      bind -x '"\C-r": "mcfly_search_with_tiocsti"'
+      bind -m emacs     -x '"\C-r": "mcfly_search_with_tiocsti"'
+      bind -m vi-insert -x '"\C-r": "mcfly_search_with_tiocsti"'
     else
       # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
-      bind -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
-      bind "\"\C-r\":\"$MCFLY_BASH_SEARCH_KEYBINDING$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\""
+      bind -m emacs     -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
+      bind -m vi-insert -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
+      bind -m emacs     "\"\C-r\":\"$MCFLY_BASH_SEARCH_KEYBINDING$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\""
+      bind -m vi-insert "\"\C-r\":\"$MCFLY_BASH_SEARCH_KEYBINDING$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\""
     fi
   else
     # The logic here is:
@@ -155,10 +158,8 @@ function mcfly_initialize {
     #   2. Type "mcfly search" and then run the command. McFly will pull the last line from the $MCFLY_HISTORY file,
     #      which should be the commented-out search from step #1. It will then remove that line from the history file and
     #      render the search UI pre-filled with it.
-    if [[ -o vi ]]; then
-      bind '"\C-r": "\e0i#mcfly: \e\C-m mcfly search\C-m"'
-    else
-      bind '"\C-r": "\C-amcfly: \e# mcfly search\C-m"'
+    bind -m emacs     '"\C-r": "\C-amcfly: \e# mcfly search\C-m"'
+    bind -m vi-insert '"\C-r": "\e0i#mcfly: \e\C-m mcfly search\C-m"'
     fi
   fi
 }
