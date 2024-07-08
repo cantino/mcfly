@@ -1,8 +1,13 @@
 #!/bin/bash
 
-# Ensure stdin is a tty
-# Avoid loading this file more than once
-if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
+function mcfly_initialize {
+  unset -f "${FUNCNAME[0]}"
+
+  # Ensure stdin is a tty
+  [[ -t 0 ]] || return 0
+
+  # Avoid loading this file more than once
+  [[ "$__MCFLY_LOADED" != "loaded" ]] || return 0
   __MCFLY_LOADED="loaded"
 
   # Setup MCFLY_HISTFILE and make sure it exists.
@@ -120,5 +125,5 @@ if [[ -t 0 ]] && [[ "$__MCFLY_LOADED" != "loaded" ]]; then
       fi
     fi
   fi
-
-fi
+}
+mcfly_initialize

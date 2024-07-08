@@ -1,7 +1,8 @@
 #!/bin/zsh
 
-# Ensure stdin is a tty
-if [[ -o interactive ]]; then
+() {
+  # Ensure stdin is a tty
+  [[ -o interactive ]] || return 0
 
   # Setup MCFLY_HISTFILE and make sure it exists.
   export MCFLY_HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
@@ -100,5 +101,4 @@ if [[ -o interactive ]]; then
     zle -N mcfly-history-widget
     bindkey '^R' mcfly-history-widget
   fi
-
-fi
+}
