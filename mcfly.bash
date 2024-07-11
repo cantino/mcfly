@@ -119,9 +119,9 @@ function mcfly_initialize {
       #      which should be the commented-out search from step #1. It will then remove that line from the history file and
       #      render the search UI pre-filled with it.
       if set -o | grep "vi " | grep -q on; then
-        bind "'\C-r': '\e0i#mcfly: \e\C-m mcfly search\C-m'"
+        bind '"\C-r": "\e0i#mcfly: \e\C-m mcfly search\C-m"'
       else
-        bind "'\C-r': '\C-amcfly: \e# mcfly search\C-m'"
+        bind '"\C-r": "\C-amcfly: \e# mcfly search\C-m"'
       fi
     fi
   fi
