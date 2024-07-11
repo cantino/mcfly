@@ -1,3 +1,8 @@
+0.9.1 - July 10, 2024
+ - Added the `mcfly stats` command (thanks @nicokosi)
+ - Prevent cancellation of Bash/Zsh initialization on mcfly initialization failure (thanks @akinomyoga)
+ - Prevent UTF-8 entry issue from new default to avoid TIOCSTI added in 0.9.0 (thanks @akinomyoga)
+
 0.9.0 - May 31, 2024
  - Make bash no longer use TIOCSTI by default (thanks @jtschuster)
 
