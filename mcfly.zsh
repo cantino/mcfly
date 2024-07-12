@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 () {
-  # Ensure stdin is a tty
+  # Ensure an interactive shell
   [[ -o interactive ]] || return 0
 
   # Setup MCFLY_HISTFILE and make sure it exists.
@@ -71,34 +71,32 @@
     [ -n "$MCFLY_DEBUG" ] && echo "mcfly_exit_logger already in zshexit_functions, skipping"
   fi
 
-  # If this is an interactive shell, take ownership of ctrl-r.
-  if [[ $- =~ .*i.* ]]; then
-    mcfly-history-widget() {
-      () {
-        echoti rmkx
-        exec </dev/tty
-        local mcfly_output=$(mktemp ${TMPDIR:-/tmp}/mcfly.output.XXXXXXXX)
-        $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT search -o "${mcfly_output}" "${LBUFFER}"
-        echoti smkx
+  # Take ownership of ctrl-r.
+  mcfly-history-widget() {
+    () {
+      echoti rmkx
+      exec </dev/tty
+      local mcfly_output=$(mktemp ${TMPDIR:-/tmp}/mcfly.output.XXXXXXXX)
+      $MCFLY_PATH --history_format $MCFLY_HISTORY_FORMAT search -o "${mcfly_output}" "${LBUFFER}"
+      echoti smkx
 
-        # Interpret commandline/run requests from McFly
-        while read -r key val; do
-          if [[ "$key" = "mode" ]]; then local mode="$val"; fi
-          if [[ "$key" = "commandline" ]]; then local commandline="$val"; fi
-        done < "${mcfly_output}"
-        command rm -f $mcfly_output
+      # Interpret commandline/run requests from McFly
+      while read -r key val; do
+        if [[ "$key" = "mode" ]]; then local mode="$val"; fi
+        if [[ "$key" = "commandline" ]]; then local commandline="$val"; fi
+      done < "${mcfly_output}"
+      command rm -f $mcfly_output
 
-        if [[ -n $commandline ]]; then
-          RBUFFER=""
-          LBUFFER="${commandline}"
-        fi
-        if [[ "${mode}" == "run" ]]; then
-          zle accept-line
-        fi
-        zle redisplay
-      }
+      if [[ -n $commandline ]]; then
+        RBUFFER=""
+        LBUFFER="${commandline}"
+      fi
+      if [[ "${mode}" == "run" ]]; then
+        zle accept-line
+      fi
+      zle redisplay
     }
-    zle -N mcfly-history-widget
-    bindkey '^R' mcfly-history-widget
-  fi
+  }
+  zle -N mcfly-history-widget
+  bindkey '^R' mcfly-history-widget
 }
