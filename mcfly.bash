@@ -6,6 +6,9 @@ function mcfly_initialize {
   # Ensure stdin is a tty
   [[ -t 0 ]] || return 0
 
+  # Ensure an interactive shell
+  [[ $- =~ .*i.* ]] || return 0
+
   # Avoid loading this file more than once
   [[ "${__MCFLY_LOADED-}" != "loaded" ]] || return 0
   __MCFLY_LOADED="loaded"
@@ -113,30 +116,28 @@ function mcfly_initialize {
     PROMPT_COMMAND="mcfly_prompt_command;${PROMPT_COMMAND#;}"
   fi
 
-  # If this is an interactive shell, take ownership of ctrl-r.
-  if [[ $- =~ .*i.* ]]; then
-    if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-      # shellcheck disable=SC2016
-      if [[ ${MCFLY_BASH_USE_TIOCSTI-} = 1 ]]; then
-        bind -x '"\C-r": "mcfly_search_with_tiocsti"'
-      else
-        # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
-        bind -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
-        bind "\"\C-r\":\"$MCFLY_BASH_SEARCH_KEYBINDING$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\""
-      fi
+  # Take ownership of ctrl-r.
+  if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+    # shellcheck disable=SC2016
+    if [[ ${MCFLY_BASH_USE_TIOCSTI-} = 1 ]]; then
+      bind -x '"\C-r": "mcfly_search_with_tiocsti"'
     else
-      # The logic here is:
-      #   1. Jump to the beginning of the edit buffer, add 'mcfly: ', and comment out the current line. We comment out the line
-      #      to ensure that all possible special characters, including backticks, are ignored. This commented out line will
-      #      end up as the most recent entry in the $MCFLY_HISTORY file.
-      #   2. Type "mcfly search" and then run the command. McFly will pull the last line from the $MCFLY_HISTORY file,
-      #      which should be the commented-out search from step #1. It will then remove that line from the history file and
-      #      render the search UI pre-filled with it.
-      if set -o | grep "vi " | grep -q on; then
-        bind '"\C-r": "\e0i#mcfly: \e\C-m mcfly search\C-m"'
-      else
-        bind '"\C-r": "\C-amcfly: \e# mcfly search\C-m"'
-      fi
+      # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
+      bind -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
+      bind "\"\C-r\":\"$MCFLY_BASH_SEARCH_KEYBINDING$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\""
+    fi
+  else
+    # The logic here is:
+    #   1. Jump to the beginning of the edit buffer, add 'mcfly: ', and comment out the current line. We comment out the line
+    #      to ensure that all possible special characters, including backticks, are ignored. This commented out line will
+    #      end up as the most recent entry in the $MCFLY_HISTORY file.
+    #   2. Type "mcfly search" and then run the command. McFly will pull the last line from the $MCFLY_HISTORY file,
+    #      which should be the commented-out search from step #1. It will then remove that line from the history file and
+    #      render the search UI pre-filled with it.
+    if set -o | grep "vi " | grep -q on; then
+      bind '"\C-r": "\e0i#mcfly: \e\C-m mcfly search\C-m"'
+    else
+      bind '"\C-r": "\C-amcfly: \e# mcfly search\C-m"'
     fi
   fi
 }
