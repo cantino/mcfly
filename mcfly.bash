@@ -75,7 +75,10 @@ function mcfly_initialize {
       # conflicts with other frameworks.
       if [[ " ${PROMPT_COMMAND[*]-} " != *" $command "* ]]; then
         PROMPT_COMMAND[0]=${PROMPT_COMMAND[0]:-}
-        PROMPT_COMMAND+=("$command")
+        # Note: We here use eval to avoid syntax error in Bash < 3.1.  We drop
+        # the support for Bash < 3.0, but this is still needed to avoid parse
+        # error before the Bash version check is performed.
+        eval 'PROMPT_COMMAND+=("$command")'
       fi
     elif [[ -z ${PROMPT_COMMAND-} ]]; then
       PROMPT_COMMAND="$command"
