@@ -1,6 +1,13 @@
 #!/bin/bash
 
 function mcfly_initialize {
+  # Note: We avoid using [[ ... ]] to check the Bash version because we are
+  # even unsure whether it is available before confirming the Bash version.
+  if [ -z "${BASH_VERSINFO-}" ] || [ "${BASH_VERSINFO-}" -lt 3 ]; then
+    printf 'mcfly.bash: This setup requires Bash >= 3.0.' >&2
+    return 1
+  fi
+
   unset -f "${FUNCNAME[0]}"
 
   # Ensure stdin is a tty
