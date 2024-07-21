@@ -1,6 +1,13 @@
 #!/bin/bash
 
 function mcfly_initialize {
+  # Note: We avoid using [[ ... ]] to check the Bash version because we are
+  # even unsure whether it is available before confirming the Bash version.
+  if [ -z "${BASH_VERSINFO-}" ] || [ "${BASH_VERSINFO-}" -lt 3 ]; then
+    printf 'mcfly.bash: This setup requires Bash >= 3.0.' >&2
+    return 1
+  fi
+
   unset -f "${FUNCNAME[0]}"
 
   # Ensure stdin is a tty
@@ -15,8 +22,8 @@ function mcfly_initialize {
 
   # Setup MCFLY_HISTFILE and make sure it exists.
   export MCFLY_HISTFILE="${HISTFILE:-$HOME/.bash_history}"
-  export MCFLY_BASH_SEARCH_KEYBINDING=${MCFLY_BASH_SEARCH_KEYBINDING:-"\C-x1"}
-  export MCFLY_BASH_ACCEPT_LINE_KEYBINDING=${MCFLY_BASH_ACCEPT_LINE_KEYBINDING:-"\C-x2"}
+  MCFLY_BASH_SEARCH_KEYBINDING=${MCFLY_BASH_SEARCH_KEYBINDING:-"\C-x1"}
+  MCFLY_BASH_ACCEPT_LINE_KEYBINDING=${MCFLY_BASH_ACCEPT_LINE_KEYBINDING:-"\C-x2"}
   if [[ ! -r ${MCFLY_HISTFILE} ]]; then
     echo "McFly: ${MCFLY_HISTFILE} does not exist or is not readable. Please fix this or set HISTFILE to something else before using McFly."
     return 1
@@ -27,8 +34,13 @@ function mcfly_initialize {
   export MCFLY_SESSION_ID
 
   # Find the binary
-  MCFLY_PATH=${MCFLY_PATH:-$(command which mcfly)}
-  if [[ -z $MCFLY_PATH ]]; then
+  MCFLY_PATH=${MCFLY_PATH:-$(builtin type -P mcfly)}
+  if [[ $MCFLY_PATH != /* ]]; then
+    # When the user include a relative path in PATH, "builtin type -P" may
+    # produce a relative path.  We convert relative paths to the absolute ones.
+    MCFLY_PATH=$PWD/$MCFLY_PATH
+  fi
+  if [[ ! -x $MCFLY_PATH ]]; then
     echo "Cannot find the mcfly binary, please make sure that mcfly is in your path before sourcing mcfly.bash."
     return 1
   fi
@@ -61,6 +73,28 @@ function mcfly_initialize {
     history -cr "${MCFLY_HISTORY}"
     return "${exit_code}" # Restore the original exit code by returning it.
   }
+
+  function mcfly_add_prompt_command {
+    local command=$1 IFS=$' \t\n'
+    if ((BASH_VERSINFO[0] > 5 || BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1)); then
+      # Bash 5.1 supports array PROMPT_COMMAND, where we register our prompt
+      # command to a new element PROMPT_COMMAND[i] (with i >= 1) to avoid
+      # conflicts with other frameworks.
+      if [[ " ${PROMPT_COMMAND[*]-} " != *" $command "* ]]; then
+        PROMPT_COMMAND[0]=${PROMPT_COMMAND[0]:-}
+        # Note: We here use eval to avoid syntax error in Bash < 3.1.  We drop
+        # the support for Bash < 3.0, but this is still needed to avoid parse
+        # error before the Bash version check is performed.
+        eval 'PROMPT_COMMAND+=("$command")'
+      fi
+    elif [[ -z ${PROMPT_COMMAND-} ]]; then
+      PROMPT_COMMAND="$command"
+    elif [[ $PROMPT_COMMAND != *"mcfly_prompt_command"* ]]; then
+      PROMPT_COMMAND="$command;${PROMPT_COMMAND#;}"
+    fi
+  }
+  # Set $PROMPT_COMMAND run mcfly_prompt_command, preserving any existing $PROMPT_COMMAND.
+  mcfly_add_prompt_command "mcfly_prompt_command"
 
   function mcfly_search_with_tiocsti {
     local LAST_EXIT_CODE=$? IFS=$' \t\n'
@@ -103,13 +137,6 @@ function mcfly_initialize {
     return "$LAST_EXIT_CODE"
   }
 
-  # Set $PROMPT_COMMAND run mcfly_prompt_command, preserving any existing $PROMPT_COMMAND.
-  if [[ -z ${PROMPT_COMMAND-} ]]; then
-    PROMPT_COMMAND="mcfly_prompt_command"
-  elif [[ $PROMPT_COMMAND != *"mcfly_prompt_command"* ]]; then
-    PROMPT_COMMAND="mcfly_prompt_command;${PROMPT_COMMAND#;}"
-  fi
-
   # Take ownership of ctrl-r.
   if ((BASH_VERSINFO[0] >= 4)); then
     # shellcheck disable=SC2016
@@ -128,7 +155,7 @@ function mcfly_initialize {
     #   2. Type "mcfly search" and then run the command. McFly will pull the last line from the $MCFLY_HISTORY file,
     #      which should be the commented-out search from step #1. It will then remove that line from the history file and
     #      render the search UI pre-filled with it.
-    if set -o | grep "vi " | grep -q on; then
+    if [[ -o vi ]]; then
       bind '"\C-r": "\e0i#mcfly: \e\C-m mcfly search\C-m"'
     else
       bind '"\C-r": "\C-amcfly: \e# mcfly search\C-m"'
