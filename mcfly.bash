@@ -160,7 +160,6 @@ function mcfly_initialize {
     #      render the search UI pre-filled with it.
     bind -m emacs     '"\C-r": "\C-amcfly: \e# mcfly search\C-m"'
     bind -m vi-insert '"\C-r": "\e0i#mcfly: \e\C-m mcfly search\C-m"'
-    fi
   fi
 }
 mcfly_initialize
