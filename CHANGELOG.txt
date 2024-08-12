@@ -1,3 +1,7 @@
+0.9.2 - Aug 11, 2024
+ - Numerous bash fixes (thanks @akinomyoga)
+ - Bind to both emacs and vi-insert keymaps in Bash (thanks @akinomyoga)
+
 0.9.1 - July 10, 2024
  - Added the `mcfly stats` command (thanks @nicokosi)
  - Prevent cancellation of Bash/Zsh initialization on mcfly initialization failure (thanks @akinomyoga)
