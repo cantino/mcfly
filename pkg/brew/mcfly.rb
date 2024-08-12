@@ -7,17 +7,17 @@
 #   brew untap cantino/mcfly
 
 class Mcfly < Formula
-  version 'v0.9.1'
+  version 'v0.9.2'
   deprecate! date: "2024-05-18", because: "is now in the core homebrew repository and you don't need this tap"
   desc "McFly"
   homepage "https://github.com/cantino/mcfly"
 
   if OS.mac?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-apple-darwin.tar.gz"
-    sha256 "10655cfa16ed4abe0b01cbcc91234d93493750c12f76635e93efbb19430018d5"
+    sha256 "638a0406caf5f6607b31acbccad20831cc8af2f2dd4a2e614a3b218df2996180"
   elsif OS.linux?
     url "https://github.com/cantino/mcfly/releases/download/#{version}/mcfly-#{version}-x86_64-unknown-linux-musl.tar.gz"
-    sha256 "66ae9bb227915cdeb92e3fb13e26522ebf1b5a163b296162c9257474c0efe4ee"
+    sha256 "f907b88861464b804860dcacf990c87cdbd4e7af08f6e854a86c35bb89b92c55"
   end
 
   def install
