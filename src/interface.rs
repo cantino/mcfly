@@ -712,6 +712,9 @@ impl<'a> Interface<'a> {
     }
 
     fn select_with_vim_key_scheme(&mut self, event: KeyEvent) -> bool {
+        if event.kind != KeyEventKind::Press {
+            return false;
+        }
         if self.in_vim_insert_mode {
             match event {
                 KeyEvent {
