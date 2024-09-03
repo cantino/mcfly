@@ -114,7 +114,7 @@ jobs:
         uses: dawidd6/action-get-tag@v1
 
       - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: cross-linux-musl
           path: /tmp/
