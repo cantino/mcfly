@@ -76,20 +76,9 @@ function mcfly_initialize {
 
   function mcfly_add_prompt_command {
     local command=$1 IFS=$' \t\n'
-    if ((BASH_VERSINFO[0] > 5 || BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1)); then
-      # Bash 5.1 supports array PROMPT_COMMAND, where we register our prompt
-      # command to a new element PROMPT_COMMAND[i] (with i >= 1) to avoid
-      # conflicts with other frameworks.
-      if [[ " ${PROMPT_COMMAND[*]-} " != *" $command "* ]]; then
-        PROMPT_COMMAND[0]=${PROMPT_COMMAND[0]:-}
-        # Note: We here use eval to avoid syntax error in Bash < 3.1.  We drop
-        # the support for Bash < 3.0, but this is still needed to avoid parse
-        # error before the Bash version check is performed.
-        eval 'PROMPT_COMMAND+=("$command")'
-      fi
-    elif [[ -z ${PROMPT_COMMAND-} ]]; then
+    if [[ -z ${PROMPT_COMMAND-} ]]; then
       PROMPT_COMMAND="$command"
-    elif [[ $PROMPT_COMMAND != *"mcfly_prompt_command"* ]]; then
+    elif [[ $PROMPT_COMMAND != *"$command"* ]]; then
       PROMPT_COMMAND="$command;${PROMPT_COMMAND#;}"
     fi
   }
