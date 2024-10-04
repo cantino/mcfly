@@ -225,19 +225,16 @@ mcfly dump
 ```
 
 ### Timestamp format
-McFly use [chrono-systemd-time-ng] parsing timestamp.
 
-**chrono-systemd-time-ng** is a non-strict implementation of [systemd.time](https://www.freedesktop.org/software/systemd/man/systemd.time.html), with the following exceptions:
+McFly parses timestamps via `chrono-systemd-time`, a non-strict implementation of [systemd.time](https://www.freedesktop.org/software/systemd/man/systemd.time.html), with the following exceptions:
 * time units **must** accompany all time span values.
 * time zone suffixes are **not** supported.
 * weekday prefixes are **not** supported.
 
-Users of McFly simply need to understand **specifying timezone in timestamp isn't allowed**.
+McFly users simply need to understand **specifying timezone in timestamp isn't allowed**.
 McFly will always use your **local timezone**.
 
-For more details, please refer to [the document of chrono-systemd-time-ng][chrono-systemd-time-ng].
-
-[chrono-systemd-time-ng]: https://docs.rs/chrono-systemd-time-ng/latest/chrono_systemd_time/
+For more details, please refer to the [`chrono-systemd-time` documentation](https://docs.rs/chrono-systemd-time/latest/chrono_systemd_time/).
 
 ### Regex
 *Dump* supports filtering commands with regex.
