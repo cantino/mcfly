@@ -6,12 +6,12 @@ use unicode_segmentation::UnicodeSegmentation;
 #[must_use]
 pub fn normalize_path(incoming_path: &str) -> String {
     let expanded_path = shellexpand::tilde(incoming_path).to_string();
-    return Path::new(&expanded_path)
+    Path::new(&expanded_path)
         .absolutize_from(pwd())
         .unwrap()
         .to_str()
         .unwrap_or_else(|| panic!("McFly error: Path must be a valid UTF8 string"))
-        .to_string();
+        .to_string()
 }
 
 #[must_use]

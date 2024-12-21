@@ -38,7 +38,7 @@ impl<'a> Dumper<'a> {
     }
 }
 
-impl<'a> Dumper<'a> {
+impl Dumper<'_> {
     fn dump2json(commands: &[DumpCommand]) -> io::Result<()> {
         let mut stdout = BufWriter::new(io::stdout().lock());
         serde_json::to_writer_pretty(&mut stdout, commands).map_err(io::Error::from)?;
