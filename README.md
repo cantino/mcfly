@@ -24,6 +24,7 @@ TL;DR: an upgraded `ctrl-r` where history results make sense for what you're wor
 * Designed to be extensible for other shells in the future.
 * Written in Rust, so it's fast and safe.
 * You can type `%` to match any number of characters when searching.
+* Supports zsh, bash (version 3+), and powershell (version 7+)
 
 ## Prioritization
 
