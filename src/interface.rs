@@ -217,14 +217,26 @@ impl<'a> Interface<'a> {
         let result_top_index = self.result_top_index();
         queue!(screen, cursor::Hide, cursor::MoveTo(1, result_top_index)).unwrap();
 
-        let (width, _height): (u16, u16) = terminal::size().unwrap();
+        let (width, height): (u16, u16) = terminal::size().unwrap();
+        let result_height = (height - result_top_index) as usize;
 
         if !self.matches.is_empty() && self.selection > self.matches.len() - 1 {
             self.selection = self.matches.len() - 1;
         }
 
-        let mut index: usize = 0;
-        for command in &self.matches {
+        let mut index = 0;
+        let in_page = self.selection < result_height;
+
+        let view_range = if in_page {
+            let len = result_height.min(self.matches.len());
+            &self.matches[..len]
+        } else {
+            let offset = self.selection - result_height + 1;
+            let len = (offset + result_height).min(self.matches.len());
+            &self.matches[offset..len]
+        };
+
+        for command in view_range {
             let mut fg = if self.settings.lightmode {
                 self.settings.colors.lightmode_colors.results_fg
             } else {
@@ -239,7 +251,7 @@ impl<'a> Interface<'a> {
 
             let mut bg = Color::Reset;
 
-            if index == self.selection {
+            if index == self.selection.min(result_height - 1) {
                 if self.settings.lightmode {
                     fg = self.settings.colors.lightmode_colors.results_selection_fg;
                     bg = self.settings.colors.lightmode_colors.results_selection_bg;
@@ -274,7 +286,7 @@ impl<'a> Interface<'a> {
                     screen,
                     cursor::MoveTo(
                         width - 9,
-                        (command_line_index + result_top_index as i16) as u16
+                        (command_line_index + self.result_top_index() as i16) as u16
                     )
                 )
                 .unwrap();
@@ -318,7 +330,7 @@ impl<'a> Interface<'a> {
                     screen,
                     cursor::MoveTo(
                         width - 9,
-                        (command_line_index + self.result_top_index() as i16) as u16
+                        (command_line_index + result_top_index as i16) as u16
                     ),
                     SetForegroundColor(timing_color),
                     Print(format!("{duration:>9}")),
@@ -329,16 +341,20 @@ impl<'a> Interface<'a> {
             }
             index += 1;
         }
+
         // Since we only clear by line instead of clearing the screen each update,
-        //  we need to clear all the lines that may have previously had a command
-        for i in index..(self.settings.results as usize) {
-            let command_line_index = self.command_line_index(i as i16);
-            queue!(
-                screen,
-                cursor::MoveTo(1, (command_line_index + result_top_index as i16) as u16),
-                Clear(ClearType::CurrentLine)
-            )
-            .unwrap();
+        //  we need to clear all the lines that may have previously had a command.
+        // If we don't enforce "index < result_height" the last line will be cleared.
+        if index < result_height {
+            for i in index..self.settings.results as usize {
+                let command_line_index = self.command_line_index(i as i16);
+                queue!(
+                    screen,
+                    cursor::MoveTo(1, (command_line_index + result_top_index as i16) as u16),
+                    Clear(ClearType::CurrentLine),
+                )
+                .unwrap();
+            }
         }
     }
 
