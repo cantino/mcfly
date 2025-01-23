@@ -218,7 +218,8 @@ impl<'a> Interface<'a> {
         queue!(screen, cursor::Hide, cursor::MoveTo(1, result_top_index)).unwrap();
 
         let (width, height): (u16, u16) = terminal::size().unwrap();
-        let result_height = (height - RESULTS_TOP_INDEX) as usize;
+        let result_height = (height - RESULTS_TOP_INDEX) as usize
+            + if self.is_screen_view_bottom() { 1 } else { 0 };
 
         if !self.matches.is_empty() && self.selection > self.matches.len() - 1 {
             self.selection = self.matches.len() - 1;
