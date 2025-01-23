@@ -218,7 +218,7 @@ impl<'a> Interface<'a> {
         queue!(screen, cursor::Hide, cursor::MoveTo(1, result_top_index)).unwrap();
 
         let (width, height): (u16, u16) = terminal::size().unwrap();
-        let result_height = (height - result_top_index) as usize;
+        let result_height = (height - RESULTS_TOP_INDEX) as usize;
 
         if !self.matches.is_empty() && self.selection > self.matches.len() - 1 {
             self.selection = self.matches.len() - 1;
@@ -344,17 +344,18 @@ impl<'a> Interface<'a> {
 
         // Since we only clear by line instead of clearing the screen each update,
         //  we need to clear all the lines that may have previously had a command.
-        // If we don't enforce "index < result_height" the last line will be cleared.
-        if index < result_height {
-            for i in index..self.settings.results as usize {
-                let command_line_index = self.command_line_index(i as i16);
-                queue!(
-                    screen,
-                    cursor::MoveTo(1, (command_line_index + result_top_index as i16) as u16),
-                    Clear(ClearType::CurrentLine),
-                )
-                .unwrap();
-            }
+        for i in index..result_height {
+            let command_line_index = self.command_line_index(i as i16);
+            eprintln!(
+                "i={i}, command_line_index={}, result_top_index={}",
+                command_line_index, result_top_index
+            );
+            queue!(
+                screen,
+                cursor::MoveTo(1, (command_line_index + result_top_index as i16) as u16),
+                Clear(ClearType::CurrentLine),
+            )
+            .unwrap();
         }
     }
 
