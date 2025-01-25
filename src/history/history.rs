@@ -431,19 +431,26 @@ impl History {
 
                     let a_start = a.match_bounds[0].0;
                     let b_start = b.match_bounds[0].0;
-                    let a_len = a.match_bounds[0].1 - a_start;
-                    let b_len = b.match_bounds[0].1 - b_start;
+                    let a_len   = a.match_bounds[0].1 - a_start;
+                    let b_len   = b.match_bounds[0].1 - b_start;
+                    let denom   = (a_start + b_start + a_len + b_len) as f64;
 
-                    let a_mod =
-                        1.0 - (a_start + a_len) as f64 / (a_start + b_start + a_len + b_len) as f64;
-                    let b_mod =
-                        1.0 - (b_start + b_len) as f64 / (a_start + b_start + a_len + b_len) as f64;
+                    // Fallback if everything is zero, to avoid 0/0
+                    if denom == 0.0 {
+                        return a.rank
+                            .partial_cmp(&b.rank)
+                            .unwrap_or(Ordering::Equal);
+                    }
 
-                    PartialOrd::partial_cmp(
-                        &(b.rank + b_mod * f64::from(fuzzy)),
-                        &(a.rank + a_mod * f64::from(fuzzy)),
-                    )
-                    .unwrap_or(Ordering::Equal)
+                    let a_mod = 1.0 - (a_start + a_len) as f64 / denom;
+                    let b_mod = 1.0 - (b_start + b_len) as f64 / denom;
+
+                    let a_score = a.rank as f64 + a_mod * fuzzy as f64;
+                    let b_score = b.rank as f64 + b_mod * fuzzy as f64;
+
+                    b_score
+                        .partial_cmp(&a_score)
+                        .unwrap_or(Ordering::Equal)
                 })
                 .collect();
         }
