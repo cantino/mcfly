@@ -421,15 +421,25 @@ impl History {
                     // larger (start+length).
                     let a_start = a.match_bounds[0].0;
                     let b_start = b.match_bounds[0].0;
-                    let a_len   = a.match_bounds[0].1 - a_start;
-                    let b_len   = b.match_bounds[0].1 - b_start;
+                    let a_len = a.match_bounds[0].1 - a_start;
+                    let b_len = b.match_bounds[0].1 - b_start;
                     let a_score = a.rank
-                        + (fuzzy as f64) * (1.0 / (1.0 + (a_start as f64 * start_weighting) + (a_len as f64 * len_weighting)));
+                        + (fuzzy as f64)
+                            * (1.0
+                                / (1.0
+                                    + (a_start as f64 * start_weighting)
+                                    + (a_len as f64 * len_weighting)));
 
                     let b_score = b.rank
-                        + (fuzzy as f64) * (1.0 / (1.0 + (b_start as f64 * start_weighting) + (b_len as f64 * len_weighting)));
+                        + (fuzzy as f64)
+                            * (1.0
+                                / (1.0
+                                    + (b_start as f64 * start_weighting)
+                                    + (b_len as f64 * len_weighting)));
 
-                    b_score.partial_cmp(&a_score).unwrap_or(std::cmp::Ordering::Equal)
+                    b_score
+                        .partial_cmp(&a_score)
+                        .unwrap_or(std::cmp::Ordering::Equal)
                 })
                 .collect();
         }
