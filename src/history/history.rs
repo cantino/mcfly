@@ -12,7 +12,6 @@ use rusqlite::named_params;
 use rusqlite::types::ToSql;
 use rusqlite::{Connection, MappedRows, Row};
 use serde::{Serialize, Serializer};
-use std::cmp::Ordering;
 use std::io::Write;
 use std::path::PathBuf;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
@@ -406,6 +405,9 @@ impl History {
         }
 
         if fuzzy > 0 && result_sort != &ResultSort::LastRun {
+            let start_weighting = 0.5;
+            let len_weighting = 0.5;
+
             names = names
                 .into_iter()
                 .sorted_by(|a, b| {
@@ -415,42 +417,19 @@ impl History {
                     // desired than longer or later matches -- even if they are
                     // ranked a little lower.
                     //
-                    // Each match is weighted by the inverse of its length plus
-                    // start position, relative to the total length + start of
-                    // both matches added together. This yields two complements
-                    // which always add up to 1 (e.g. 0.6 vs 0.4). If both
-                    // matches have the same length and start position, or if
-                    // those balance out exactly, the resulting weights will
-                    // both equal 0.5.
-                    //
-                    // The weights are multiplied by the configurable fuzzy
-                    // factor before being added to each result's original
-                    // rank. Factors > 1 are a "thumb on the scale" increasing
-                    // the likelihood of the weight flipping the outcome for
-                    // the originally lower-ranked result.
-
+                    // Compute a single per‐item score for, prioritizing higher rank and penalizing
+                    // larger (start+length).
                     let a_start = a.match_bounds[0].0;
                     let b_start = b.match_bounds[0].0;
                     let a_len   = a.match_bounds[0].1 - a_start;
                     let b_len   = b.match_bounds[0].1 - b_start;
-                    let denom   = (a_start + b_start + a_len + b_len) as f64;
+                    let a_score = a.rank as f64
+                        + (fuzzy as f64) * (1.0 / (1.0 + (a_start as f64 * start_weighting) + (a_len as f64 * len_weighting)));
 
-                    // Fallback if everything is zero, to avoid 0/0
-                    if denom == 0.0 {
-                        return a.rank
-                            .partial_cmp(&b.rank)
-                            .unwrap_or(Ordering::Equal);
-                    }
+                    let b_score = b.rank as f64
+                        + (fuzzy as f64) * (1.0 / (1.0 + (b_start as f64 * start_weighting) + (b_len as f64 * len_weighting)));
 
-                    let a_mod = 1.0 - (a_start + a_len) as f64 / denom;
-                    let b_mod = 1.0 - (b_start + b_len) as f64 / denom;
-
-                    let a_score = a.rank as f64 + a_mod * fuzzy as f64;
-                    let b_score = b.rank as f64 + b_mod * fuzzy as f64;
-
-                    b_score
-                        .partial_cmp(&a_score)
-                        .unwrap_or(Ordering::Equal)
+                    b_score.partial_cmp(&a_score).unwrap_or(std::cmp::Ordering::Equal)
                 })
                 .collect();
         }
