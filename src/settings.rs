@@ -168,7 +168,7 @@ impl Default for Settings {
             session_id: String::new(),
             mcfly_history: PathBuf::new(),
             dir: String::new(),
-            results: 10,
+            results: 30,
             when_run: None,
             exit_code: None,
             old_dir: None,
