@@ -322,7 +322,7 @@ $env:MCFLY_FUZZY=2
 ```
 
 ### Results Count
-To change the maximum number of results shown, set `MCFLY_RESULTS` (default: 10).
+To change the maximum number of results shown, set `MCFLY_RESULTS` (default: 30).
 
 bash / zsh:
 ```bash
