@@ -408,7 +408,7 @@ impl History {
         if fuzzy > 0 && result_sort != &ResultSort::LastRun {
             names = names
                 .into_iter()
-                .sorted_by(|a, b| {
+                .sorted_unstable_by(|a, b| {
                     // Fuzzy matches impose new ordering criteria on top of the
                     // natural rank-based sorting: at the most basic level,
                     // shorter and earlier matches are more likely to be
