@@ -254,9 +254,7 @@ impl History {
         fuzzy: i16,
         result_sort: &ResultSort,
     ) -> Vec<Command> {
-        let has_uppercase = cmd.chars().any(|c| c.is_uppercase());
-
-        let (wildcard, match_function) = if has_uppercase {
+        let (wildcard, match_function) = if Self::is_case_sensitive(cmd) {
             ("*", "GLOB")
         } else {
             ("%", "LIKE")
@@ -432,18 +430,26 @@ impl History {
         names
     }
 
+    /// Enable case sensitivity when input string contains uppercase
+    fn is_case_sensitive(cmd: &str) -> bool {
+        cmd.chars().any(|c| c.is_uppercase())
+    }
+
     fn calc_match_bounds(text: &str, cmd: &str, fuzzy: i16) -> Vec<(usize, usize)> {
-        let lowercase_text = text.to_lowercase();
-        let lowercase_cmd = cmd.to_lowercase();
+        let (text, cmd) = if Self::is_case_sensitive(cmd) {
+            (text.to_string(), cmd.to_string())
+        } else {
+            (text.to_lowercase(), cmd.to_lowercase())
+        };
 
         match fuzzy {
-            0 => lowercase_text
-                .match_indices(&lowercase_cmd)
+            0 => text
+                .match_indices(&cmd)
                 .map(|(index, _)| (index, index + cmd.len()))
                 .collect::<Vec<_>>(),
             _ => {
-                let mut search_iter = lowercase_cmd.chars().peekable();
-                let mut matches = lowercase_text
+                let mut search_iter = cmd.chars().peekable();
+                let mut matches = text
                     .match_indices(|c| {
                         let next = search_iter.peek();
 
