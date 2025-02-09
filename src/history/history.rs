@@ -254,15 +254,23 @@ impl History {
         fuzzy: i16,
         result_sort: &ResultSort,
     ) -> Vec<Command> {
-        let mut like_query = "%".to_string();
+        let has_uppercase = cmd.chars().any(|c| c.is_uppercase());
+
+        let (wildcard, match_function) = if has_uppercase {
+            ("*", "GLOB")
+        } else {
+            ("%", "LIKE")
+        };
+
+        let mut like_query = wildcard.to_string();
 
         if fuzzy > 0 {
-            like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join("%"));
+            like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join(wildcard));
         } else {
             like_query.push_str(cmd);
         }
 
-        like_query.push('%');
+        like_query += wildcard;
 
         let order_by_column: &str = match &result_sort {
             ResultSort::LastRun => "last_run",
@@ -270,14 +278,16 @@ impl History {
         };
 
         let query: &str = &format!(
-            "{} {} {} {}",
+            "{} {} {} {} {}",
             "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
                 age_factor, length_factor, exit_factor, recent_failure_factor,
                 selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
                 selected_occurrences_factor, occurrences_factor, last_run
             FROM contextual_commands
-            WHERE cmd LIKE (:like)",
-            "ORDER BY",
+            WHERE cmd",
+            match_function,
+            "(:like)
+            ORDER BY",
             order_by_column,
             "DESC LIMIT :limit"
         )[..];
