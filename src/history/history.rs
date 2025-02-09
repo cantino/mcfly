@@ -304,36 +304,7 @@ impl History {
                         .get(1)
                         .unwrap_or_else(|err| panic!("McFly error: cmd to be readable ({err})"));
 
-                    let lowercase_text = text.to_lowercase();
-                    let lowercase_cmd = cmd.to_lowercase();
-
-                    let bounds = match fuzzy {
-                        0 => lowercase_text
-                            .match_indices(&lowercase_cmd)
-                            .map(|(index, _)| (index, index + cmd.len()))
-                            .collect::<Vec<_>>(),
-                        _ => {
-                            let mut search_iter = lowercase_cmd.chars().peekable();
-                            let mut matches = lowercase_text
-                                .match_indices(|c| {
-                                    let next = search_iter.peek();
-
-                                    if next.is_some() && next.unwrap() == &c {
-                                        let _advance = search_iter.next();
-
-                                        return true;
-                                    }
-
-                                    false
-                                })
-                                .map(|m| m.0);
-
-                            let start = matches.next().unwrap_or(0);
-                            let end = matches.last().unwrap_or(start) + 1;
-
-                            vec![(start, end)]
-                        }
-                    };
+                    let bounds = Self::calc_match_bounds(&text, cmd, fuzzy);
 
                     Ok(Command {
                         id: row.get(0).unwrap_or_else(|err| {
@@ -459,6 +430,39 @@ impl History {
         }
 
         names
+    }
+
+    fn calc_match_bounds(text: &str, cmd: &str, fuzzy: i16) -> Vec<(usize, usize)> {
+        let lowercase_text = text.to_lowercase();
+        let lowercase_cmd = cmd.to_lowercase();
+
+        match fuzzy {
+            0 => lowercase_text
+                .match_indices(&lowercase_cmd)
+                .map(|(index, _)| (index, index + cmd.len()))
+                .collect::<Vec<_>>(),
+            _ => {
+                let mut search_iter = lowercase_cmd.chars().peekable();
+                let mut matches = lowercase_text
+                    .match_indices(|c| {
+                        let next = search_iter.peek();
+
+                        if next.is_some() && next.unwrap() == &c {
+                            let _advance = search_iter.next();
+
+                            return true;
+                        }
+
+                        false
+                    })
+                    .map(|m| m.0);
+
+                let start = matches.next().unwrap_or(0);
+                let end = matches.last().unwrap_or(start) + 1;
+
+                vec![(start, end)]
+            }
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
