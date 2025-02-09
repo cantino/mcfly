@@ -72,14 +72,14 @@ impl Default for Network {
 impl Network {
     #[must_use]
     pub fn random() -> Network {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         Network {
-            final_bias: rng.gen_range(-1.0..1.0),
+            final_bias: rng.random_range(-1.0..1.0),
             final_weights: [
-                rng.gen_range(-1.0..1.0),
-                rng.gen_range(-1.0..1.0),
-                rng.gen_range(-1.0..1.0),
+                rng.random_range(-1.0..1.0),
+                rng.random_range(-1.0..1.0),
+                rng.random_range(-1.0..1.0),
             ],
             hidden_nodes: [Node::random(), Node::random(), Node::random()],
             hidden_node_sums: [0.0, 0.0, 0.0],

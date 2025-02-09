@@ -77,7 +77,7 @@ impl TrainingSampleGenerator {
             }
 
             if negative_examples <= positive_examples {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 // Get the features for another command that isn't the correct one.
                 if let Some(random_command) = &results
@@ -105,7 +105,7 @@ impl TrainingSampleGenerator {
         let mut positive_examples = 0;
         let mut negative_examples = 0;
         let records = records.unwrap_or(self.data_set.len());
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         loop {
             if let Some((features, correct)) = &self.data_set.iter().choose(&mut rng) {
