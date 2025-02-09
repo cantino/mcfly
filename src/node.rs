@@ -20,20 +20,20 @@ pub struct Node {
 impl Node {
     #[must_use]
     pub fn random() -> Node {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         Node {
-            offset: rng.gen_range(-1.0..1.0),
-            age: rng.gen_range(-1.0..1.0),
-            length: rng.gen_range(-1.0..1.0),
-            exit: rng.gen_range(-1.0..1.0),
-            recent_failure: rng.gen_range(-1.0..1.0),
-            selected_dir: rng.gen_range(-1.0..1.0),
-            dir: rng.gen_range(-1.0..1.0),
-            overlap: rng.gen_range(-1.0..1.0),
-            immediate_overlap: rng.gen_range(-1.0..1.0),
-            selected_occurrences: rng.gen_range(-1.0..1.0),
-            occurrences: rng.gen_range(-1.0..1.0),
+            offset: rng.random_range(-1.0..1.0),
+            age: rng.random_range(-1.0..1.0),
+            length: rng.random_range(-1.0..1.0),
+            exit: rng.random_range(-1.0..1.0),
+            recent_failure: rng.random_range(-1.0..1.0),
+            selected_dir: rng.random_range(-1.0..1.0),
+            dir: rng.random_range(-1.0..1.0),
+            overlap: rng.random_range(-1.0..1.0),
+            immediate_overlap: rng.random_range(-1.0..1.0),
+            selected_occurrences: rng.random_range(-1.0..1.0),
+            occurrences: rng.random_range(-1.0..1.0),
         }
     }
 
