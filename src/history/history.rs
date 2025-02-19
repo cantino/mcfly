@@ -254,10 +254,11 @@ impl History {
         fuzzy: i16,
         result_sort: &ResultSort,
     ) -> Vec<Command> {
-        let (wildcard, match_function) = if Self::is_case_sensitive(cmd) {
-            ("*", "GLOB")
+        let (wildcard, match_function, cmd) = if Self::is_case_sensitive(cmd) {
+            // replace '%' with '*' for glob matching
+            ("*", "GLOB", cmd.replace("%", "*"))
         } else {
-            ("%", "LIKE")
+            ("%", "LIKE", cmd.to_string())
         };
 
         let mut like_query = wildcard.to_string();
@@ -265,7 +266,7 @@ impl History {
         if fuzzy > 0 {
             like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join(wildcard));
         } else {
-            like_query.push_str(cmd);
+            like_query.push_str(&cmd);
         }
 
         like_query += wildcard;
@@ -302,7 +303,7 @@ impl History {
                         .get(1)
                         .unwrap_or_else(|err| panic!("McFly error: cmd to be readable ({err})"));
 
-                    let bounds = Self::calc_match_bounds(&text, cmd, fuzzy);
+                    let bounds = Self::calc_match_bounds(&text, &cmd, fuzzy);
 
                     Ok(Command {
                         id: row.get(0).unwrap_or_else(|err| {
