@@ -254,15 +254,22 @@ impl History {
         fuzzy: i16,
         result_sort: &ResultSort,
     ) -> Vec<Command> {
-        let mut like_query = "%".to_string();
+        let (wildcard, match_function, cmd) = if Self::is_case_sensitive(cmd) {
+            // replace '%' with '*' for glob matching
+            ("*", "GLOB", cmd.replace("%", "*"))
+        } else {
+            ("%", "LIKE", cmd.to_string())
+        };
+
+        let mut like_query = wildcard.to_string();
 
         if fuzzy > 0 {
-            like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join("%"));
+            like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join(wildcard));
         } else {
-            like_query.push_str(cmd);
+            like_query.push_str(&cmd);
         }
 
-        like_query.push('%');
+        like_query += wildcard;
 
         let order_by_column: &str = match &result_sort {
             ResultSort::LastRun => "last_run",
@@ -270,14 +277,16 @@ impl History {
         };
 
         let query: &str = &format!(
-            "{} {} {} {}",
+            "{} {} {} {} {}",
             "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
                 age_factor, length_factor, exit_factor, recent_failure_factor,
                 selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
                 selected_occurrences_factor, occurrences_factor, last_run
             FROM contextual_commands
-            WHERE cmd LIKE (:like)",
-            "ORDER BY",
+            WHERE cmd",
+            match_function,
+            "(:like)
+            ORDER BY",
             order_by_column,
             "DESC LIMIT :limit"
         )[..];
@@ -294,36 +303,7 @@ impl History {
                         .get(1)
                         .unwrap_or_else(|err| panic!("McFly error: cmd to be readable ({err})"));
 
-                    let lowercase_text = text.to_lowercase();
-                    let lowercase_cmd = cmd.to_lowercase();
-
-                    let bounds = match fuzzy {
-                        0 => lowercase_text
-                            .match_indices(&lowercase_cmd)
-                            .map(|(index, _)| (index, index + cmd.len()))
-                            .collect::<Vec<_>>(),
-                        _ => {
-                            let mut search_iter = lowercase_cmd.chars().peekable();
-                            let mut matches = lowercase_text
-                                .match_indices(|c| {
-                                    let next = search_iter.peek();
-
-                                    if next.is_some() && next.unwrap() == &c {
-                                        let _advance = search_iter.next();
-
-                                        return true;
-                                    }
-
-                                    false
-                                })
-                                .map(|m| m.0);
-
-                            let start = matches.next().unwrap_or(0);
-                            let end = matches.last().unwrap_or(start) + 1;
-
-                            vec![(start, end)]
-                        }
-                    };
+                    let bounds = Self::calc_match_bounds(&text, &cmd, fuzzy);
 
                     Ok(Command {
                         id: row.get(0).unwrap_or_else(|err| {
@@ -449,6 +429,47 @@ impl History {
         }
 
         names
+    }
+
+    /// Enable case sensitivity when input string contains uppercase
+    fn is_case_sensitive(cmd: &str) -> bool {
+        cmd.chars().any(|c| c.is_uppercase())
+    }
+
+    fn calc_match_bounds(text: &str, cmd: &str, fuzzy: i16) -> Vec<(usize, usize)> {
+        let (text, cmd) = if Self::is_case_sensitive(cmd) {
+            (text.to_string(), cmd.to_string())
+        } else {
+            (text.to_lowercase(), cmd.to_lowercase())
+        };
+
+        match fuzzy {
+            0 => text
+                .match_indices(&cmd)
+                .map(|(index, _)| (index, index + cmd.len()))
+                .collect::<Vec<_>>(),
+            _ => {
+                let mut search_iter = cmd.chars().peekable();
+                let mut matches = text
+                    .match_indices(|c| {
+                        let next = search_iter.peek();
+
+                        if next.is_some() && next.unwrap() == &c {
+                            let _advance = search_iter.next();
+
+                            return true;
+                        }
+
+                        false
+                    })
+                    .map(|m| m.0);
+
+                let start = matches.next().unwrap_or(0);
+                let end = matches.last().unwrap_or(start) + 1;
+
+                vec![(start, end)]
+            }
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
