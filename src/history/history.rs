@@ -255,8 +255,8 @@ impl History {
         result_sort: &ResultSort,
     ) -> Vec<Command> {
         let (wildcard, match_function, cmd) = if Self::is_case_sensitive(cmd) {
-            // replace '%' with '*' for glob matching
-            ("*", "GLOB", cmd.replace("%", "*"))
+            // escape '*' with '[*]' and replace '%' with '*' for glob matching
+            ("*", "GLOB", cmd.replace("*", "[*]").replace("%", "*"))
         } else {
             ("%", "LIKE", cmd.to_string())
         };
