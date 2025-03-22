@@ -412,16 +412,8 @@ impl History {
                     let a_start = *a.match_indices.first().unwrap_or(&0);
                     let b_start = *b.match_indices.first().unwrap_or(&0);
 
-                    let a_len = if fuzzy > 0 {
-                        a.match_indices.last().map(|i| i + 1).unwrap_or(0) - a_start
-                    } else {
-                        cmd.len()
-                    };
-                    let b_len = if fuzzy > 0 {
-                        b.match_indices.last().map(|i| i + 1).unwrap_or(0) - b_start
-                    } else {
-                        cmd.len()
-                    };
+                    let a_len = a.match_indices.last().map(|i| i + 1).unwrap_or(0) - a_start;
+                    let b_len = b.match_indices.last().map(|i| i + 1).unwrap_or(0) - b_start;
 
                     let a_mod =
                         1.0 - (a_start + a_len) as f64 / (a_start + b_start + a_len + b_len) as f64;
