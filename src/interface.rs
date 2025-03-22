@@ -272,12 +272,7 @@ impl<'a> Interface<'a> {
                 SetBackgroundColor(bg),
                 SetForegroundColor(fg),
                 Print(Interface::truncate_for_display(
-                    command,
-                    &self.input.command,
-                    width,
-                    highlight,
-                    fg,
-                    self.debug
+                    command, width, highlight, fg, self.debug
                 ))
             )
             .unwrap();
@@ -991,13 +986,11 @@ impl<'a> Interface<'a> {
 
     fn truncate_for_display(
         command: &Command,
-        search: &str,
         width: u16,
         highlight_color: Color,
         base_color: Color,
         debug: bool,
     ) -> String {
-        let mut prev: usize = 0;
         let debug_space = if debug { 90 } else { 0 };
         let max_grapheme_length = if width > debug_space {
             width - debug_space - 9
@@ -1006,21 +999,20 @@ impl<'a> Interface<'a> {
         };
         let mut out = FixedLengthGraphemeString::empty(max_grapheme_length);
 
-        if !search.is_empty() {
-            for (start, end) in &command.match_bounds {
-                if prev != *start {
-                    out.push_grapheme_str(&command.cmd[prev..*start]);
+        let mut match_indices = command.match_indices.iter().peekable();
+
+        for (i, c) in command.cmd.char_indices() {
+            match match_indices.peek() {
+                Some(&&j) if i == j => {
+                    let _ = match_indices.next();
+                    execute!(out, SetForegroundColor(highlight_color)).unwrap();
+                    out.push_grapheme_str(c);
                 }
-
-                execute!(out, SetForegroundColor(highlight_color)).unwrap();
-                out.push_grapheme_str(&command.cmd[*start..*end]);
-                execute!(out, SetForegroundColor(base_color)).unwrap();
-                prev = *end;
+                _ => {
+                    execute!(out, SetForegroundColor(base_color)).unwrap();
+                    out.push_grapheme_str(c);
+                }
             }
-        }
-
-        if prev != command.cmd.len() {
-            out.push_grapheme_str(&command.cmd[prev..]);
         }
 
         if debug {
