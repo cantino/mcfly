@@ -45,7 +45,7 @@ pub struct Command {
     pub selected: bool,
     pub dir: Option<String>,
     pub features: Features,
-    pub match_bounds: Vec<(usize, usize)>,
+    pub match_indices: Vec<usize>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -331,7 +331,7 @@ impl History {
                         rank: row.get(8).unwrap_or_else(|err| {
                             panic!("McFly error: rank to be readable ({err})")
                         }),
-                        match_bounds: bounds,
+                        match_indices: bounds,
                         features: Features {
                             age_factor: row.get(9).unwrap_or_else(|err| {
                                 panic!("McFly error: age_factor to be readable ({err})")
@@ -409,10 +409,19 @@ impl History {
                     // the likelihood of the weight flipping the outcome for
                     // the originally lower-ranked result.
 
-                    let a_start = a.match_bounds[0].0;
-                    let b_start = b.match_bounds[0].0;
-                    let a_len = a.match_bounds[0].1 - a_start;
-                    let b_len = b.match_bounds[0].1 - b_start;
+                    let a_start = *a.match_indices.first().unwrap();
+                    let b_start = *b.match_indices.first().unwrap();
+
+                    let a_len = if fuzzy > 0 {
+                        a.match_indices.last().unwrap() + 1 - a_start
+                    } else {
+                        cmd.len()
+                    };
+                    let b_len = if fuzzy > 0 {
+                        b.match_indices.last().unwrap() + 1 - b_start
+                    } else {
+                        cmd.len()
+                    };
 
                     let a_mod =
                         1.0 - (a_start + a_len) as f64 / (a_start + b_start + a_len + b_len) as f64;
@@ -436,7 +445,7 @@ impl History {
         cmd.chars().any(|c| c.is_uppercase())
     }
 
-    fn calc_match_bounds(text: &str, cmd: &str, fuzzy: i16) -> Vec<(usize, usize)> {
+    fn calc_match_bounds(text: &str, cmd: &str, fuzzy: i16) -> Vec<usize> {
         let (text, cmd) = if Self::is_case_sensitive(cmd) {
             (text.to_string(), cmd.to_string())
         } else {
@@ -446,28 +455,24 @@ impl History {
         match fuzzy {
             0 => text
                 .match_indices(&cmd)
-                .map(|(index, _)| (index, index + cmd.len()))
-                .collect::<Vec<_>>(),
+                .flat_map(|(index, _)| index..index + cmd.len())
+                .collect(),
             _ => {
                 let mut search_iter = cmd.chars().peekable();
-                let mut matches = text
-                    .match_indices(|c| {
-                        let next = search_iter.peek();
 
-                        if next.is_some() && next.unwrap() == &c {
-                            let _advance = search_iter.next();
+                text.match_indices(|c| {
+                    let next = search_iter.peek();
 
-                            return true;
-                        }
+                    if next.is_some() && next.unwrap() == &c {
+                        let _advance = search_iter.next();
 
-                        false
-                    })
-                    .map(|m| m.0);
+                        return true;
+                    }
 
-                let start = matches.next().unwrap_or(0);
-                let end = matches.last().unwrap_or(start) + 1;
-
-                vec![(start, end)]
+                    false
+                })
+                .map(|m| m.0)
+                .collect()
             }
         }
     }
