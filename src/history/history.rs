@@ -303,7 +303,7 @@ impl History {
                         .get(1)
                         .unwrap_or_else(|err| panic!("McFly error: cmd to be readable ({err})"));
 
-                    let bounds = Self::calc_match_bounds(&text, &cmd, fuzzy);
+                    let bounds = Self::calc_match_indices(&text, &cmd, fuzzy);
 
                     Ok(Command {
                         id: row.get(0).unwrap_or_else(|err| {
@@ -409,16 +409,16 @@ impl History {
                     // the likelihood of the weight flipping the outcome for
                     // the originally lower-ranked result.
 
-                    let a_start = *a.match_indices.first().unwrap();
-                    let b_start = *b.match_indices.first().unwrap();
+                    let a_start = *a.match_indices.first().unwrap_or(&0);
+                    let b_start = *b.match_indices.first().unwrap_or(&0);
 
                     let a_len = if fuzzy > 0 {
-                        a.match_indices.last().unwrap() + 1 - a_start
+                        a.match_indices.last().map(|i| i + 1).unwrap_or(0) - a_start
                     } else {
                         cmd.len()
                     };
                     let b_len = if fuzzy > 0 {
-                        b.match_indices.last().unwrap() + 1 - b_start
+                        b.match_indices.last().map(|i| i + 1).unwrap_or(0) - b_start
                     } else {
                         cmd.len()
                     };
@@ -445,7 +445,8 @@ impl History {
         cmd.chars().any(|c| c.is_uppercase())
     }
 
-    fn calc_match_bounds(text: &str, cmd: &str, fuzzy: i16) -> Vec<usize> {
+    /// Calculate the indices of the matches in the text.
+    fn calc_match_indices(text: &str, cmd: &str, fuzzy: i16) -> Vec<usize> {
         let (text, cmd) = if Self::is_case_sensitive(cmd) {
             (text.to_string(), cmd.to_string())
         } else {
