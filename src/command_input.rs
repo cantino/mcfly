@@ -237,7 +237,7 @@ impl CommandInput {
 
         for &(count, (offset, _)) in vec.iter().rev() {
             if count <= self.cursor {
-                if !found_word && (vec[if count >= 1 { count - 1 } else { 0 }].1).1 == " " {
+                if !found_word && (vec[count.saturating_sub(1)].1).1 == " " {
                     continue; // Ignore leading spaces
                 } else if found_word {
                     if offset == word_boundaries[word_index] {
