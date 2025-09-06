@@ -203,7 +203,7 @@ impl Default for Settings {
                     results_bg: Color::Black,
                     results_hl: Color::Blue,
                     results_selection_fg: Color::Black,
-                    results_selection_bg: Color::White,
+                    results_selection_bg: Color::DarkGrey,
                     results_selection_hl: Color::DarkGreen,
                 },
                 lightmode_colors: LightModeColors {
