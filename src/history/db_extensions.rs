@@ -1,7 +1,7 @@
 use crate::history::history::Features;
 use crate::network::Network;
-use rusqlite::functions::FunctionFlags;
 use rusqlite::Connection;
+use rusqlite::functions::FunctionFlags;
 
 pub fn add_db_functions(db: &Connection) {
     let network = Network::default();

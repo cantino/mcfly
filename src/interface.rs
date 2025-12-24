@@ -8,13 +8,13 @@ use crate::settings::{InterfaceView, KeyScheme, ResultFilter};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::KeyCode::Char;
-use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, read};
 use crossterm::style::{Color, Print, SetBackgroundColor, SetForegroundColor};
 use crossterm::terminal::{self, LeaveAlternateScreen};
 use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen};
 use crossterm::{cursor, execute, queue};
 use humantime::format_duration;
-use std::io::{stdout, Write};
+use std::io::{Write, stdout};
 use std::string::String;
 
 pub struct Interface<'a> {
@@ -67,7 +67,7 @@ impl MenuMode {
                 }
             },
             MenuMode::ConfirmDelete => {
-                return String::from("Delete selected command from the history? (Y/N)")
+                return String::from("Delete selected command from the history? (Y/N)");
             }
         }
 
@@ -397,11 +397,10 @@ impl<'a> Interface<'a> {
     }
 
     fn confirm(&mut self, confirmation: bool) {
-        if confirmation {
-            if let MenuMode::ConfirmDelete = self.menu_mode {
+        if confirmation
+            && let MenuMode::ConfirmDelete = self.menu_mode {
                 self.delete_selection();
             }
-        }
         self.menu_mode = MenuMode::Normal;
     }
 

@@ -44,13 +44,11 @@ fn clean_temporary_files(mcfly_history: &Path, history_format: HistoryFormat, co
         let paths = fs::read_dir(expanded_path).unwrap();
 
         for entry in paths.flatten() {
-            if let Some(file_name) = entry.path().file_name() {
-                if let Some(valid_unicode_str) = file_name.to_str() {
-                    if valid_unicode_str.starts_with("mcfly.") {
+            if let Some(file_name) = entry.path().file_name()
+                && let Some(valid_unicode_str) = file_name.to_str()
+                    && valid_unicode_str.starts_with("mcfly.") {
                         shell_history::delete_lines(&entry.path(), history_format, command);
                     }
-                }
-            }
         }
     }
 }

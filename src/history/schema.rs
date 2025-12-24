@@ -1,5 +1,5 @@
 use crate::simplified_command::SimplifiedCommand;
-use rusqlite::{named_params, Connection};
+use rusqlite::{Connection, named_params};
 use std::io;
 use std::io::Write;
 
@@ -22,8 +22,10 @@ pub fn migrate(connection: &Connection) {
         .unwrap_or_else(|err| panic!("McFly error: Query to work ({err})"))
         .unwrap_or(0);
 
-    assert!(current_version <= CURRENT_SCHEMA_VERSION, "McFly error: Database schema version ({current_version}) is newer than the max version supported by this binary ({CURRENT_SCHEMA_VERSION}). You should update mcfly.",
-        );
+    assert!(
+        current_version <= CURRENT_SCHEMA_VERSION,
+        "McFly error: Database schema version ({current_version}) is newer than the max version supported by this binary ({CURRENT_SCHEMA_VERSION}). You should update mcfly.",
+    );
 
     if current_version < CURRENT_SCHEMA_VERSION {
         print!("McFly: Upgrading McFly DB to version {CURRENT_SCHEMA_VERSION}, please wait...");
