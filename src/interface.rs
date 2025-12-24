@@ -397,10 +397,9 @@ impl<'a> Interface<'a> {
     }
 
     fn confirm(&mut self, confirmation: bool) {
-        if confirmation
-            && let MenuMode::ConfirmDelete = self.menu_mode {
-                self.delete_selection();
-            }
+        if confirmation && let MenuMode::ConfirmDelete = self.menu_mode {
+            self.delete_selection();
+        }
         self.menu_mode = MenuMode::Normal;
     }
 

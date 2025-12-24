@@ -370,9 +370,10 @@ impl Settings {
                 settings.dir = directory.unwrap_or_else(pwd);
 
                 if let Ok(results) = env::var("MCFLY_RESULTS")
-                    && let Ok(results) = u16::from_str(&results) {
-                        settings.results = results;
-                    }
+                    && let Ok(results) = u16::from_str(&results)
+                {
+                    settings.results = results;
+                }
 
                 if let Some(results) = results {
                     settings.results = results;
@@ -486,9 +487,10 @@ impl Settings {
         };
 
         if let Ok(prompt) = env::var("MCFLY_PROMPT")
-            && prompt.chars().count() == 1 {
-                settings.prompt = prompt;
-            }
+            && prompt.chars().count() == 1
+        {
+            settings.prompt = prompt;
+        }
 
         settings
     }

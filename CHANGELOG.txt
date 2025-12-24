@@ -1,3 +1,9 @@
+0.9.4 - Dec 24, 2025
+ - Implement case sensitivity for inputs containing uppercase letters, highlighing only matched characters (thanks @kentakom1213)
+ - Fish fixes (thanks @praveenperera!)
+ - Make the result selection in dark mode easier to see (thanks @cjordan)
+ - Upgrade Rust to 2024 edition
+
 0.9.3 - Feb 11, 2025
  - Fix PowerShell VIM key scheme duplicates keypresses (thanks @jtschuster)
  - Display more results by default (thanks @kentakom1213) and scrolling (thanks @kentakom1213)
