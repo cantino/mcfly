@@ -16,7 +16,7 @@ lto = true
 debug = true
 
 [dependencies]
-config = { version = "0.15.0", default-features = false, features = ["toml"] }
+config = { version = "0.15", default-features = false, features = ["toml"] }
 chrono = "0.4"
 chrono-systemd-time = "0.3"
 csv = "1"
@@ -32,7 +32,7 @@ shellexpand = "3"
 unicode-segmentation = "1.11"
 
 [dependencies.rusqlite]
-version = "0.33"
+version = "0.38"
 features = ["functions", "unlock_notify"]
 
 [dependencies.crossterm]
