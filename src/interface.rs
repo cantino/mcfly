@@ -264,6 +264,26 @@ impl<'a> Interface<'a> {
                 }
             }
 
+            // Handle recently failed commands
+            let is_recently_failed = command.exit_code.map_or(false, |c| c != 0);
+            if is_recently_failed {
+                fg = if self.settings.lightmode {
+                    self.settings.colors.lightmode_colors.results_recent_failure
+                } else {
+                    self.settings.colors.darkmode_colors.results_recent_failure
+                };
+            }
+
+            // Handle broken commands (that have always failed)
+            let is_broken = command.features.exit_factor == 0.0;
+            if is_broken {
+                fg = if self.settings.lightmode {
+                    self.settings.colors.lightmode_colors.results_broken
+                } else {
+                    self.settings.colors.darkmode_colors.results_broken
+                };
+            }
+
             let command_line_index = self.command_line_index(index as i16);
             queue!(
                 screen,

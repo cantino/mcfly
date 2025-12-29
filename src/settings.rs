@@ -101,6 +101,8 @@ pub struct DarkModeColors {
     pub results_fg: Color,
     pub results_bg: Color,
     pub results_hl: Color,
+    pub results_recent_failure: Color,
+    pub results_broken: Color,
     pub results_selection_fg: Color,
     pub results_selection_bg: Color,
     pub results_selection_hl: Color,
@@ -113,6 +115,8 @@ pub struct LightModeColors {
     pub results_fg: Color,
     pub results_bg: Color,
     pub results_hl: Color,
+    pub results_recent_failure: Color,
+    pub results_broken: Color,
     pub results_selection_fg: Color,
     pub results_selection_bg: Color,
     pub results_selection_hl: Color,
@@ -202,6 +206,8 @@ impl Default for Settings {
                     results_fg: Color::White,
                     results_bg: Color::Black,
                     results_hl: Color::Blue,
+                    results_recent_failure: Color::DarkYellow,
+                    results_broken: Color::DarkRed,
                     results_selection_fg: Color::Black,
                     results_selection_bg: Color::DarkGrey,
                     results_selection_hl: Color::DarkGreen,
@@ -212,6 +218,8 @@ impl Default for Settings {
                     results_fg: Color::Black,
                     results_bg: Color::White,
                     results_hl: Color::Blue,
+                    results_recent_failure: Color::Yellow,
+                    results_broken: Color::Red,
                     results_selection_fg: Color::White,
                     results_selection_bg: Color::DarkGrey,
                     results_selection_hl: Color::Grey,
@@ -569,6 +577,20 @@ impl Settings {
             {
                 self.colors.darkmode_colors.results_hl = results_hl;
             }
+            if let Some(results_recent_failure) = darkmode_config
+                .get("results_recent_failure")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.results_recent_failure = results_recent_failure;
+            }
+            if let Some(results_broken) = darkmode_config
+                .get("results_broken")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.darkmode_colors.results_broken = results_broken;
+            }
             if let Some(results_selection_fg) = darkmode_config
                 .get("results_selection_fg")
                 .and_then(|v| v.clone().into_string().ok())
@@ -631,6 +653,20 @@ impl Settings {
                 .and_then(|v| Color::from_str(v.as_str()).ok())
             {
                 self.colors.lightmode_colors.results_hl = results_hl;
+            }
+            if let Some(results_recent_failure) = lightmode_config
+                .get("results_recent_failure")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.results_recent_failure = results_recent_failure;
+            }
+            if let Some(results_broken) = lightmode_config
+                .get("results_broken")
+                .and_then(|v| v.clone().into_string().ok())
+                .and_then(|v| Color::from_str(v.as_str()).ok())
+            {
+                self.colors.lightmode_colors.results_broken = results_broken;
             }
             if let Some(results_selection_fg) = lightmode_config
                 .get("results_selection_fg")
