@@ -238,22 +238,27 @@ McFly will always use your **local timezone**.
 For more details, please refer to the [`chrono-systemd-time` documentation](https://docs.rs/chrono-systemd-time/latest/chrono_systemd_time/).
 
 ### Regex
-*Dump* supports filtering commands with regex.
+To change the search mode to regex-based search, set `MCFLY_SEARCH_MODE` to `REGEX` (default: `PATTERN`) or cycle through search modes in the UI.
+
 The regex syntax follows [crate regex](https://docs.rs/regex/latest/regex/#syntax).
 
-For example:
-```bash
-mcfly dump -r '^cargo run'
-```
-will dump all command prefixes with `cargo run`.
+**Note**: Invalid regex patterns will simply return no results.
+**Note**: Fuzzy search is not supported in regex mode.
 
-You can use `-r/--regex` and time options at the same time.
-
-For example:
+bash / zsh:
 ```bash
-mcfly dump -r '^cargo run' --since '2023-09-12 09:15:30'
+export MCFLY_SEARCH_MODE=REGEX
 ```
-will dump all command prefixes with `cargo run` ran since *2023-09-12 09:15:30*.
+
+fish:
+```bash
+set -gx MCFLY_SEARCH_MODE REGEX
+```
+
+powershell:
+```powershell
+$env:MCFLY_SEARCH_MODE="REGEX"
+ ```
 
 ## Settings
 A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
