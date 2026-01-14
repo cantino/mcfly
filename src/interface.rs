@@ -256,7 +256,7 @@ impl<'a> Interface<'a> {
                 highlight = theme.results_selection_hl;
             }
             // Handle recently failed commands
-            let is_recently_failed = command.exit_code.map_or(false, |c| c != 0);
+            let is_recently_failed = command.exit_code.is_some_and(|c| c != 0);
             if is_recently_failed {
                 fg = theme.results_recent_failure;
             }
