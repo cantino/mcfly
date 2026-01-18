@@ -394,6 +394,28 @@ powershell:
 $env:MCFLY_DISABLE_MENU=true
  ```
 
+### Color Coding for Failed Commands
+McFly automatically color-codes commands based on their execution history:
+- **Recently failed commands** (non-zero exit code) are shown in yellow
+- **Broken commands** (that always fail) are shown in red
+
+To disable this color coding feature, set the environment variable `MCFLY_DISABLE_FAILURE_COLORS`.
+
+bash / zsh:
+```bash
+export MCFLY_DISABLE_FAILURE_COLORS=true
+```
+
+fish:
+```bash
+set -gx MCFLY_DISABLE_FAILURE_COLORS true
+```
+
+powershell:
+```powershell
+$env:MCFLY_DISABLE_FAILURE_COLORS="true"
+```
+
 ### Results sorting
 To change the sorting of results shown, set `MCFLY_RESULTS_SORT` (default: RANK).
 Possible values `RANK` and `LAST_RUN`

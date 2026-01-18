@@ -137,6 +137,7 @@ pub struct Settings {
     pub disable_menu: bool,
     pub prompt: String,
     pub disable_run_command: bool,
+    pub disable_failure_colors: bool,
     pub time_range: TimeRange,
     pub sort_order: SortOrder,
     pub pattern: Option<Regex>,
@@ -179,6 +180,7 @@ impl Default for Settings {
             disable_menu: false,
             prompt: String::from("$"),
             disable_run_command: false,
+            disable_failure_colors: false,
             time_range: TimeRange::default(),
             sort_order: SortOrder::default(),
             pattern: None,
@@ -474,6 +476,8 @@ impl Settings {
         settings.disable_menu = is_env_var_truthy("MCFLY_DISABLE_MENU");
 
         settings.disable_run_command = is_env_var_truthy("MCFLY_DISABLE_RUN_COMMAND");
+
+        settings.disable_failure_colors = is_env_var_truthy("MCFLY_DISABLE_FAILURE_COLORS");
 
         settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
             Ok("vim") => KeyScheme::Vim,
