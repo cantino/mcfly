@@ -225,6 +225,23 @@ You can dump all the commands history without any arguments:
 mcfly dump
 ```
 
+*Dump* supports filtering commands with regex.
+The regex syntax follows [crate regex](https://docs.rs/regex/latest/regex/#syntax).
+
+For example:
+```bash
+mcfly dump -r '^cargo run'
+```
+will dump all command prefixes with `cargo run`.
+
+You can use `-r/--regex` and time options at the same time.
+
+For example:
+```bash
+mcfly dump -r '^cargo run' --since '2023-09-12 09:15:30'
+```
+will dump all command prefixes with `cargo run` ran since *2023-09-12 09:15:30*.
+
 ### Timestamp format
 
 McFly parses timestamps via `chrono-systemd-time`, a non-strict implementation of [systemd.time](https://www.freedesktop.org/software/systemd/man/systemd.time.html), with the following exceptions:
