@@ -110,6 +110,26 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
+### Install using WinGet on Windows
+
+1. Install `mcfly`:
+   ```shell
+   winget install mcfly
+   ```
+2. Add the following to the end of your `$PROFILE`:
+   ```shell
+   Invoke-Expression -Command $(mcfly init powershell | out string)
+   ```
+3. Restart your terminal
+
+#### Uninstall using Winget on Windows
+
+1. Remove `mcfly`:
+   ```shell
+   winget uninstall mcfly
+   ```
+2. Remove the lines you added to `$PROFILE`.
+
 ### Installing using our install script (macOS or Linux)
 
 1. `curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly` (or, if the current user doesn't have permissions to edit /usr/local/bin, then use `sudo sh -s`.)
