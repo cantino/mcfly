@@ -13,6 +13,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
+use terminal_colorsaurus::{QueryOptions, ThemeMode, theme_mode};
 
 #[derive(Debug)]
 pub enum Mode {
@@ -475,7 +476,7 @@ impl Settings {
             }
         }
 
-        settings.lightmode = is_env_var_truthy("MCFLY_LIGHT");
+        settings.lightmode = is_light_mode_enabled();
 
         settings.disable_menu = is_env_var_truthy("MCFLY_DISABLE_MENU");
 
@@ -722,17 +723,24 @@ pub fn pwd() -> String {
         .to_string()
 }
 
+fn is_value_truthy(val: &str) -> bool {
+    val != "F" && val != "f" && val != "false" && val != "False" && val != "FALSE" && val != "0"
+}
+
 fn is_env_var_truthy(name: &str) -> bool {
     match env::var(name) {
-        Ok(val) => {
-            val != "F"
-                && val != "f"
-                && val != "false"
-                && val != "False"
-                && val != "FALSE"
-                && val != "0"
-        }
+        Ok(val) => is_value_truthy(&val),
         Err(_) => false,
+    }
+}
+
+fn is_light_mode_enabled() -> bool {
+    if let Ok(env_val) = env::var("MCFLY_LIGHT") {
+        is_value_truthy(&env_val)
+    } else {
+        let queried_mode = theme_mode(QueryOptions::default()).unwrap_or(ThemeMode::Dark);
+
+        queried_mode == ThemeMode::Light
     }
 }
 
