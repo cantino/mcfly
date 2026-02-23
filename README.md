@@ -110,7 +110,7 @@ When suggesting a command, McFly takes into consideration:
     ```
 1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
-### Install using WinGet (on Windows)
+### Install using WinGet on Windows (we do not maintain this install script and cannot vouch for its accuracy or safety)
 
 1. Install `mcfly`:
    ```shell
