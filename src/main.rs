@@ -25,8 +25,8 @@ fn handle_addition(settings: &Settings) {
             &settings.old_dir,
         );
 
-        if settings.append_to_histfile.is_some() {
-            let histfile = PathBuf::from(settings.append_to_histfile.as_ref().unwrap());
+        if let Some(append_to_histfile) = &settings.append_to_histfile {
+            let histfile = PathBuf::from(append_to_histfile);
             let command = shell_history::HistoryCommand::new(
                 &settings.command,
                 settings.when_run.unwrap_or(

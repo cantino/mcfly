@@ -27,13 +27,13 @@ impl<'a> StatsGenerator<'a> {
             return "No history found in the database".to_string();
         }
         lines.push_str("📊 Quick stats:\n");
-        if settings.stats_only_dir.is_some() {
+        if let Some(stats_only_dir) = &settings.stats_only_dir {
             lines.push_str(
                 format!(
                     "  - your history database contains {:?} items total and {:?} in {:?}\n",
                     count_history,
                     Self::count_commands_from_db_history(self, &settings.stats_only_dir),
-                    &settings.stats_only_dir.as_ref().unwrap()
+                    stats_only_dir
                 )
                 .as_mut_str(),
             );

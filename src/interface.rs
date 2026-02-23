@@ -277,7 +277,7 @@ impl<'a> Interface<'a> {
             )
             .unwrap();
 
-            if command.last_run.is_some() {
+            if let Some(last_run) = command.last_run {
                 queue!(
                     screen,
                     cursor::MoveTo(
@@ -291,7 +291,7 @@ impl<'a> Interface<'a> {
                     Duration::minutes(
                         Utc::now()
                             .signed_duration_since(
-                                Utc.timestamp_opt(command.last_run.unwrap(), 0).unwrap(),
+                                Utc.timestamp_opt(last_run, 0).unwrap(),
                             )
                             .num_minutes(),
                     )
