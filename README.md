@@ -278,7 +278,26 @@ will dump all command prefixes with `cargo run` ran since *2023-09-12 09:15:30*.
 ## Settings
 A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
 
-[Color settings](https://github.com/cantino/mcfly/blob/b54adb65e1567887fe430188324c09553431eb7c/src/settings.rs#L508) can be set in a config file, which will be in `~/.mcfly` if it exists, otherwise in `$XDG_DATA_DIR/mcfly`. On MacOS, this would be `~/Library/Application Support/McFly/config.toml`.
+[Color settings](https://github.com/cantino/mcfly/blob/b54adb65e1567887fe430188324c09553431eb7c/src/settings.rs#L508) can be set in a config file, which will be in `~/.mcfly` if it exists, otherwise in `$XDG_DATA_DIR/mcfly`. On MacOS, this would be `~/Library/Application Support/McFly/config.toml`. You can find an example configuration [here](./docs/exmaple-config.toml) 
+
+#### Supported Colors 
+- reset 
+- black 
+- dark_grey 
+- red 
+- dark_red 
+- green 
+- dark_green 
+- yellow 
+- dark_yellow 
+- blue 
+- dark_blue 
+- magenta 
+- dark_magenta 
+- cyan 
+- dark_cyan 
+- white 
+- grey 
 
 ### Light Mode
 To swap the color scheme for use in a light terminal, set the environment variable `MCFLY_LIGHT`.
