@@ -57,6 +57,12 @@ pub enum ResultFilter {
     CurrentDirectory,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SearchMode {
+    Pattern,
+    Regex,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum HistoryFormat {
     /// bash format - commands in plain text, one per line, with multi-line commands joined.
@@ -144,6 +150,7 @@ pub struct Settings {
     pub interface_view: InterfaceView,
     pub result_sort: ResultSort,
     pub result_filter: ResultFilter,
+    pub search_mode: SearchMode,
     pub disable_menu: bool,
     pub prompt: String,
     pub disable_run_command: bool,
@@ -186,6 +193,7 @@ impl Default for Settings {
             interface_view: InterfaceView::Top,
             result_sort: ResultSort::Rank,
             result_filter: ResultFilter::Global,
+            search_mode: SearchMode::Pattern,
             disable_menu: false,
             prompt: String::from("$"),
             disable_run_command: false,
@@ -265,6 +273,15 @@ impl Settings {
                 _ => ResultFilter::Global,
             },
             _ => ResultFilter::Global,
+        };
+
+        settings.search_mode = match env::var("MCFLY_SEARCH_MODE") {
+            Ok(val) => match val.to_lowercase().as_str() {
+                "pattern" => SearchMode::Pattern,
+                "regex" => SearchMode::Regex,
+                _ => SearchMode::Pattern,
+            },
+            _ => SearchMode::Pattern,
         };
 
         settings.session_id = cli.session_id.unwrap_or_else(||

@@ -245,19 +245,6 @@ You can dump all the commands history without any arguments:
 mcfly dump
 ```
 
-### Timestamp format
-
-McFly parses timestamps via `chrono-systemd-time`, a non-strict implementation of [systemd.time](https://www.freedesktop.org/software/systemd/man/systemd.time.html), with the following exceptions:
-* time units **must** accompany all time span values.
-* time zone suffixes are **not** supported.
-* weekday prefixes are **not** supported.
-
-McFly users simply need to understand **specifying timezone in timestamp isn't allowed**.
-McFly will always use your **local timezone**.
-
-For more details, please refer to the [`chrono-systemd-time` documentation](https://docs.rs/chrono-systemd-time/latest/chrono_systemd_time/).
-
-### Regex
 *Dump* supports filtering commands with regex.
 The regex syntax follows [crate regex](https://docs.rs/regex/latest/regex/#syntax).
 
@@ -274,6 +261,41 @@ For example:
 mcfly dump -r '^cargo run' --since '2023-09-12 09:15:30'
 ```
 will dump all command prefixes with `cargo run` ran since *2023-09-12 09:15:30*.
+
+### Timestamp format
+
+McFly parses timestamps via `chrono-systemd-time`, a non-strict implementation of [systemd.time](https://www.freedesktop.org/software/systemd/man/systemd.time.html), with the following exceptions:
+* time units **must** accompany all time span values.
+* time zone suffixes are **not** supported.
+* weekday prefixes are **not** supported.
+
+McFly users simply need to understand **specifying timezone in timestamp isn't allowed**.
+McFly will always use your **local timezone**.
+
+For more details, please refer to the [`chrono-systemd-time` documentation](https://docs.rs/chrono-systemd-time/latest/chrono_systemd_time/).
+
+### Regex
+To change the search mode to regex-based search, set `MCFLY_SEARCH_MODE` to `REGEX` (default: `PATTERN`) or cycle through search modes in the UI.
+
+The regex syntax follows [crate regex](https://docs.rs/regex/latest/regex/#syntax).
+
+**Note**: Invalid regex patterns will simply return no results.
+**Note**: Fuzzy search is not supported in regex mode.
+
+bash / zsh:
+```bash
+export MCFLY_SEARCH_MODE=REGEX
+```
+
+fish:
+```bash
+set -gx MCFLY_SEARCH_MODE REGEX
+```
+
+powershell:
+```powershell
+$env:MCFLY_SEARCH_MODE="REGEX"
+ ```
 
 ## Settings
 A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.

@@ -1,5 +1,6 @@
 use crate::history::history::Features;
 use crate::network::Network;
+use regex::Regex;
 use rusqlite::Connection;
 use rusqlite::functions::FunctionFlags;
 
@@ -38,4 +39,15 @@ pub fn add_db_functions(db: &Connection) {
         },
     )
     .unwrap_or_else(|err| panic!("McFly error: Successful create_scalar_function ({err})"));
+
+    db.create_scalar_function("regexp", 2, FunctionFlags::SQLITE_UTF8, |ctx| {
+        let pattern: String = ctx.get::<String>(0)?;
+        let text: String = ctx.get::<String>(1)?;
+
+        match Regex::new(&pattern) {
+            Ok(regex) => Ok(regex.is_match(&text)),
+            Err(_) => Ok(false), // Return false for invalid regex patterns
+        }
+    })
+    .unwrap_or_else(|err| panic!("McFly error: Failed to create REGEXP function ({err})"));
 }
