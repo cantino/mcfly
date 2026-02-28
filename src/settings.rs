@@ -90,29 +90,19 @@ pub struct TimeRange {
 pub struct Colors {
     pub menubar_bg: Color,
     pub menubar_fg: Color,
-    pub darkmode_colors: DarkModeColors,
-    pub lightmode_colors: LightModeColors,
+    pub darkmode_colors: ThemeColors,
+    pub lightmode_colors: ThemeColors,
 }
 
-#[derive(Debug)]
-pub struct DarkModeColors {
+#[derive(Debug, Clone)]
+pub struct ThemeColors {
     pub prompt: Color,
     pub timing: Color,
     pub results_fg: Color,
     pub results_bg: Color,
     pub results_hl: Color,
-    pub results_selection_fg: Color,
-    pub results_selection_bg: Color,
-    pub results_selection_hl: Color,
-}
-
-#[derive(Debug)]
-pub struct LightModeColors {
-    pub prompt: Color,
-    pub timing: Color,
-    pub results_fg: Color,
-    pub results_bg: Color,
-    pub results_hl: Color,
+    pub results_recent_failure: Color,
+    pub results_broken: Color,
     pub results_selection_fg: Color,
     pub results_selection_bg: Color,
     pub results_selection_hl: Color,
@@ -147,6 +137,7 @@ pub struct Settings {
     pub disable_menu: bool,
     pub prompt: String,
     pub disable_run_command: bool,
+    pub disable_failure_colors: bool,
     pub time_range: TimeRange,
     pub sort_order: SortOrder,
     pub pattern: Option<Regex>,
@@ -189,6 +180,7 @@ impl Default for Settings {
             disable_menu: false,
             prompt: String::from("$"),
             disable_run_command: false,
+            disable_failure_colors: false,
             time_range: TimeRange::default(),
             sort_order: SortOrder::default(),
             pattern: None,
@@ -196,22 +188,26 @@ impl Default for Settings {
             colors: Colors {
                 menubar_bg: Color::Blue,
                 menubar_fg: Color::White,
-                darkmode_colors: DarkModeColors {
+                darkmode_colors: ThemeColors {
                     prompt: Color::White,
                     timing: Color::Blue,
                     results_fg: Color::White,
                     results_bg: Color::Black,
                     results_hl: Color::Blue,
+                    results_recent_failure: Color::DarkYellow,
+                    results_broken: Color::DarkRed,
                     results_selection_fg: Color::Black,
                     results_selection_bg: Color::DarkGrey,
                     results_selection_hl: Color::DarkGreen,
                 },
-                lightmode_colors: LightModeColors {
+                lightmode_colors: ThemeColors {
                     prompt: Color::Black,
                     timing: Color::DarkBlue,
                     results_fg: Color::Black,
                     results_bg: Color::White,
                     results_hl: Color::Blue,
+                    results_recent_failure: Color::Yellow,
+                    results_broken: Color::Red,
                     results_selection_fg: Color::White,
                     results_selection_bg: Color::DarkGrey,
                     results_selection_hl: Color::Grey,
@@ -481,6 +477,8 @@ impl Settings {
 
         settings.disable_run_command = is_env_var_truthy("MCFLY_DISABLE_RUN_COMMAND");
 
+        settings.disable_failure_colors = is_env_var_truthy("MCFLY_DISABLE_FAILURE_COLORS");
+
         settings.key_scheme = match env::var("MCFLY_KEY_SCHEME").as_ref().map(String::as_ref) {
             Ok("vim") => KeyScheme::Vim,
             _ => KeyScheme::Emacs,
@@ -529,130 +527,18 @@ impl Settings {
             }
         }
 
-        let darkmode_config = color_config
+        if let Some(darkmode_config) = color_config
             .and_then(|v| v.clone().into_table().ok())
-            .and_then(|v| v.get("darkmode").and_then(|v| v.clone().into_table().ok()));
-
-        if let Some(darkmode_config) = darkmode_config {
-            if let Some(prompt) = darkmode_config
-                .get("prompt")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.prompt = prompt;
-            }
-            if let Some(timing) = darkmode_config
-                .get("timing")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.timing = timing;
-            }
-            if let Some(results_fg) = darkmode_config
-                .get("results_fg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_fg = results_fg;
-            }
-            if let Some(results_bg) = darkmode_config
-                .get("results_bg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_bg = results_bg;
-            }
-            if let Some(results_hl) = darkmode_config
-                .get("results_hl")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_hl = results_hl;
-            }
-            if let Some(results_selection_fg) = darkmode_config
-                .get("results_selection_fg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_selection_fg = results_selection_fg;
-            }
-            if let Some(results_selection_bg) = darkmode_config
-                .get("results_selection_bg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_selection_bg = results_selection_bg;
-            }
-            if let Some(results_selection_hl) = darkmode_config
-                .get("results_selection_hl")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.darkmode_colors.results_selection_hl = results_selection_hl;
-            }
+            .and_then(|v| v.get("darkmode").and_then(|v| v.clone().into_table().ok()))
+        {
+            update_theme_colors_from_config(&mut self.colors.darkmode_colors, &darkmode_config);
         }
 
-        let lightmode_config = color_config
+        if let Some(lightmode_config) = color_config
             .and_then(|v| v.clone().into_table().ok())
-            .and_then(|v| v.get("lightmode").and_then(|v| v.clone().into_table().ok()));
-
-        if let Some(lightmode_config) = lightmode_config {
-            if let Some(prompt) = lightmode_config
-                .get("prompt")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.prompt = prompt;
-            }
-            if let Some(timing) = lightmode_config
-                .get("timing")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.timing = timing;
-            }
-            if let Some(results_fg) = lightmode_config
-                .get("results_fg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_fg = results_fg;
-            }
-            if let Some(results_bg) = lightmode_config
-                .get("results_bg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_bg = results_bg;
-            }
-            if let Some(results_hl) = lightmode_config
-                .get("results_hl")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_hl = results_hl;
-            }
-            if let Some(results_selection_fg) = lightmode_config
-                .get("results_selection_fg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_selection_fg = results_selection_fg;
-            }
-            if let Some(results_selection_bg) = lightmode_config
-                .get("results_selection_bg")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_selection_bg = results_selection_bg;
-            }
-            if let Some(results_selection_hl) = lightmode_config
-                .get("results_selection_hl")
-                .and_then(|v| v.clone().into_string().ok())
-                .and_then(|v| Color::from_str(v.as_str()).ok())
-            {
-                self.colors.lightmode_colors.results_selection_hl = results_selection_hl;
-            }
+            .and_then(|v| v.get("lightmode").and_then(|v| v.clone().into_table().ok()))
+        {
+            update_theme_colors_from_config(&mut self.colors.lightmode_colors, &lightmode_config);
         }
     }
 
@@ -734,6 +620,37 @@ fn is_env_var_truthy(name: &str) -> bool {
         }
         Err(_) => false,
     }
+}
+
+fn update_theme_colors_from_config(theme: &mut ThemeColors, config: &HashMap<String, Value>) {
+    let update_color = |field: &str, setter: &mut dyn FnMut(Color)| {
+        if let Some(color_str) = config
+            .get(field)
+            .and_then(|v| v.clone().into_string().ok())
+            .and_then(|v| Color::from_str(&v).ok())
+        {
+            setter(color_str);
+        }
+    };
+
+    update_color("prompt", &mut |c| theme.prompt = c);
+    update_color("timing", &mut |c| theme.timing = c);
+    update_color("results_fg", &mut |c| theme.results_fg = c);
+    update_color("results_bg", &mut |c| theme.results_bg = c);
+    update_color("results_hl", &mut |c| theme.results_hl = c);
+    update_color("results_recent_failure", &mut |c| {
+        theme.results_recent_failure = c
+    });
+    update_color("results_broken", &mut |c| theme.results_broken = c);
+    update_color("results_selection_fg", &mut |c| {
+        theme.results_selection_fg = c
+    });
+    update_color("results_selection_bg", &mut |c| {
+        theme.results_selection_bg = c
+    });
+    update_color("results_selection_hl", &mut |c| {
+        theme.results_selection_hl = c
+    });
 }
 
 impl TimeRange {
