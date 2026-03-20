@@ -114,11 +114,11 @@ When suggesting a command, McFly takes into consideration:
 
 1. Install `mcfly`:
    ```shell
-   winget install mcfly
+   winget install AndrewCantino.McFly
    ```
-2. Add the following to the end of your `$PROFILE`:
+2. Add the following to your `$PROFILE`:
    ```shell
-   Invoke-Expression -Command $(mcfly init powershell | out string)
+   Invoke-Expression -Command $(mcfly init powershell | Out-String)
    ```
 3. Restart your terminal
 
@@ -126,7 +126,7 @@ When suggesting a command, McFly takes into consideration:
 
 1. Remove `mcfly`:
    ```shell
-   winget uninstall mcfly
+   winget uninstall AndrewCantino.McFly
    ```
 2. Remove the lines you added to `$PROFILE`.
 
