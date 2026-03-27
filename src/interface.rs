@@ -4,7 +4,7 @@ use crate::history::History;
 use crate::fixed_length_grapheme_string::FixedLengthGraphemeString;
 use crate::history::Command;
 use crate::history_cleaner;
-use crate::settings::{InterfaceView, KeyScheme, ResultFilter};
+use crate::settings::{InterfaceView, KeyScheme, ResultFilter, SearchMode};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::KeyCode::Char;
@@ -30,6 +30,7 @@ pub struct Interface<'a> {
     in_vim_insert_mode: bool,
     result_sort: ResultSort,
     result_filter: ResultFilter,
+    search_mode: SearchMode,
 }
 
 pub struct SelectionResult {
@@ -85,8 +86,13 @@ impl MenuMode {
         menu_text.push_str("F2 - Delete | ");
 
         match interface.result_filter {
-            ResultFilter::Global => menu_text.push_str("F3 - All Directories"),
-            ResultFilter::CurrentDirectory => menu_text.push_str("F3 - This Directory"),
+            ResultFilter::Global => menu_text.push_str("F3 - All Directories | "),
+            ResultFilter::CurrentDirectory => menu_text.push_str("F3 - This Directory | "),
+        }
+
+        match interface.search_mode {
+            crate::settings::SearchMode::Pattern => menu_text.push_str("F4 - Pattern Search"),
+            crate::settings::SearchMode::Regex => menu_text.push_str("F4 - Regex Search"),
         }
 
         menu_text
@@ -119,6 +125,7 @@ impl<'a> Interface<'a> {
             in_vim_insert_mode: true,
             result_sort: settings.result_sort.clone(),
             result_filter: settings.result_filter.clone(),
+            search_mode: settings.search_mode.clone(),
         }
     }
 
@@ -422,6 +429,7 @@ impl<'a> Interface<'a> {
             self.settings.results as i16,
             self.settings.fuzzy,
             &self.result_sort,
+            &self.search_mode,
         );
     }
 
@@ -438,6 +446,13 @@ impl<'a> Interface<'a> {
             ResultFilter::CurrentDirectory => ResultFilter::Global,
         };
         self.build_cache_table();
+    }
+
+    fn switch_search_mode(&mut self) {
+        self.search_mode = match self.search_mode {
+            SearchMode::Pattern => SearchMode::Regex,
+            SearchMode::Regex => SearchMode::Pattern,
+        };
     }
 
     fn select(&mut self) {
@@ -710,6 +725,14 @@ impl<'a> Interface<'a> {
                 self.switch_result_filter();
                 self.refresh_matches(true);
             }
+
+            KeyEvent {
+                code: KeyCode::F(4),
+                ..
+            } => {
+                self.switch_search_mode();
+                self.refresh_matches(true);
+            }
             _ => {}
         }
 
@@ -835,6 +858,13 @@ impl<'a> Interface<'a> {
                     ..
                 } => {
                     self.switch_result_filter();
+                    self.refresh_matches(true);
+                }
+                KeyEvent {
+                    code: KeyCode::F(4),
+                    ..
+                } => {
+                    self.switch_search_mode();
                     self.refresh_matches(true);
                 }
                 _ => {}
@@ -971,6 +1001,13 @@ impl<'a> Interface<'a> {
                     ..
                 } => {
                     self.switch_result_filter();
+                    self.refresh_matches(true);
+                }
+                KeyEvent {
+                    code: KeyCode::F(4),
+                    ..
+                } => {
+                    self.switch_search_mode();
                     self.refresh_matches(true);
                 }
                 _ => {}

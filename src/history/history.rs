@@ -8,6 +8,7 @@ use crate::shell_history;
 use crate::simplified_command::SimplifiedCommand;
 use crate::time::to_datetime;
 use itertools::Itertools;
+use regex::Regex;
 use rusqlite::named_params;
 use rusqlite::types::ToSql;
 use rusqlite::{Connection, MappedRows, Row};
@@ -253,23 +254,34 @@ impl History {
         num: i16,
         fuzzy: i16,
         result_sort: &ResultSort,
+        search_mode: &crate::settings::SearchMode,
     ) -> Vec<Command> {
-        let (wildcard, match_function, cmd) = if Self::is_case_sensitive(cmd) {
-            // escape '*' with '[*]' and replace '%' with '*' for glob matching
-            ("*", "GLOB", cmd.replace("*", "[*]").replace("%", "*"))
-        } else {
-            ("%", "LIKE", cmd.to_string())
+        let mut like_query;
+        let (match_function, cmd) = match search_mode {
+            crate::settings::SearchMode::Pattern => {
+                let (wildcard, match_function, cmd) = if Self::is_case_sensitive(cmd) {
+                    // escape '*' with '[*]' and replace '%' with '*' for glob matching
+                    ("*", "GLOB", cmd.replace("*", "[*]").replace("%", "*"))
+                } else {
+                    ("%", "LIKE", cmd.to_string())
+                };
+
+                like_query = wildcard.to_string();
+                if fuzzy > 0 {
+                    like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join(wildcard));
+                } else {
+                    like_query.push_str(&cmd);
+                }
+
+                like_query += wildcard;
+
+                (match_function, cmd)
+            }
+            crate::settings::SearchMode::Regex => {
+                like_query = cmd.to_string();
+                ("REGEXP", cmd.to_string())
+            }
         };
-
-        let mut like_query = wildcard.to_string();
-
-        if fuzzy > 0 {
-            like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join(wildcard));
-        } else {
-            like_query.push_str(&cmd);
-        }
-
-        like_query += wildcard;
 
         let order_by_column: &str = match &result_sort {
             ResultSort::LastRun => "last_run",
@@ -303,7 +315,7 @@ impl History {
                         .get(1)
                         .unwrap_or_else(|err| panic!("McFly error: cmd to be readable ({err})"));
 
-                    let bounds = Self::calc_match_indices(&text, &cmd, fuzzy);
+                    let bounds = Self::calc_match_indices(&text, &cmd, fuzzy, search_mode);
 
                     Ok(Command {
                         id: row.get(0).unwrap_or_else(|err| {
@@ -438,34 +450,56 @@ impl History {
     }
 
     /// Calculate the indices of the matches in the text.
-    fn calc_match_indices(text: &str, cmd: &str, fuzzy: i16) -> Vec<usize> {
-        let (text, cmd) = if Self::is_case_sensitive(cmd) {
-            (text.to_string(), cmd.to_string())
-        } else {
-            (text.to_lowercase(), cmd.to_lowercase())
-        };
+    fn calc_match_indices(
+        text: &str,
+        cmd: &str,
+        fuzzy: i16,
+        search_mode: &crate::settings::SearchMode,
+    ) -> Vec<usize> {
+        match search_mode {
+            crate::settings::SearchMode::Pattern => {
+                let (text, cmd) = if Self::is_case_sensitive(cmd) {
+                    (text.to_string(), cmd.to_string())
+                } else {
+                    (text.to_lowercase(), cmd.to_lowercase())
+                };
 
-        match fuzzy {
-            0 => text
-                .match_indices(&cmd)
-                .flat_map(|(index, _)| index..index + cmd.len())
-                .collect(),
-            _ => {
-                let mut search_iter = cmd.chars().peekable();
+                match fuzzy {
+                    0 => text
+                        .match_indices(&cmd)
+                        .flat_map(|(index, _)| index..index + cmd.len())
+                        .collect(),
+                    _ => {
+                        let mut search_iter = cmd.chars().peekable();
 
-                text.match_indices(|c| {
-                    let next = search_iter.peek();
+                        text.match_indices(|c| {
+                            let next = search_iter.peek();
 
-                    if next.is_some() && next.unwrap() == &c {
-                        let _advance = search_iter.next();
+                            if next.is_some() && next.unwrap() == &c {
+                                let _advance = search_iter.next();
 
-                        return true;
+                                return true;
+                            }
+
+                            false
+                        })
+                        .map(|m| m.0)
+                        .collect()
                     }
-
-                    false
-                })
-                .map(|m| m.0)
-                .collect()
+                }
+            }
+            crate::settings::SearchMode::Regex => {
+                match Regex::new(cmd) {
+                    Ok(regex) => {
+                        // Find all regex matches and return all character positions
+                        let matches: Vec<usize> = regex
+                            .find_iter(text)
+                            .flat_map(|m| m.start()..m.end())
+                            .collect();
+                        matches
+                    }
+                    Err(_) => Vec::new(), // Invalid regex, no matches
+                }
             }
         }
     }
