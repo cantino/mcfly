@@ -68,24 +68,24 @@ function mcfly_initialize {
     #   for backwards compatibility and to load in new terminal sessions;
     # * find the text of the last command in $MCFLY_HISTORY and save it to the database.
     "$MCFLY_PATH" add --exit "${exit_code}" --append-to-histfile "${MCFLY_HISTFILE}"
-    # Clear the in-memory history and reload it from $MCFLY_HISTORY
-    # (to remove instances of '#mcfly: ' from the local session history).
-    history -cr "${MCFLY_HISTORY}"
+    # Reload in-memory history from the canonical history file so arrow keys stay
+    # in sync when PROMPT_COMMAND also runs `history -a` against HISTFILE.
+    history -cn "${MCFLY_HISTFILE}"
     return "${exit_code}" # Restore the original exit code by returning it.
   }
 
   function mcfly_add_prompt_command {
     local command=$1 IFS=$' \t\n'
+    if [[ ";${PROMPT_COMMAND[*]-};" == *";${command};"* ]]; then
+      return 0
+    fi
     if ((BASH_VERSINFO[0] > 5 || BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 1)); then
-      # Bash 5.1 supports array PROMPT_COMMAND, where we register our prompt
-      # command to a new element PROMPT_COMMAND[i] (with i >= 1) to avoid
-      # conflicts with other frameworks.
-      if [[ " ${PROMPT_COMMAND[*]-} " != *" $command "* ]]; then
-        PROMPT_COMMAND[0]=${PROMPT_COMMAND[0]:-}
-        # Note: We here use eval to avoid syntax error in Bash < 3.1.  We drop
-        # the support for Bash < 3.0, but this is still needed to avoid parse
-        # error before the Bash version check is performed.
-        eval 'PROMPT_COMMAND+=("$command")'
+      if [[ "$(declare -p PROMPT_COMMAND 2>&1)" == declare\ -a* ]]; then
+        PROMPT_COMMAND+=("$command")
+      elif [[ -z ${PROMPT_COMMAND-} ]]; then
+        PROMPT_COMMAND="$command"
+      else
+        PROMPT_COMMAND="$command;${PROMPT_COMMAND#;}"
       fi
     elif [[ -z ${PROMPT_COMMAND-} ]]; then
       PROMPT_COMMAND="$command"
