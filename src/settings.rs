@@ -64,7 +64,8 @@ pub enum HistoryFormat {
     Bash,
 
     /// zsh format - commands in plain text, with multiline commands on multiple lines.
-    /// `McFly` does not currently handle joining these lines; they're treated as separate commands.
+    /// When `extended_history` is true, continuation lines without a timestamp prefix
+    /// are joined to the previous command.
     /// If --zsh-extended-history was given, `extended_history` will be true, and we'll strip the
     /// timestamp from the beginning of each command.
     Zsh { extended_history: bool },
