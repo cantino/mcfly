@@ -110,16 +110,69 @@ impl fmt::Display for HistoryCommand {
     }
 }
 
+fn current_timestamp() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
+        .as_secs() as i64
+}
+
+fn parse_zsh_history(history_contents: &str, history_format: HistoryFormat) -> Vec<HistoryCommand> {
+    let HistoryFormat::Zsh { extended_history } = history_format else {
+        panic!("McFly error: parse_zsh_history called with non-zsh format");
+    };
+
+    let default_when = current_timestamp();
+
+    if !extended_history {
+        return history_contents
+            .split('\n')
+            .filter(|line| !has_leading_timestamp(line) && !line.is_empty())
+            .map(|line| HistoryCommand::new(line, default_when, history_format))
+            .collect();
+    }
+
+    let zsh_timestamp_and_duration_regex = Regex::new(r"^: ([0-9]+):[0-9]+;").unwrap();
+    let mut commands = Vec::new();
+    let mut current: Option<(String, i64)> = None;
+
+    for line in history_contents.split('\n') {
+        if line.is_empty() || has_leading_timestamp(line) {
+            continue;
+        }
+
+        if let Some(caps) = zsh_timestamp_and_duration_regex.captures(line) {
+            if let Some((command, when)) = current.take() {
+                commands.push(HistoryCommand::new(command, when, history_format));
+            }
+            let when = caps
+                .get(1)
+                .unwrap()
+                .as_str()
+                .parse::<i64>()
+                .unwrap_or(default_when);
+            let command = line[caps.get(0).unwrap().end()..].to_string();
+            current = Some((command, when));
+        } else if let Some((ref mut command, _when)) = current {
+            command.push('\n');
+            command.push_str(line);
+        }
+    }
+
+    if let Some((command, when)) = current {
+        commands.push(HistoryCommand::new(command, when, history_format));
+    }
+
+    commands
+}
+
 #[must_use]
 pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCommand> {
     match history_format {
         HistoryFormat::Bash => {
             let history_contents = read_ignoring_utf_errors(path);
             let zsh_timestamp_and_duration_regex = Regex::new(r"^: [0-9]+:[0-9]+;").unwrap();
-            let when = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
-                .as_secs() as i64;
+            let when = current_timestamp();
             history_contents
                 .split('\n')
                 .filter(|line| !has_leading_timestamp(line) && !line.is_empty())
@@ -129,17 +182,7 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
         }
         HistoryFormat::Zsh { .. } => {
             let history_contents = read_and_unmetafy(path);
-            let zsh_timestamp_and_duration_regex = Regex::new(r"^: [0-9]+:[0-9]+;").unwrap();
-            let when = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
-                .as_secs() as i64;
-            history_contents
-                .split('\n')
-                .filter(|line| !has_leading_timestamp(line) && !line.is_empty())
-                .map(|line| zsh_timestamp_and_duration_regex.replace(line, ""))
-                .map(|line| HistoryCommand::new(line, when, history_format))
-                .collect()
+            parse_zsh_history(&history_contents, history_format)
         }
         HistoryFormat::Fish => {
             // Fish history format is not technically YAML.  This is a naive parser of the format,
@@ -261,6 +304,8 @@ pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) 
 #[cfg(test)]
 mod tests {
     use super::has_leading_timestamp;
+    use super::parse_zsh_history;
+    use crate::settings::HistoryFormat;
 
     #[test]
     fn has_leading_timestamp_works() {
@@ -272,5 +317,52 @@ mod tests {
         assert!(!has_leading_timestamp("# 1234567890"));
         assert!(!has_leading_timestamp("1234567890"));
         assert!(!has_leading_timestamp("hello 1234567890"));
+    }
+
+    #[test]
+    fn parse_zsh_extended_history_joins_multiline_commands() {
+        let history = ": 1593624164:0;echo foo \\\n bar\n";
+        let commands = parse_zsh_history(
+            history,
+            HistoryFormat::Zsh {
+                extended_history: true,
+            },
+        );
+
+        assert_eq!(commands.len(), 1);
+        assert_eq!(commands[0].command, "echo foo \\\n bar");
+        assert_eq!(commands[0].when, 1_593_624_164);
+    }
+
+    #[test]
+    fn parse_zsh_extended_history_keeps_separate_commands() {
+        let history = ": 1:0;echo \\\\\n: 2:0;echo hello\n";
+        let commands = parse_zsh_history(
+            history,
+            HistoryFormat::Zsh {
+                extended_history: true,
+            },
+        );
+
+        assert_eq!(commands.len(), 2);
+        assert_eq!(commands[0].command, "echo \\\\");
+        assert_eq!(commands[0].when, 1);
+        assert_eq!(commands[1].command, "echo hello");
+        assert_eq!(commands[1].when, 2);
+    }
+
+    #[test]
+    fn parse_zsh_history_without_extended_history_is_line_by_line() {
+        let history = "echo foo \\\n bar\n";
+        let commands = parse_zsh_history(
+            history,
+            HistoryFormat::Zsh {
+                extended_history: false,
+            },
+        );
+
+        assert_eq!(commands.len(), 2);
+        assert_eq!(commands[0].command, "echo foo \\");
+        assert_eq!(commands[1].command, " bar");
     }
 }
