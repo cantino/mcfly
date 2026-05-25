@@ -254,19 +254,31 @@ impl History {
         fuzzy: i16,
         result_sort: &ResultSort,
     ) -> Vec<Command> {
-        let (wildcard, match_function, cmd) = if Self::is_case_sensitive(cmd) {
+        let (wildcard, match_function, cmd, like_escape) = if Self::is_case_sensitive(cmd) {
             // escape '*' with '[*]' and replace '%' with '*' for glob matching
-            ("*", "GLOB", cmd.replace("*", "[*]").replace("%", "*"))
+            (
+                "*",
+                "GLOB",
+                cmd.replace("*", "[*]").replace("%", "*"),
+                "",
+            )
         } else {
-            ("%", "LIKE", cmd.to_string())
+            ("%", "LIKE", cmd.to_string(), " ESCAPE '\\'")
         };
 
         let mut like_query = wildcard.to_string();
 
         if fuzzy > 0 {
-            like_query.push_str(&cmd.split("").collect::<Vec<&str>>().join(wildcard));
-        } else {
+            like_query.push_str(
+                &cmd.chars()
+                    .map(|c| Self::escape_like(&c.to_string()))
+                    .collect::<Vec<_>>()
+                    .join(wildcard),
+            );
+        } else if like_escape.is_empty() {
             like_query.push_str(&cmd);
+        } else {
+            like_query.push_str(&Self::escape_like(&cmd));
         }
 
         like_query += wildcard;
@@ -277,7 +289,7 @@ impl History {
         };
 
         let query: &str = &format!(
-            "{} {} {} {} {}",
+            "{} {} {}{} {} {} {}",
             "SELECT id, cmd, cmd_tpl, session_id, when_run, exit_code, selected, dir, rank,
                 age_factor, length_factor, exit_factor, recent_failure_factor,
                 selected_dir_factor, dir_factor, overlap_factor, immediate_overlap_factor,
@@ -285,8 +297,9 @@ impl History {
             FROM contextual_commands
             WHERE cmd",
             match_function,
-            "(:like)
-            ORDER BY",
+            "(:like)",
+            like_escape,
+            "ORDER BY",
             order_by_column,
             "DESC LIMIT :limit"
         )[..];
@@ -437,6 +450,13 @@ impl History {
         cmd.chars().any(|c| c.is_uppercase())
     }
 
+    /// Escape special characters in a SQL LIKE pattern.
+    fn escape_like(text: &str) -> String {
+        text.replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_")
+    }
+
     /// Calculate the indices of the matches in the text.
     fn calc_match_indices(text: &str, cmd: &str, fuzzy: i16) -> Vec<usize> {
         let (text, cmd) = if Self::is_case_sensitive(cmd) {
@@ -446,10 +466,15 @@ impl History {
         };
 
         match fuzzy {
-            0 => text
-                .match_indices(&cmd)
-                .flat_map(|(index, _)| index..index + cmd.len())
-                .collect(),
+            0 => {
+                let mut indices = Vec::new();
+                for (start, matched) in text.match_indices(&cmd) {
+                    for (offset, _) in matched.char_indices() {
+                        indices.push(start + offset);
+                    }
+                }
+                indices
+            }
             _ => {
                 let mut search_iter = cmd.chars().peekable();
 
@@ -923,5 +948,31 @@ impl History {
             connection,
             network: Network::default(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::History;
+
+    #[test]
+    fn escape_like_escapes_sql_wildcards() {
+        assert_eq!(History::escape_like("_"), "\\_");
+        assert_eq!(History::escape_like("100%"), "100\\%");
+        assert_eq!(History::escape_like("a\\b"), "a\\\\b");
+    }
+
+    #[test]
+    fn calc_match_indices_uses_char_boundaries() {
+        let text = "│hello";
+        let indices = History::calc_match_indices(text, "│", 0);
+        assert_eq!(indices, vec![0]);
+    }
+
+    #[test]
+    fn calc_match_indices_fuzzy_finds_literal_characters() {
+        let text = "foo_bar";
+        let indices = History::calc_match_indices(text, "_", 2);
+        assert_eq!(indices, vec![3]);
     }
 }
