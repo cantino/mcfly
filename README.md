@@ -459,6 +459,23 @@ Note that only single-character-prompts are allowed. setting `MCFLY_PROMPT` to `
 
 McFly stores its SQLite database in the standard location for the OS. On OS X, this is in `~/Library/Application Support/McFly`, on Linux it is in `$XDG_DATA_DIR/mcfly/history.db` (default would be `~/.local/share/mcfly/history.db`), and on Windows, it is `%LOCALAPPDATA%\McFly\data\history.db`. For legacy support, if `~/.mcfly/` exists, it is used instead.
 
+### Migrating history to a new machine
+
+McFly imports commands from `$HISTFILE` (or `$MCFLY_HISTFILE`) **only when `history.db` does not exist yet**—typically the first time you open a shell after installing McFly. Copying an old history file onto a machine that already has McFly will update your shell history file, but McFly will not automatically import those older commands into its database.
+
+**Before installing McFly:** copy your old machine's history file to the path your shell will use on the new machine (for example `~/.bash_history` or `~/.zsh_history`), then install McFly and open a new shell. McFly will import the file on first run.
+
+**After McFly is already installed:**
+
+1. Back up your current `history.db` if you might want McFly-specific metadata later (see Database Location above).
+2. Append or merge the old history file into your current `$HISTFILE`.
+3. Delete `history.db` (or the whole McFly data directory if you prefer a clean re-import).
+4. Open a new shell. McFly will rebuild its database from `$HISTFILE`.
+
+**Alternative:** copy `history.db` from the old machine instead of re-importing from `$HISTFILE`. This preserves McFly metadata such as working directories, but both machines should run a compatible McFly version and use the same database location layout.
+
+History files with timestamps (Bash `HISTTIMEFORMAT`, Zsh `EXTENDED_HISTORY`) import more accurately than plain command lists.
+
 ### Slow startup
 
 If you have a very large history database and you notice that McFly launches slowly, you can set `MCFLY_HISTORY_LIMIT` to something like 10000 to limit how many records are considered when searching. In this example, McFly would search only the latest 10,000 entries.
