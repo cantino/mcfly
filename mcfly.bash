@@ -147,6 +147,13 @@ function mcfly_initialize {
       # Bind ctrl+r to 2 keystrokes, the first one is used to search in McFly, the second one is used to run the command (if mcfly_search binds it to accept-line).
       bind -m emacs     -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
       bind -m vi-insert -x "\"$MCFLY_BASH_SEARCH_KEYBINDING\":\"mcfly_search\""
+      if ((BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] == 1)); then
+        # Workaround for Bash 5.1: overwriting an existing "bind -x" keybinding
+        # with a string macro breaks other existing "bind -x" keybindings.
+        # See https://github.com/cantino/mcfly/issues/470
+        bind -m emacs     -r '\C-r'
+        bind -m vi-insert -r '\C-r'
+      fi
       bind -m emacs     "\"\C-r\":\"$MCFLY_BASH_SEARCH_KEYBINDING$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\""
       bind -m vi-insert "\"\C-r\":\"$MCFLY_BASH_SEARCH_KEYBINDING$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\""
     fi
