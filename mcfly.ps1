@@ -1,10 +1,28 @@
 #!/usr/bin/env pwsh
 
 $null = New-Module mcfly {
-    # We need PSReadLine for a number of capabilities
-    if ($null -eq (Get-Module -Name PSReadLine)) {
-        Write-Host "Installing PSReadLine as McFly dependency"
-        Install-Module PSReadLine
+    # We want PSReadLine 2.2.0+ for full prediction support if available
+    $psReadLineMinVersion = [version]'2.2.0'
+    $hasNewPSReadLine = Get-Module PSReadLine -ListAvailable |
+        Where-Object { $_.Version -ge $psReadLineMinVersion }
+    if (-not $hasNewPSReadLine -and [Environment]::UserInteractive) {
+        try {
+            Write-Host "Installing PSReadLine $psReadLineMinVersion+ as McFly dependency"
+            Install-Module PSReadLine -Force -Scope CurrentUser -MinimumVersion $psReadLineMinVersion -ErrorAction Stop
+        }
+        catch {
+            Write-Warning "Could not install PSReadLine $psReadLineMinVersion+ ($($_.Exception.Message)). Continuing with the existing version."
+        }
+    }
+
+    # Prefer the newest available; fall back to whatever is already loaded.
+    Import-Module PSReadLine -MinimumVersion $psReadLineMinVersion -ErrorAction SilentlyContinue
+    if (-not (Get-Module PSReadLine)) {
+        Import-Module PSReadLine -ErrorAction SilentlyContinue
+    }
+    if (-not (Get-Module PSReadLine)) {
+        Write-Warning "McFly requires PSReadLine, which is not available. Skipping McFly setup."
+        return
     }
 
     # Get history file and make a dummy file for psreadline (hopefully after it has loaded the real history file to its in memory history)
@@ -43,7 +61,7 @@ $null = New-Module mcfly {
         $lastExitTmp = $LASTEXITCODE
         $tempFile = New-TemporaryFile
         Start-Process -FilePath '::MCFLY::' -ArgumentList "search", "$CommandToComplete", -o, "$tempFile" -NoNewWindow -Wait
-        foreach($line in Get-Content $tempFile) {
+        foreach ($line in Get-Content $tempFile) {
             $key, $value = $line -split ' ', 2
             if ("mode" -eq $key) {
                 $mode = $value
@@ -52,10 +70,10 @@ $null = New-Module mcfly {
                 $commandline = $value
             }
         }
-        if(-not ($null -eq $commandline)) {
+        if (-not ($null -eq $commandline)) {
             [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine()
             [Microsoft.PowerShell.PSConsoleReadline]::Insert($commandline)
-            if("run" -eq $mode) {
+            if ("run" -eq $mode) {
                 [Microsoft.PowerShell.PSConsoleReadline]::AcceptLine()
             }
         }
@@ -89,7 +107,15 @@ $null = New-Module mcfly {
     # We need to make sure we call out AddToHistoryHandler right after each command is called
     Set-PSReadLineOption -HistorySaveStyle SaveIncrementally
 
-    Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+    #   -PredictionSource       -> added in 2.1.0
+    #   'HistoryAndPlugin' value -> added in 2.2.0 (older versions only accept None/History)
+    $loadedPSReadLineVersion = (Get-Module -Name PSReadLine).Version
+    if ($loadedPSReadLineVersion -ge [version]'2.2.0') {
+        Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+    }
+    elseif ($loadedPSReadLineVersion -ge [version]'2.1.0') {
+        Set-PSReadLineOption -PredictionSource History
+    }
 
     Set-PSReadLineOption -AddToHistoryHandler {
         Param([string]$Command)
