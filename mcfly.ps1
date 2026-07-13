@@ -1,27 +1,23 @@
 #!/usr/bin/env pwsh
 
 $null = New-Module mcfly {
-    # We want PSReadLine 2.2.0+ for full prediction support if available
-    $psReadLineMinVersion = [version]'2.2.0'
-    $hasNewPSReadLine = Get-Module PSReadLine -ListAvailable |
-        Where-Object { $_.Version -ge $psReadLineMinVersion }
-    if (-not $hasNewPSReadLine -and [Environment]::UserInteractive) {
-        try {
-            Write-Host "Installing PSReadLine $psReadLineMinVersion+ as McFly dependency"
-            Install-Module PSReadLine -Force -Scope CurrentUser -MinimumVersion $psReadLineMinVersion -ErrorAction Stop
-        }
-        catch {
-            Write-Warning "Could not install PSReadLine $psReadLineMinVersion+ ($($_.Exception.Message)). Continuing with the existing version."
-        }
-    }
-
-    # Prefer the newest available; fall back to whatever is already loaded.
-    Import-Module PSReadLine -MinimumVersion $psReadLineMinVersion -ErrorAction SilentlyContinue
+    # Use the already-loaded PSReadLine; it can't be version-swapped mid-session and a second copy
+    # breaks Ctrl+R. Only import/install when none is loaded.
     if (-not (Get-Module PSReadLine)) {
+        if (-not (Get-Module PSReadLine -ListAvailable) -and [Environment]::UserInteractive) {
+            try {
+                Write-Host "Installing PSReadLine as McFly dependency"
+                Install-Module PSReadLine -Force -Scope CurrentUser -ErrorAction Stop
+            }
+            catch {
+                Write-Warning "Could not install PSReadLine ($($_.Exception.Message))."
+            }
+        }
         Import-Module PSReadLine -ErrorAction SilentlyContinue
     }
+
     if (-not (Get-Module PSReadLine)) {
-        Write-Warning "McFly requires PSReadLine, which is not available. Skipping McFly setup."
+        Write-Warning "McFly requires PSReadLine, which is not available. Run 'Install-Module PSReadLine'. Skipping McFly setup."
         return
     }
 
@@ -107,14 +103,28 @@ $null = New-Module mcfly {
     # We need to make sure we call out AddToHistoryHandler right after each command is called
     Set-PSReadLineOption -HistorySaveStyle SaveIncrementally
 
-    #   -PredictionSource       -> added in 2.1.0
-    #   'HistoryAndPlugin' value -> added in 2.2.0 (older versions only accept None/History)
-    $loadedPSReadLineVersion = (Get-Module -Name PSReadLine).Version
-    if ($loadedPSReadLineVersion -ge [version]'2.2.0') {
+    # HistoryAndPlugin needs 2.2.0+; on older versions leave prediction off (McFly's Ctrl+r replaces it).
+    $loadedPSReadLine = @(Get-Module PSReadLine | Sort-Object Version -Descending)[0]
+    if ($loadedPSReadLine.Version -ge [version]'2.2.0') {
         Set-PSReadLineOption -PredictionSource HistoryAndPlugin
     }
-    elseif ($loadedPSReadLineVersion -ge [version]'2.1.0') {
-        Set-PSReadLineOption -PredictionSource History
+    else {
+        # An old PSReadLine is loaded and shadows a newer installed one. It can't be swapped
+        # mid-session, so delete the stale user-scoped copy; the next shell then loads the newer one.
+        $newerPSReadLine = Get-Module PSReadLine -ListAvailable |
+            Where-Object { $_.Version -ge [version]'2.2.0' } |
+            Sort-Object Version -Descending | Select-Object -First 1
+        if ($newerPSReadLine -and $loadedPSReadLine.ModuleBase.StartsWith($HOME, [StringComparison]::OrdinalIgnoreCase)) {
+            Remove-Item -LiteralPath $loadedPSReadLine.ModuleBase -Recurse -Force -ErrorAction SilentlyContinue
+            $stillShadowed = Get-Module PSReadLine -ListAvailable |
+                Where-Object { $_.Version -eq $loadedPSReadLine.Version }
+            if ($stillShadowed) {
+                Write-Warning "Could not fully remove old PSReadLine $($loadedPSReadLine.Version) at '$($loadedPSReadLine.ModuleBase)' (files in use). Close other shells and rerun, or remove it manually."
+            }
+            else {
+                Write-Warning "Removed shadowing PSReadLine $($loadedPSReadLine.Version); restart the shell to load $($newerPSReadLine.Version) and enable prediction."
+            }
+        }
     }
 
     Set-PSReadLineOption -AddToHistoryHandler {
