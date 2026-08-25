@@ -15,7 +15,7 @@ use mcfly::trainer::Trainer;
 
 fn handle_addition(settings: &Settings) {
     let history = History::load(settings.history_format);
-    if history.should_add(&settings.command) {
+    if history.should_add(&settings.command, settings.commands_to_ignore.as_ref()) {
         history.add(
             &settings.command,
             &settings.session_id,

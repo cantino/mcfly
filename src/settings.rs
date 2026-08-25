@@ -150,6 +150,7 @@ pub struct Settings {
     pub time_range: TimeRange,
     pub sort_order: SortOrder,
     pub pattern: Option<Regex>,
+    pub commands_to_ignore: Option<Regex>,
     pub dump_format: DumpFormat,
     pub colors: Colors,
     pub stats_min_cmd_length: i16,
@@ -192,6 +193,7 @@ impl Default for Settings {
             time_range: TimeRange::default(),
             sort_order: SortOrder::default(),
             pattern: None,
+            commands_to_ignore: None,
             dump_format: DumpFormat::default(),
             colors: Colors {
                 menubar_bg: Color::Blue,
@@ -265,6 +267,20 @@ impl Settings {
                 _ => ResultFilter::Global,
             },
             _ => ResultFilter::Global,
+        };
+
+        settings.commands_to_ignore = match env::var("MCFLY_HISTORY_IGNORE") {
+            Ok(val) if !val.is_empty() => match Regex::new(&val) {
+                Ok(re) => Some(re),
+                Err(err) => {
+                    // A bad pattern shouldn't stop commands from being recorded, so warn and carry on.
+                    eprintln!(
+                        "McFly error: MCFLY_HISTORY_IGNORE is not a valid regular expression ({err})"
+                    );
+                    None
+                }
+            },
+            _ => None,
         };
 
         settings.session_id = cli.session_id.unwrap_or_else(||
