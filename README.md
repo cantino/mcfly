@@ -455,6 +455,24 @@ $env:MCFLY_PROMPT=">"
 
 Note that only single-character-prompts are allowed. setting `MCFLY_PROMPT` to `"<str>"` will reset it to the default prompt.
 
+### Ignoring commands
+McFly already skips a few noisy commands (like `ls`, `cd`, and `pwd`) as well as anything you run with a leading space. To skip more, set `MCFLY_HISTORY_IGNORE` to a regular expression. Commands matching it will not be recorded. The pattern is unanchored, so add `^` if you want to match from the start of the command.
+
+bash / zsh:
+```bash
+export MCFLY_HISTORY_IGNORE="^(kubectl|helm) |password"
+```
+
+fish:
+```bash
+set -gx MCFLY_HISTORY_IGNORE "^(kubectl|helm) |password"
+```
+
+powershell:
+```powershell
+$env:MCFLY_HISTORY_IGNORE="^(kubectl|helm) |password"
+```
+
 ### Database Location
 
 McFly stores its SQLite database in the standard location for the OS. On OS X, this is in `~/Library/Application Support/McFly`, on Linux it is in `$XDG_DATA_DIR/mcfly/history.db` (default would be `~/.local/share/mcfly/history.db`), and on Windows, it is `%LOCALAPPDATA%\McFly\data\history.db`. For legacy support, if `~/.mcfly/` exists, it is used instead.

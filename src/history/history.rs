@@ -8,6 +8,7 @@ use crate::shell_history;
 use crate::simplified_command::SimplifiedCommand;
 use crate::time::to_datetime;
 use itertools::Itertools;
+use regex::Regex;
 use rusqlite::named_params;
 use rusqlite::types::ToSql;
 use rusqlite::{Connection, MappedRows, Row};
@@ -91,6 +92,39 @@ const IGNORED_COMMANDS: [&str; 7] = [
     "mcfly search",
 ];
 
+/// Returns true if `command` should never be recorded, either because of a built-in rule or because
+/// it matches the user's `MCFLY_HISTORY_IGNORE` pattern.
+fn is_ignored_command(command: &str, commands_to_ignore: Option<&Regex>) -> bool {
+    // Ignore empty commands.
+    if command.is_empty() {
+        return true;
+    }
+
+    // Ignore commands added via a ctrl-r search.
+    if command.starts_with("#mcfly:") {
+        return true;
+    }
+
+    // Ignore commands with a leading space.
+    if command.starts_with(' ') {
+        return true;
+    }
+
+    // Ignore built-in blacklisted commands.
+    if IGNORED_COMMANDS.contains(&command) {
+        return true;
+    }
+
+    // Ignore commands matching the user-supplied pattern.
+    if let Some(pattern) = commands_to_ignore
+        && pattern.is_match(command)
+    {
+        return true;
+    }
+
+    false
+}
+
 impl History {
     #[must_use]
     pub fn load(history_format: HistoryFormat) -> History {
@@ -104,24 +138,8 @@ impl History {
         history
     }
 
-    pub fn should_add(&self, command: &str) -> bool {
-        // Ignore empty commands.
-        if command.is_empty() {
-            return false;
-        }
-
-        // Ignore commands added via a ctrl-r search.
-        if command.starts_with("#mcfly:") {
-            return false;
-        }
-
-        // Ignore commands with a leading space.
-        if command.starts_with(' ') {
-            return false;
-        }
-
-        // Ignore blacklisted commands.
-        if IGNORED_COMMANDS.contains(&command) {
+    pub fn should_add(&self, command: &str, commands_to_ignore: Option<&Regex>) -> bool {
+        if is_ignored_command(command, commands_to_ignore) {
             return false;
         }
 
@@ -923,5 +941,38 @@ impl History {
             connection,
             network: Network::default(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_ignored_command;
+    use regex::Regex;
+
+    #[test]
+    fn it_ignores_builtin_and_special_commands() {
+        assert!(is_ignored_command("", None));
+        assert!(is_ignored_command("#mcfly:git status", None));
+        assert!(is_ignored_command(" secret command", None));
+        assert!(is_ignored_command("ls", None));
+        assert!(!is_ignored_command("git status", None));
+    }
+
+    #[test]
+    fn it_ignores_commands_matching_the_user_pattern() {
+        let pattern = Regex::new("^(foo|bar) ").unwrap();
+        assert!(is_ignored_command("foo --baz", Some(&pattern)));
+        assert!(is_ignored_command("bar qux", Some(&pattern)));
+        assert!(!is_ignored_command("git commit", Some(&pattern)));
+    }
+
+    #[test]
+    fn the_user_pattern_leaves_unrelated_commands_alone() {
+        let pattern = Regex::new("password").unwrap();
+        assert!(is_ignored_command(
+            "mysql -u root -psuperpassword",
+            Some(&pattern)
+        ));
+        assert!(!is_ignored_command("echo hello", Some(&pattern)));
     }
 }
