@@ -454,7 +454,7 @@ impl<'a> Interface<'a> {
 
         loop {
             let event =
-                read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", &e));
+                read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", e));
             self.debug_cursor(&mut screen);
 
             match self.menu_mode {
