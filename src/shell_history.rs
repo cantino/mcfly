@@ -14,20 +14,20 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 fn read_ignoring_utf_errors(path: &Path) -> String {
     let mut f =
-        File::open(path).unwrap_or_else(|_| panic!("McFly error: {:?} file not found", &path));
+        File::open(path).unwrap_or_else(|_| panic!("McFly error: {:?} file not found", path));
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer)
-        .unwrap_or_else(|_| panic!("McFly error: Unable to read from {:?}", &path));
+        .unwrap_or_else(|_| panic!("McFly error: Unable to read from {:?}", path));
     String::from_utf8_lossy(&buffer).to_string()
 }
 
 // Zsh uses a meta char (0x83) to signify that the previous character should be ^ 32.
 fn read_and_unmetafy(path: &Path) -> String {
     let mut f =
-        File::open(path).unwrap_or_else(|_| panic!("McFly error: {:?} file not found", &path));
+        File::open(path).unwrap_or_else(|_| panic!("McFly error: {:?} file not found", path));
     let mut buffer = Vec::new();
     f.read_to_end(&mut buffer)
-        .unwrap_or_else(|_| panic!("McFly error: Unable to read from {:?}", &path));
+        .unwrap_or_else(|_| panic!("McFly error: Unable to read from {:?}", path));
     for index in (0..buffer.len()).rev() {
         if buffer[index] == 0x83 {
             buffer.remove(index);
@@ -219,7 +219,7 @@ pub fn delete_last_history_entry_if_search(
         .collect::<Vec<String>>();
 
     fs::write(path, lines.join("\n"))
-        .unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", &path));
+        .unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", path));
 }
 
 pub fn delete_lines(path: &Path, history_format: HistoryFormat, command: &str) {
@@ -236,7 +236,7 @@ pub fn delete_lines(path: &Path, history_format: HistoryFormat, command: &str) {
         .collect::<Vec<String>>();
 
     fs::write(path, lines.join("\n"))
-        .unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", &path));
+        .unwrap_or_else(|_| panic!("McFly error: Unable to update {:?}", path));
 }
 
 pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) {
@@ -250,7 +250,7 @@ pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) 
         });
 
     if debug {
-        println!("McFly: Appended to file '{:?}': {}", &path, command);
+        println!("McFly: Appended to file '{:?}': {}", path, command);
     }
 
     if let Err(e) = writeln!(file, "{command}") {

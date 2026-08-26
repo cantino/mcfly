@@ -843,7 +843,7 @@ impl History {
 
         // Make ~/.mcfly/history.db
         let mut connection = Connection::open(&mcfly_db_path)
-            .unwrap_or_else(|_| panic!("Unable to create history DB at {:?}", &mcfly_db_path));
+            .unwrap_or_else(|_| panic!("Unable to create history DB at {:?}", mcfly_db_path));
 
         db_extensions::add_db_functions(&connection);
 
@@ -895,7 +895,7 @@ impl History {
                     {
                         println!(
                             "A single history line could not be saved due to '{}' (command was '{}'), but other inserts should be fine.",
-                            e, &command.command
+                            e, command.command
                         );
                     }
                 }
