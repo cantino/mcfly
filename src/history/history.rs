@@ -93,7 +93,7 @@ const IGNORED_COMMANDS: [&str; 7] = [
 ];
 
 /// Returns true if `command` should never be recorded, either because of a built-in rule or because
-/// it matches the user's `MCFLY_HISTORY_IGNORE` pattern.
+/// it matches the user's `MCFLY_IGNORE_PATTERN` pattern.
 fn is_ignored_command(command: &str, commands_to_ignore: Option<&Regex>) -> bool {
     // Ignore empty commands.
     if command.is_empty() {
@@ -974,5 +974,16 @@ mod tests {
             Some(&pattern)
         ));
         assert!(!is_ignored_command("echo hello", Some(&pattern)));
+    }
+
+    #[test]
+    fn the_user_pattern_supports_unicode_perl_classes_and_case_folding() {
+        let pattern = Regex::new(r"(?i)password|\btoken\b").unwrap();
+        assert!(is_ignored_command(
+            "export API_PASSWORD=secret",
+            Some(&pattern)
+        ));
+        assert!(is_ignored_command("curl -H 'token: abc'", Some(&pattern)));
+        assert!(!is_ignored_command("git status", Some(&pattern)));
     }
 }

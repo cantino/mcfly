@@ -269,13 +269,13 @@ impl Settings {
             _ => ResultFilter::Global,
         };
 
-        settings.commands_to_ignore = match env::var("MCFLY_HISTORY_IGNORE") {
+        settings.commands_to_ignore = match env::var("MCFLY_IGNORE_PATTERN") {
             Ok(val) if !val.is_empty() => match Regex::new(&val) {
                 Ok(re) => Some(re),
                 Err(err) => {
                     // A bad pattern shouldn't stop commands from being recorded, so warn and carry on.
                     eprintln!(
-                        "McFly error: MCFLY_HISTORY_IGNORE is not a valid regular expression ({err})"
+                        "McFly error: MCFLY_IGNORE_PATTERN is not a valid regular expression ({err})"
                     );
                     None
                 }

@@ -456,21 +456,21 @@ $env:MCFLY_PROMPT=">"
 Note that only single-character-prompts are allowed. setting `MCFLY_PROMPT` to `"<str>"` will reset it to the default prompt.
 
 ### Ignoring commands
-McFly already skips a few noisy commands (like `ls`, `cd`, and `pwd`) as well as anything you run with a leading space. To skip more, set `MCFLY_HISTORY_IGNORE` to a regular expression. Commands matching it will not be recorded. The pattern is unanchored, so add `^` if you want to match from the start of the command.
+McFly already skips a few noisy commands (like `ls`, `cd`, and `pwd`) as well as anything you run with a leading space. To skip more, set `MCFLY_IGNORE_PATTERN` to a regular expression. Commands matching it will not be recorded. The pattern is unanchored, so add `^` if you want to match from the start of the command.
 
 bash / zsh:
 ```bash
-export MCFLY_HISTORY_IGNORE="^(kubectl|helm) |password"
+export MCFLY_IGNORE_PATTERN="^(kubectl|helm) |password"
 ```
 
 fish:
 ```bash
-set -gx MCFLY_HISTORY_IGNORE "^(kubectl|helm) |password"
+set -gx MCFLY_IGNORE_PATTERN "^(kubectl|helm) |password"
 ```
 
 powershell:
 ```powershell
-$env:MCFLY_HISTORY_IGNORE="^(kubectl|helm) |password"
+$env:MCFLY_IGNORE_PATTERN="^(kubectl|helm) |password"
 ```
 
 ### Database Location
