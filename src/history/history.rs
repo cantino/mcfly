@@ -404,29 +404,37 @@ impl History {
         }
 
         if fuzzy > 0 && result_sort != &ResultSort::LastRun {
+            let is_case_sensitive = Self::is_case_sensitive(&cmd);
             names = names
                 .into_iter()
                 .sorted_unstable_by(|a, b| {
-                    // Fuzzy matches impose new ordering criteria on top of the
-                    // natural rank-based sorting: at the most basic level,
-                    // shorter and earlier matches are more likely to be
-                    // desired than longer or later matches -- even if they are
-                    // ranked a little lower.
-                    //
-                    // Each match is weighted by the inverse of its length plus
-                    // start position, relative to the total length + start of
-                    // both matches added together. This yields two complements
-                    // which always add up to 1 (e.g. 0.6 vs 0.4). If both
-                    // matches have the same length and start position, or if
-                    // those balance out exactly, the resulting weights will
-                    // both equal 0.5.
-                    //
-                    // The weights are multiplied by the configurable fuzzy
-                    // factor before being added to each result's original
-                    // rank. Factors > 1 are a "thumb on the scale" increasing
-                    // the likelihood of the weight flipping the outcome for
-                    // the originally lower-ranked result.
+                    // Exact substring matches are always prioritized over
+                    // fuzzy-only matches. This preserves the benefit of fuzzy
+                    // matching (finding commands you don't exactly remember)
+                    // while ensuring that commands containing the exact search
+                    // string aren't buried by fuzzy results.
+                    let a_exact = if is_case_sensitive {
+                        a.cmd.contains(&cmd)
+                    } else {
+                        a.cmd.to_lowercase().contains(&cmd.to_lowercase())
+                    };
+                    let b_exact = if is_case_sensitive {
+                        b.cmd.contains(&cmd)
+                    } else {
+                        b.cmd.to_lowercase().contains(&cmd.to_lowercase())
+                    };
 
+                    if a_exact && !b_exact {
+                        return Ordering::Less;
+                    }
+                    if !a_exact && b_exact {
+                        return Ordering::Greater;
+                    }
+
+                    // Within the same exactness tier (both exact or both
+                    // fuzzy), apply the existing fuzzy ranking logic: shorter
+                    // and earlier matches are preferred, weighted by the
+                    // configurable fuzzy factor.
                     let a_start = *a.match_indices.first().unwrap_or(&0);
                     let b_start = *b.match_indices.first().unwrap_or(&0);
 
