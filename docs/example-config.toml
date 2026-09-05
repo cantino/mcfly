@@ -1,0 +1,11 @@
+[colors]
+[colors.menubar]
+bg = "dark_blue"
+fg = "black"
+
+[colors.darkmode]
+prompt = "cyan"
+timing = "magenta"
+results_selection_fg = "dark_yellow"
+results_selection_bg = "reset"
+results_selection_hl = "yellow"
