@@ -1,10 +1,24 @@
 #!/usr/bin/env pwsh
 
 $null = New-Module mcfly {
-    # We need PSReadLine for a number of capabilities
-    if ($null -eq (Get-Module -Name PSReadLine)) {
-        Write-Host "Installing PSReadLine as McFly dependency"
-        Install-Module PSReadLine
+    # Use the already-loaded PSReadLine; it can't be version-swapped mid-session and a second copy
+    # breaks Ctrl+R. Only import/install when none is loaded.
+    if (-not (Get-Module PSReadLine)) {
+        if (-not (Get-Module PSReadLine -ListAvailable) -and [Environment]::UserInteractive) {
+            try {
+                Write-Host "Installing PSReadLine as McFly dependency"
+                Install-Module PSReadLine -Force -Scope CurrentUser -ErrorAction Stop
+            }
+            catch {
+                Write-Warning "Could not install PSReadLine ($($_.Exception.Message))."
+            }
+        }
+        Import-Module PSReadLine -ErrorAction SilentlyContinue
+    }
+
+    if (-not (Get-Module PSReadLine)) {
+        Write-Warning "McFly requires PSReadLine, which is not available. Run 'Install-Module PSReadLine'. Skipping McFly setup."
+        return
     }
 
     # Get history file and make a dummy file for psreadline (hopefully after it has loaded the real history file to its in memory history)
@@ -43,7 +57,7 @@ $null = New-Module mcfly {
         $lastExitTmp = $LASTEXITCODE
         $tempFile = New-TemporaryFile
         Start-Process -FilePath '::MCFLY::' -ArgumentList "search", "$CommandToComplete", -o, "$tempFile" -NoNewWindow -Wait
-        foreach($line in Get-Content $tempFile) {
+        foreach ($line in Get-Content $tempFile) {
             $key, $value = $line -split ' ', 2
             if ("mode" -eq $key) {
                 $mode = $value
@@ -52,10 +66,10 @@ $null = New-Module mcfly {
                 $commandline = $value
             }
         }
-        if(-not ($null -eq $commandline)) {
+        if (-not ($null -eq $commandline)) {
             [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine()
             [Microsoft.PowerShell.PSConsoleReadline]::Insert($commandline)
-            if("run" -eq $mode) {
+            if ("run" -eq $mode) {
                 [Microsoft.PowerShell.PSConsoleReadline]::AcceptLine()
             }
         }
@@ -89,7 +103,29 @@ $null = New-Module mcfly {
     # We need to make sure we call out AddToHistoryHandler right after each command is called
     Set-PSReadLineOption -HistorySaveStyle SaveIncrementally
 
-    Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+    # HistoryAndPlugin needs 2.2.0+; on older versions leave prediction off (McFly's Ctrl+r replaces it).
+    $loadedPSReadLine = @(Get-Module PSReadLine | Sort-Object Version -Descending)[0]
+    if ($loadedPSReadLine.Version -ge [version]'2.2.0') {
+        Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+    }
+    else {
+        # An old PSReadLine is loaded and shadows a newer installed one. It can't be swapped
+        # mid-session, so delete the stale user-scoped copy; the next shell then loads the newer one.
+        $newerPSReadLine = Get-Module PSReadLine -ListAvailable |
+            Where-Object { $_.Version -ge [version]'2.2.0' } |
+            Sort-Object Version -Descending | Select-Object -First 1
+        if ($newerPSReadLine -and $loadedPSReadLine.ModuleBase.StartsWith($HOME, [StringComparison]::OrdinalIgnoreCase)) {
+            Remove-Item -LiteralPath $loadedPSReadLine.ModuleBase -Recurse -Force -ErrorAction SilentlyContinue
+            $stillShadowed = Get-Module PSReadLine -ListAvailable |
+                Where-Object { $_.Version -eq $loadedPSReadLine.Version }
+            if ($stillShadowed) {
+                Write-Warning "Could not fully remove old PSReadLine $($loadedPSReadLine.Version) at '$($loadedPSReadLine.ModuleBase)' (files in use). Close other shells and rerun, or remove it manually."
+            }
+            else {
+                Write-Warning "Removed shadowing PSReadLine $($loadedPSReadLine.Version); restart the shell to load $($newerPSReadLine.Version) and enable prediction."
+            }
+        }
+    }
 
     Set-PSReadLineOption -AddToHistoryHandler {
         Param([string]$Command)
