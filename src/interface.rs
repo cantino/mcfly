@@ -238,29 +238,33 @@ impl<'a> Interface<'a> {
         };
 
         for command in view_range {
-            let mut fg = if self.settings.lightmode {
-                self.settings.colors.lightmode_colors.results_fg
+            // Handle light-/darkmode
+            let theme = if self.settings.lightmode {
+                &self.settings.colors.lightmode_colors
             } else {
-                self.settings.colors.darkmode_colors.results_fg
+                &self.settings.colors.darkmode_colors
             };
-
-            let mut highlight = if self.settings.lightmode {
-                self.settings.colors.lightmode_colors.results_hl
-            } else {
-                self.settings.colors.darkmode_colors.results_hl
-            };
-
+            // Set default colors
+            let mut highlight = theme.results_hl;
             let mut bg = Color::Reset;
-
-            if index == self.selection.min(result_height - 1) {
-                if self.settings.lightmode {
-                    fg = self.settings.colors.lightmode_colors.results_selection_fg;
-                    bg = self.settings.colors.lightmode_colors.results_selection_bg;
-                    highlight = self.settings.colors.lightmode_colors.results_selection_hl;
-                } else {
-                    fg = self.settings.colors.darkmode_colors.results_selection_fg;
-                    bg = self.settings.colors.darkmode_colors.results_selection_bg;
-                    highlight = self.settings.colors.darkmode_colors.results_selection_hl;
+            let mut fg = theme.results_fg;
+            // Handle selection
+            let is_selected = index == self.selection.min(result_height - 1);
+            if is_selected {
+                fg = theme.results_selection_fg;
+                bg = theme.results_selection_bg;
+                highlight = theme.results_selection_hl;
+            }
+            // Handle recently failed commands
+            if !self.settings.disable_failure_colors {
+                let is_recently_failed = command.exit_code.is_some_and(|c| c != 0);
+                if is_recently_failed {
+                    fg = theme.results_recent_failure;
+                }
+                // Handle broken commands (that have always failed)
+                let is_broken = command.features.exit_factor == 0.0;
+                if is_broken {
+                    fg = theme.results_broken;
                 }
             }
 
