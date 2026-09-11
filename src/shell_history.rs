@@ -115,31 +115,95 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
     match history_format {
         HistoryFormat::Bash => {
             let history_contents = read_ignoring_utf_errors(path);
-            let zsh_timestamp_and_duration_regex = Regex::new(r"^: [0-9]+:[0-9]+;").unwrap();
             let when = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
                 .as_secs() as i64;
-            history_contents
-                .split('\n')
-                .filter(|line| !has_leading_timestamp(line) && !line.is_empty())
-                .map(|line| zsh_timestamp_and_duration_regex.replace(line, ""))
-                .map(|line| HistoryCommand::new(line, when, history_format))
-                .collect()
+                
+            let has_timestamps = history_contents.split('\n').take(10).any(has_leading_timestamp);
+            
+            if has_timestamps {
+                let mut commands = Vec::new();
+                let mut current_command = String::new();
+                for line in history_contents.split('\n') {
+                    if has_leading_timestamp(line) {
+                        if !current_command.is_empty() {
+                            commands.push(HistoryCommand::new(
+                                current_command.clone(),
+                                when,
+                                history_format,
+                            ));
+                            current_command.clear();
+                        }
+                    } else if !line.is_empty() {
+                        if !current_command.is_empty() {
+                            current_command.push('\n');
+                        }
+                        current_command.push_str(line);
+                    }
+                }
+                if !current_command.is_empty() {
+                    commands.push(HistoryCommand::new(current_command, when, history_format));
+                }
+                commands
+            } else {
+                history_contents
+                    .split('\n')
+                    .filter(|line| !line.is_empty())
+                    .map(|line| HistoryCommand::new(line, when, history_format))
+                    .collect()
+            }
         }
-        HistoryFormat::Zsh { .. } => {
+        HistoryFormat::Zsh { extended_history } => {
             let history_contents = read_and_unmetafy(path);
             let zsh_timestamp_and_duration_regex = Regex::new(r"^: [0-9]+:[0-9]+;").unwrap();
             let when = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
                 .as_secs() as i64;
-            history_contents
-                .split('\n')
-                .filter(|line| !has_leading_timestamp(line) && !line.is_empty())
-                .map(|line| zsh_timestamp_and_duration_regex.replace(line, ""))
-                .map(|line| HistoryCommand::new(line, when, history_format))
-                .collect()
+            
+            let mut commands = Vec::new();
+            let mut current_command = String::new();
+            
+            for line in history_contents.split('\n') {
+                if has_leading_timestamp(line) || line.is_empty() {
+                    continue;
+                }
+                
+                if extended_history && zsh_timestamp_and_duration_regex.is_match(line) {
+                    if !current_command.is_empty() {
+                        commands.push(HistoryCommand::new(
+                            zsh_timestamp_and_duration_regex.replace(&current_command, "").into_owned(),
+                            when,
+                            history_format,
+                        ));
+                        current_command.clear();
+                    }
+                    current_command.push_str(line);
+                } else if !current_command.is_empty() && current_command.ends_with('\\') {
+                    current_command.pop();
+                    current_command.push('\n');
+                    current_command.push_str(line);
+                } else {
+                    if !current_command.is_empty() {
+                        commands.push(HistoryCommand::new(
+                            zsh_timestamp_and_duration_regex.replace(&current_command, "").into_owned(),
+                            when,
+                            history_format,
+                        ));
+                        current_command.clear();
+                    }
+                    current_command.push_str(line);
+                }
+            }
+            if !current_command.is_empty() {
+                commands.push(HistoryCommand::new(
+                    zsh_timestamp_and_duration_regex.replace(&current_command, "").into_owned(),
+                    when,
+                    history_format,
+                ));
+            }
+            commands
         }
         HistoryFormat::Fish => {
             // Fish history format is not technically YAML.  This is a naive parser of the format,
