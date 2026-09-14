@@ -119,9 +119,12 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
                 .as_secs() as i64;
-                
-            let has_timestamps = history_contents.split('\n').take(10).any(has_leading_timestamp);
-            
+
+            let has_timestamps = history_contents
+                .split('\n')
+                .take(10)
+                .any(has_leading_timestamp);
+
             if has_timestamps {
                 let mut commands = Vec::new();
                 let mut current_command = String::new();
@@ -161,19 +164,21 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
                 .as_secs() as i64;
-            
+
             let mut commands = Vec::new();
             let mut current_command = String::new();
-            
+
             for line in history_contents.split('\n') {
                 if has_leading_timestamp(line) || line.is_empty() {
                     continue;
                 }
-                
+
                 if extended_history && zsh_timestamp_and_duration_regex.is_match(line) {
                     if !current_command.is_empty() {
                         commands.push(HistoryCommand::new(
-                            zsh_timestamp_and_duration_regex.replace(&current_command, "").into_owned(),
+                            zsh_timestamp_and_duration_regex
+                                .replace(&current_command, "")
+                                .into_owned(),
                             when,
                             history_format,
                         ));
@@ -187,7 +192,9 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
                 } else {
                     if !current_command.is_empty() {
                         commands.push(HistoryCommand::new(
-                            zsh_timestamp_and_duration_regex.replace(&current_command, "").into_owned(),
+                            zsh_timestamp_and_duration_regex
+                                .replace(&current_command, "")
+                                .into_owned(),
                             when,
                             history_format,
                         ));
@@ -198,7 +205,9 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
             }
             if !current_command.is_empty() {
                 commands.push(HistoryCommand::new(
-                    zsh_timestamp_and_duration_regex.replace(&current_command, "").into_owned(),
+                    zsh_timestamp_and_duration_regex
+                        .replace(&current_command, "")
+                        .into_owned(),
                     when,
                     history_format,
                 ));
@@ -324,7 +333,45 @@ pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) 
 
 #[cfg(test)]
 mod tests {
-    use super::has_leading_timestamp;
+    use super::{delete_lines, full_history, has_leading_timestamp};
+    use crate::settings::HistoryFormat;
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static TEST_FILE_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+    struct TempTestFile {
+        path: PathBuf,
+    }
+
+    impl TempTestFile {
+        fn new(name: &str, content: &str) -> Self {
+            let counter = TEST_FILE_COUNTER.fetch_add(1, Ordering::SeqCst);
+            let filename = format!("mcfly_test_{}_{}_{}.tmp", std::process::id(), name, counter);
+            let path = std::env::temp_dir().join(filename);
+            fs::write(&path, content).expect("Failed to write temporary test history file");
+            Self { path }
+        }
+
+        fn from_bytes(name: &str, bytes: &[u8]) -> Self {
+            let counter = TEST_FILE_COUNTER.fetch_add(1, Ordering::SeqCst);
+            let filename = format!("mcfly_test_{}_{}_{}.tmp", std::process::id(), name, counter);
+            let path = std::env::temp_dir().join(filename);
+            fs::write(&path, bytes).expect("Failed to write temporary test history file bytes");
+            Self { path }
+        }
+
+        fn path(&self) -> &Path {
+            &self.path
+        }
+    }
+
+    impl Drop for TempTestFile {
+        fn drop(&mut self) {
+            let _ = fs::remove_file(&self.path);
+        }
+    }
 
     #[test]
     fn has_leading_timestamp_works() {
@@ -336,5 +383,168 @@ mod tests {
         assert!(!has_leading_timestamp("# 1234567890"));
         assert!(!has_leading_timestamp("1234567890"));
         assert!(!has_leading_timestamp("hello 1234567890"));
+    }
+
+    #[test]
+    fn test_bash_multiline_with_timestamps() {
+        let content = "\
+#1593624164
+echo \"single line\"
+#1593624165
+for i in {1..3}; do
+  echo \"number: $i\"
+done
+#1593624166
+git commit -m \"feat: multiline commit
+This is the body of the commit message.
+Signed-off-by: Developer <dev@example.com>\"
+#1593624167
+cargo test
+";
+        let temp = TempTestFile::new("bash_multiline", content);
+        let commands = full_history(temp.path(), HistoryFormat::Bash);
+
+        assert_eq!(commands.len(), 4);
+        assert_eq!(commands[0].command, "echo \"single line\"");
+        assert_eq!(
+            commands[1].command,
+            "for i in {1..3}; do\n  echo \"number: $i\"\ndone"
+        );
+        assert_eq!(
+            commands[2].command,
+            "git commit -m \"feat: multiline commit\nThis is the body of the commit message.\nSigned-off-by: Developer <dev@example.com>\""
+        );
+        assert_eq!(commands[3].command, "cargo test");
+    }
+
+    #[test]
+    fn test_bash_history_without_timestamps() {
+        let content = "\
+echo foo
+cargo build
+cargo test
+";
+        let temp = TempTestFile::new("bash_no_ts", content);
+        let commands = full_history(temp.path(), HistoryFormat::Bash);
+
+        assert_eq!(commands.len(), 3);
+        assert_eq!(commands[0].command, "echo foo");
+        assert_eq!(commands[1].command, "cargo build");
+        assert_eq!(commands[2].command, "cargo test");
+    }
+
+    #[test]
+    fn test_zsh_extended_multiline_commands() {
+        let content = "\
+: 1593624160:0;echo \"first command\"
+: 1593624161:0;echo \"hello\\
+world\"
+: 1593624162:0;echo foo \\
+ bar
+: 1593624163:0;curl -X POST \\
+  -H \"Content-Type: application/json\" \\
+  -d '{\"key\": \"value\"}'
+: 1593624164:0;git status
+";
+        let temp = TempTestFile::new("zsh_ext_multiline", content);
+        let commands = full_history(
+            temp.path(),
+            HistoryFormat::Zsh {
+                extended_history: true,
+            },
+        );
+
+        assert_eq!(commands.len(), 5);
+        assert_eq!(commands[0].command, "echo \"first command\"");
+        assert_eq!(commands[1].command, "echo \"hello\nworld\"");
+        assert_eq!(commands[2].command, "echo foo \n bar");
+        assert_eq!(
+            commands[3].command,
+            "curl -X POST \n  -H \"Content-Type: application/json\" \n  -d '{\"key\": \"value\"}'"
+        );
+        assert_eq!(commands[4].command, "git status");
+    }
+
+    #[test]
+    fn test_zsh_standard_multiline_commands() {
+        let content = "\
+echo \"first command\"
+echo \"hello\\
+world\"
+echo foo \\
+ bar
+git status
+";
+        let temp = TempTestFile::new("zsh_std_multiline", content);
+        let commands = full_history(
+            temp.path(),
+            HistoryFormat::Zsh {
+                extended_history: false,
+            },
+        );
+
+        assert_eq!(commands.len(), 4);
+        assert_eq!(commands[0].command, "echo \"first command\"");
+        assert_eq!(commands[1].command, "echo \"hello\nworld\"");
+        assert_eq!(commands[2].command, "echo foo \n bar");
+        assert_eq!(commands[3].command, "git status");
+    }
+
+    #[test]
+    fn test_empty_history_file() {
+        let temp = TempTestFile::new("empty_hist", "\n\n");
+        let bash_commands = full_history(temp.path(), HistoryFormat::Bash);
+        assert!(bash_commands.is_empty());
+
+        let zsh_commands = full_history(
+            temp.path(),
+            HistoryFormat::Zsh {
+                extended_history: true,
+            },
+        );
+        assert!(zsh_commands.is_empty());
+    }
+
+    #[test]
+    fn test_zsh_unmetafying_in_history() {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b": 100:0;echo a");
+        bytes.push(0x83);
+        bytes.push(b'b' ^ 32);
+        bytes.push(b'\n');
+
+        let temp = TempTestFile::from_bytes("zsh_meta", &bytes);
+        let commands = full_history(
+            temp.path(),
+            HistoryFormat::Zsh {
+                extended_history: true,
+            },
+        );
+
+        assert_eq!(commands.len(), 1);
+        assert_eq!(commands[0].command, "echo ab");
+    }
+
+    #[test]
+    fn test_delete_lines_multiline_command() {
+        let content = "\
+#1593624164
+echo \"single line\"
+#1593624165
+for i in {1..3}; do
+  echo \"number: $i\"
+done
+#1593624166
+cargo test
+";
+        let temp = TempTestFile::new("bash_delete_multiline", content);
+        let multiline_cmd = "for i in {1..3}; do\n  echo \"number: $i\"\ndone";
+
+        delete_lines(temp.path(), HistoryFormat::Bash, multiline_cmd);
+
+        let commands = full_history(temp.path(), HistoryFormat::Bash);
+        assert_eq!(commands.len(), 2);
+        assert_eq!(commands[0].command, "echo \"single line\"");
+        assert_eq!(commands[1].command, "cargo test");
     }
 }
