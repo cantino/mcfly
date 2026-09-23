@@ -119,14 +119,26 @@ function mcfly_initialize {
       return
     fi
     # Get the command and set the bash text to it, and move the cursor to the end of the line.
-    local MCFLY_COMMAND
-    MCFLY_COMMAND=$(command awk 'NR==2{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
+    local MCFLY_COMMAND="" MCFLY_MODE="" in_commandline=0 line
+    while IFS= read -r line || [[ -n $line ]]; do
+      if [[ $line == "mode "* ]]; then
+        MCFLY_MODE="${line#mode }"
+        in_commandline=0
+      elif [[ $line == "delete "* ]]; then
+        in_commandline=0
+      elif [[ $line == "commandline "* ]]; then
+        MCFLY_COMMAND="${line#commandline }"
+        in_commandline=1
+      elif [[ $in_commandline -eq 1 ]]; then
+        MCFLY_COMMAND="${MCFLY_COMMAND}
+${line}"
+      fi
+    done < "$MCFLY_OUTPUT"
+
     READLINE_LINE=$MCFLY_COMMAND
     READLINE_POINT=${#READLINE_LINE}
 
     # Get the mode and bind the accept-line key if the mode is run.
-    local MCFLY_MODE
-    MCFLY_MODE=$(command awk 'NR==1{$1=a; print substr($0, 2)}' "$MCFLY_OUTPUT")
     if [[ $MCFLY_MODE == "run" ]]; then
       bind "\"$MCFLY_BASH_ACCEPT_LINE_KEYBINDING\":accept-line"
     else
