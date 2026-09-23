@@ -55,11 +55,20 @@ if test "$__MCFLY_LOADED" != "loaded"
       eval $__MCFLY_CMD search -o '$mcfly_output' -- (commandline | string escape)
 
       # Interpret commandline/run requests from McFly
-      set -l mode; set -l commandline
-      while read key val
-        test "$key" = "mode"; and set mode "$val"
-        test "$key" = "commandline"; and set commandline "$val"
-        test "$key" = "delete"; and history delete --exact --case-sensitive "$val"
+      set -l mode; set -l commandline; set -l in_commandline 0
+      while read -l line
+        if string match -q "mode *" -- $line
+          set mode (string sub -s 6 -- $line)
+          set in_commandline 0
+        else if string match -q "delete *" -- $line
+          set in_commandline 0
+          history delete --exact --case-sensitive (string sub -s 8 -- $line)
+        else if string match -q "commandline *" -- $line
+          set commandline (string sub -s 13 -- $line)
+          set in_commandline 1
+        else if test $in_commandline -eq 1
+          set commandline (printf '%s\n%s' "$commandline" "$line")
+        end
       end < "$mcfly_output"
       rm -f $mcfly_output
 

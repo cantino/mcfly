@@ -81,9 +81,20 @@
       echoti smkx
 
       # Interpret commandline/run requests from McFly
-      while read -r key val; do
-        if [[ "$key" = "mode" ]]; then local mode="$val"; fi
-        if [[ "$key" = "commandline" ]]; then local commandline="$val"; fi
+      local mode="" commandline="" in_commandline=0 line
+      while IFS= read -r line || [[ -n $line ]]; do
+        if [[ "$line" == "mode "* ]]; then
+          mode="${line#mode }"
+          in_commandline=0
+        elif [[ "$line" == "delete "* ]]; then
+          in_commandline=0
+        elif [[ "$line" == "commandline "* ]]; then
+          commandline="${line#commandline }"
+          in_commandline=1
+        elif [[ $in_commandline -eq 1 ]]; then
+          commandline="${commandline}
+${line}"
+        fi
       done < "${mcfly_output}"
       command rm -f $mcfly_output
 

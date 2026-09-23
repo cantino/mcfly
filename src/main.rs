@@ -74,10 +74,16 @@ fn handle_search(settings: &Settings) {
             fs::write(path, &out)
                 .unwrap_or_else(|err| panic!("McFly error: unable to write to {path}: {err}"));
         } else {
-            fake_typer::use_tiocsti(&cmd);
+            if cmd.contains('\n') {
+                eprintln!(
+                    "McFly: multi-line commands cannot be typed with TIOCSTI; please use shell integration with output-selection."
+                );
+            } else {
+                fake_typer::use_tiocsti(&cmd);
 
-            if result.run {
-                fake_typer::use_tiocsti("\n");
+                if result.run {
+                    fake_typer::use_tiocsti("\n");
+                }
             }
         }
     }

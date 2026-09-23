@@ -998,15 +998,16 @@ impl<'a> Interface<'a> {
         let mut match_indices = command.match_indices.iter().peekable();
 
         for (i, c) in command.cmd.char_indices() {
+            let display_char = if c == '\n' || c == '\r' { ' ' } else { c };
             match match_indices.peek() {
                 Some(&&j) if i == j => {
                     let _ = match_indices.next();
                     execute!(out, SetForegroundColor(highlight_color)).unwrap();
-                    out.push_grapheme_str(c);
+                    out.push_grapheme_str(display_char);
                 }
                 _ => {
                     execute!(out, SetForegroundColor(base_color)).unwrap();
-                    out.push_grapheme_str(c);
+                    out.push_grapheme_str(display_char);
                 }
             }
         }
