@@ -37,6 +37,7 @@ pub enum InitMode {
     Zsh,
     Fish,
     Powershell,
+    Nushell,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -73,6 +74,11 @@ pub enum HistoryFormat {
     /// '\n', and with timestamps stored as 'when'.  ('paths' is ignored.)
     /// (Some discussion of changing format: https://github.com/fish-shell/fish-shell/pull/6493)
     Fish,
+
+    /// Nushell's history, as found at `$nu.history-path`. This is either the plaintext format,
+    /// one command per line with embedded newlines written as `<\n>`, or a SQLite database,
+    /// depending on `$env.config.history.file_format`.
+    Nu,
 }
 
 /// Time range, it can be:
@@ -311,7 +317,7 @@ impl Settings {
         });
 
         {
-            use crate::cli::HistoryFormat::{Bash, Fish, Zsh, ZshExtended};
+            use crate::cli::HistoryFormat::{Bash, Fish, Nu, Zsh, ZshExtended};
             settings.history_format = match cli.history_format {
                 Bash => HistoryFormat::Bash,
                 Zsh => HistoryFormat::Zsh {
@@ -321,6 +327,7 @@ impl Settings {
                     extended_history: true,
                 },
                 Fish => HistoryFormat::Fish,
+                Nu => HistoryFormat::Nu,
             };
         }
 
@@ -450,12 +457,13 @@ impl Settings {
             SubCommand::Init { shell } => {
                 settings.mode = Mode::Init;
 
-                use crate::cli::InitMode::{Bash, Fish, Powershell, Zsh};
+                use crate::cli::InitMode::{Bash, Fish, Nushell, Powershell, Zsh};
                 settings.init_mode = match shell {
                     Bash => InitMode::Bash,
                     Zsh => InitMode::Zsh,
                     Fish => InitMode::Fish,
                     Powershell => InitMode::Powershell,
+                    Nushell => InitMode::Nushell,
                 };
             }
 

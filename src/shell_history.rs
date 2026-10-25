@@ -1,5 +1,6 @@
 use crate::settings::HistoryFormat;
 use regex::Regex;
+use rusqlite::{Connection, OpenFlags};
 use std::env;
 use std::fmt;
 use std::fs;
@@ -11,6 +12,9 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+// Nushell's plaintext history stores multi-line commands on one line, with newlines written as `<\n>`.
+const NU_NEWLINE_ESCAPE: &str = "<\\n>";
 
 fn read_ignoring_utf_errors(path: &Path) -> String {
     let mut f =
@@ -106,6 +110,7 @@ impl fmt::Display for HistoryCommand {
                 }
             }
             HistoryFormat::Fish => writeln!(f, "- cmd: {}\n  when: {}", self.command, self.when),
+            HistoryFormat::Nu => write!(f, "{}", self.command.replace('\n', NU_NEWLINE_ESCAPE)),
         }
     }
 }
@@ -169,7 +174,59 @@ pub fn full_history(path: &Path, history_format: HistoryFormat) -> Vec<HistoryCo
 
             commands
         }
+        HistoryFormat::Nu => {
+            if is_sqlite_file(path) {
+                return nu_sqlite_history(path);
+            }
+
+            let history_contents = read_ignoring_utf_errors(path);
+            let when = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
+                .as_secs() as i64;
+            history_contents
+                .split('\n')
+                .filter(|line| !line.is_empty())
+                .map(|line| line.replace(NU_NEWLINE_ESCAPE, "\n"))
+                .map(|line| HistoryCommand::new(line, when, history_format))
+                .collect()
+        }
     }
+}
+
+fn is_sqlite_file(path: &Path) -> bool {
+    let mut header = [0; 16];
+    File::open(path)
+        .and_then(|mut f| f.read_exact(&mut header))
+        .is_ok()
+        && &header == b"SQLite format 3\0"
+}
+
+// Reads Nushell's history when `$env.config.history.file_format` is "sqlite".
+fn nu_sqlite_history(path: &Path) -> Vec<HistoryCommand> {
+    let connection = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+        .unwrap_or_else(|err| panic!("McFly error: Unable to open {path:?} ({err})"));
+    let mut statement = connection
+        .prepare("SELECT command_line, start_timestamp FROM history ORDER BY id")
+        .unwrap_or_else(|err| panic!("McFly error: Unable to read Nushell history ({err})"));
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_else(|err| panic!("McFly error: Time went backwards ({err})"))
+        .as_secs() as i64;
+    statement
+        .query_map([], |row| {
+            let command: String = row.get(0)?;
+            // Nushell stores timestamps in milliseconds.
+            let when: Option<i64> = row.get(1)?;
+            Ok(HistoryCommand::new(
+                command,
+                when.map_or(now, |ms| ms / 1000),
+                HistoryFormat::Nu,
+            ))
+        })
+        .unwrap_or_else(|err| panic!("McFly error: Unable to read Nushell history ({err})"))
+        .filter_map(Result::ok)
+        .collect()
 }
 
 #[must_use]
@@ -260,7 +317,16 @@ pub fn append_history_entry(command: &HistoryCommand, path: &Path, debug: bool) 
 
 #[cfg(test)]
 mod tests {
-    use super::has_leading_timestamp;
+    use super::{HistoryCommand, full_history, has_leading_timestamp};
+    use crate::settings::HistoryFormat;
+    use rusqlite::Connection;
+    use std::env;
+    use std::fs;
+    use std::path::PathBuf;
+
+    fn temp_path(name: &str) -> PathBuf {
+        env::temp_dir().join(format!("mcfly-test-{}-{}", std::process::id(), name))
+    }
 
     #[test]
     fn has_leading_timestamp_works() {
@@ -272,5 +338,68 @@ mod tests {
         assert!(!has_leading_timestamp("# 1234567890"));
         assert!(!has_leading_timestamp("1234567890"));
         assert!(!has_leading_timestamp("hello 1234567890"));
+    }
+
+    #[test]
+    fn full_history_reads_nu_plaintext() {
+        let path = temp_path("nu-history.txt");
+        fs::write(
+            &path,
+            "ls\nfor x in [1 2] {<\\n>  print $x<\\n>}\n\ncd ~/src\n",
+        )
+        .unwrap();
+
+        let commands: Vec<String> = full_history(&path, HistoryFormat::Nu)
+            .into_iter()
+            .map(|c| c.command)
+            .collect();
+        fs::remove_file(&path).unwrap();
+
+        assert_eq!(
+            commands,
+            vec!["ls", "for x in [1 2] {\n  print $x\n}", "cd ~/src"]
+        );
+    }
+
+    #[test]
+    fn full_history_reads_nu_sqlite() {
+        let path = temp_path("nu-history.sqlite3");
+        let _ = fs::remove_file(&path);
+        {
+            // The table as created by Nushell's line editor (reedline).
+            let connection = Connection::open(&path).unwrap();
+            connection
+                .execute_batch(
+                    "CREATE TABLE history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        command_line TEXT NOT NULL,
+                        start_timestamp INTEGER,
+                        session_id INTEGER,
+                        hostname TEXT,
+                        cwd TEXT,
+                        duration_ms INTEGER,
+                        exit_status INTEGER,
+                        more_info TEXT
+                    ) STRICT;
+                    INSERT INTO history (command_line, start_timestamp) VALUES ('ls', 1700000000123);
+                    INSERT INTO history (command_line, start_timestamp) VALUES ('cargo build', NULL);",
+                )
+                .unwrap();
+        }
+
+        let commands = full_history(&path, HistoryFormat::Nu);
+        fs::remove_file(&path).unwrap();
+
+        assert_eq!(commands.len(), 2);
+        assert_eq!(commands[0].command, "ls");
+        assert_eq!(commands[0].when, 1700000000);
+        assert_eq!(commands[1].command, "cargo build");
+        assert!(commands[1].when > 1700000000);
+    }
+
+    #[test]
+    fn nu_history_command_escapes_newlines() {
+        let command = HistoryCommand::new("if true {\n  ls\n}", 0, HistoryFormat::Nu);
+        assert_eq!(command.to_string(), "if true {<\\n>  ls<\\n>}");
     }
 }

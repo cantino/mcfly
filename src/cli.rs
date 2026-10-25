@@ -195,6 +195,7 @@ pub enum HistoryFormat {
     Zsh,
     ZshExtended,
     Fish,
+    Nu,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -203,6 +204,8 @@ pub enum InitMode {
     Zsh,
     Fish,
     Powershell,
+    #[value(alias = "nu")]
+    Nushell,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, Default)]
@@ -237,5 +240,30 @@ impl SortOrder {
             Self::Asc => "ASC",
             Self::Desc => "DESC",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Cli, HistoryFormat, InitMode, SubCommand};
+    use clap::Parser;
+
+    #[test]
+    fn init_accepts_nushell_and_nu() {
+        for shell in ["nushell", "nu"] {
+            let cli = Cli::try_parse_from(["mcfly", "init", shell]).unwrap();
+            assert!(matches!(
+                cli.command,
+                SubCommand::Init {
+                    shell: InitMode::Nushell
+                }
+            ));
+        }
+    }
+
+    #[test]
+    fn history_format_accepts_nu() {
+        let cli = Cli::try_parse_from(["mcfly", "--history_format", "nu", "add", "ls"]).unwrap();
+        assert!(matches!(cli.history_format, HistoryFormat::Nu));
     }
 }

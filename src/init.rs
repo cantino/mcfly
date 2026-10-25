@@ -18,6 +18,9 @@ impl Init {
             InitMode::Powershell => {
                 Init::init_pwsh();
             }
+            InitMode::Nushell => {
+                Init::init_nushell();
+            }
         }
         Self {}
     }
@@ -36,6 +39,10 @@ impl Init {
     pub fn init_pwsh() {
         let script = include_str!("../mcfly.ps1")
             .replace("::MCFLY::", env::current_exe().unwrap().to_str().unwrap());
+        print!("{script}");
+    }
+    pub fn init_nushell() {
+        let script = include_str!("../mcfly.nu");
         print!("{script}");
     }
 }

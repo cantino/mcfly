@@ -24,7 +24,7 @@ TL;DR: an upgraded `ctrl-r` where history results make sense for what you're wor
 * Designed to be extensible for other shells in the future.
 * Written in Rust, so it's fast and safe.
 * You can type `%` to match any number of characters when searching.
-* Supports Zsh, Bash (version 3+), and PowerShell (version 7+)
+* Supports Zsh, Bash (version 3+), PowerShell (version 7+), and Nushell
 
 ## Prioritization
 
@@ -64,6 +64,12 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     mcfly init fish | source
     ```
+
+   Nushell (add to the end of your `config.nu`):
+    ```nu
+    mkdir ($nu.data-dir | path join "vendor/autoload")
+    mcfly init nushell | save --force ($nu.data-dir | path join "vendor/autoload/mcfly.nu")
+    ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
 #### Uninstalling with Homebrew
@@ -72,7 +78,7 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     brew uninstall mcfly
     ```
-1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
+1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish` / `config.nu`. For Nushell, also delete `mcfly.nu` from `($nu.data-dir)/vendor/autoload`.
 
 ### Install with MacPorts (on macOS)
 
@@ -100,6 +106,12 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     mcfly init fish | source
     ```
+
+   Nushell (add to the end of your `config.nu`):
+    ```nu
+    mkdir ($nu.data-dir | path join "vendor/autoload")
+    mcfly init nushell | save --force ($nu.data-dir | path join "vendor/autoload/mcfly.nu")
+    ```
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
 #### Uninstalling with MacPorts
@@ -108,7 +120,7 @@ When suggesting a command, McFly takes into consideration:
     ```bash
     sudo port uninstall mcfly
     ```
-1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
+1. Remove the lines you added to `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish` / `config.nu`. For Nushell, also delete `mcfly.nu` from `($nu.data-dir)/vendor/autoload`.
 
 ### Install using WinGet on Windows (we do not maintain this install script and cannot vouch for its accuracy or safety)
 
@@ -153,6 +165,12 @@ When suggesting a command, McFly takes into consideration:
    mcfly init fish | source
    ```
 
+   Nushell (add to the end of your `config.nu`):
+    ```nu
+    mkdir ($nu.data-dir | path join "vendor/autoload")
+    mcfly init nushell | save --force ($nu.data-dir | path join "vendor/autoload/mcfly.nu")
+    ```
+
 3. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
 
 ### Installing manually from GitHub (macOS or Linux)
@@ -174,6 +192,12 @@ When suggesting a command, McFly takes into consideration:
    Fish:
     ```bash
     mcfly init fish | source
+    ```
+
+   Nushell (add to the end of your `config.nu`):
+    ```nu
+    mkdir ($nu.data-dir | path join "vendor/autoload")
+    mcfly init nushell | save --force ($nu.data-dir | path join "vendor/autoload/mcfly.nu")
     ```
 
 1. Run `. ~/.bashrc` / `. ~/.zshrc` / `source ~/.config/fish/config.fish` or restart your terminal emulator.
@@ -201,6 +225,12 @@ When suggesting a command, McFly takes into consideration:
     mcfly init fish | source
     ```
 
+   Nushell (add to the end of your `config.nu`):
+    ```nu
+    mkdir ($nu.data-dir | path join "vendor/autoload")
+    mcfly init nushell | save --force ($nu.data-dir | path join "vendor/autoload/mcfly.nu")
+    ```
+
     Powershell Core (pwsh)
     ```powershell
     Invoke-Expression -Command $(mcfly init powershell | out-string)
@@ -218,6 +248,12 @@ When suggesting a command, McFly takes into consideration:
     ```
 * It will download mcfly and install for you.
 * `$(mcfly init zsh)` will be executed after prompt
+
+## Nushell
+
+Nushell can't source the output of a command, so `mcfly init nushell` is saved to Nushell's vendor autoload directory, which is loaded right after `config.nu`. Saving it from `config.nu` keeps it up to date when McFly is upgraded.
+
+On first run McFly imports your existing Nushell history, in either the plaintext or the SQLite format (`$env.config.history.file_format`). Commands that start with a space are not recorded when `$env.config.history.ignore_space_prefixed` is on (the default). Deleting a command in McFly removes it from McFly's database, but not from Nushell's own history.
 
 ## iTerm2
 
@@ -276,7 +312,7 @@ mcfly dump -r '^cargo run' --since '2023-09-12 09:15:30'
 will dump all command prefixes with `cargo run` ran since *2023-09-12 09:15:30*.
 
 ## Settings
-A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`.
+A number of settings can be set via environment variables. To set a setting you should add the following snippets to your `~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish` / `config.nu`.
 
 [Color settings](https://github.com/cantino/mcfly/blob/b54adb65e1567887fe430188324c09553431eb7c/src/settings.rs#L508) can be set in a config file, which will be in `~/.mcfly` if it exists, otherwise in `$XDG_DATA_DIR/mcfly`. On MacOS, this would be `~/Library/Application Support/McFly/config.toml`.
 
@@ -296,6 +332,11 @@ set -gx MCFLY_LIGHT TRUE
 powershell:
 ```powershell
 $env:MCFLY_LIGHT = "TRUE"
+```
+
+nushell:
+```nu
+$env.MCFLY_LIGHT = "TRUE"
 ```
 
 Tip: on macOS you can use the following snippet for color scheme to be configured based on system-wide settings:
@@ -325,6 +366,11 @@ powershell:
 $env:MCFLY_KEY_SCHEME="vim"
 ```
 
+nushell:
+```nu
+$env.MCFLY_KEY_SCHEME = "vim"
+```
+
 ### Fuzzy Searching
 To enable fuzzy searching, set `MCFLY_FUZZY` to an integer. 0 is off; higher numbers weight toward shorter matches. Values in the 2-5 range get good results so far; try a few and [report what works best for you](https://github.com/cantino/mcfly/issues/183)!
 
@@ -341,6 +387,11 @@ set -gx MCFLY_FUZZY 2
 powershell:
 ```powershell
 $env:MCFLY_FUZZY=2
+```
+
+nushell:
+```nu
+$env.MCFLY_FUZZY = "2"
 ```
 
 ### Results Count
@@ -361,6 +412,11 @@ powershell:
 $env:MCFLY_RESULTS=50
 ```
 
+nushell:
+```nu
+$env.MCFLY_RESULTS = "50"
+```
+
 ### Delete without confirmation
 To delete without confirmation, set `MCFLY_DELETE_WITHOUT_CONFIRM` to true.
 
@@ -377,6 +433,11 @@ set -gx MCFLY_DELETE_WITHOUT_CONFIRM true
 powershell:
 ```powershell
 $env:MCFLY_DELETE_WITHOUT_CONFIRM="true"
+```
+
+nushell:
+```nu
+$env.MCFLY_DELETE_WITHOUT_CONFIRM = "true"
 ```
 
 ### Interface view
@@ -398,6 +459,11 @@ powershell:
 $env:MCFLY_INTERFACE_VIEW="BOTTOM"
 ```
 
+nushell:
+```nu
+$env.MCFLY_INTERFACE_VIEW = "BOTTOM"
+```
+
 ### Disable menu interface
 To disable the menu interface, set the environment variable `MCFLY_DISABLE_MENU`.
 
@@ -415,6 +481,11 @@ powershell:
 ```powershell
 $env:MCFLY_DISABLE_MENU=true
  ```
+
+nushell:
+```nu
+$env.MCFLY_DISABLE_MENU = "TRUE"
+```
 
 ### Results sorting
 To change the sorting of results shown, set `MCFLY_RESULTS_SORT` (default: RANK).
@@ -435,6 +506,11 @@ powershell:
 $env:MCFLY_RESULTS_SORT="LAST_RUN"
  ```
 
+nushell:
+```nu
+$env.MCFLY_RESULTS_SORT = "LAST_RUN"
+```
+
 ### Custom Prompt
 To change the prompt, set `MCFLY_PROMPT` (default: `$`).
 
@@ -452,6 +528,11 @@ powershell:
 ```powershell
 $env:MCFLY_PROMPT=">"
  ```
+
+nushell:
+```nu
+$env.MCFLY_PROMPT = "❯"
+```
 
 Note that only single-character-prompts are allowed. setting `MCFLY_PROMPT` to `"<str>"` will reset it to the default prompt.
 
@@ -471,6 +552,11 @@ set -gx MCFLY_IGNORE_PATTERN "^(kubectl|helm) |password"
 powershell:
 ```powershell
 $env:MCFLY_IGNORE_PATTERN="^(kubectl|helm) |password"
+```
+
+nushell:
+```nu
+$env.MCFLY_IGNORE_PATTERN = "^(kubectl|helm) |password"
 ```
 
 ### Database Location

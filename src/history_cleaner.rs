@@ -32,6 +32,9 @@ pub fn clean(settings: &Settings, history: &History, command: &str) {
         // Also, deletion from the fish history file is done by fish itself, via commands sent out
         // in the results file and interpreted by mcfly.fish.
         HistoryFormat::Fish => {}
+        // Nushell integration passes each command to McFly directly, like fish. Nushell's own
+        // history is owned by its line editor (and may be a SQLite database), so it's left alone.
+        HistoryFormat::Nu => {}
     }
 }
 
