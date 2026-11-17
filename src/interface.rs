@@ -8,6 +8,8 @@ use crate::settings::{InterfaceView, KeyScheme, ResultFilter};
 use crate::settings::{ResultSort, Settings};
 use chrono::{Duration, TimeZone, Utc};
 use crossterm::event::KeyCode::Char;
+#[cfg(unix)]
+use crossterm::event::poll;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, read};
 use crossterm::style::{Color, Print, SetBackgroundColor, SetForegroundColor};
 use crossterm::terminal::{self, LeaveAlternateScreen};
@@ -16,6 +18,8 @@ use crossterm::{cursor, execute, queue};
 use humantime::format_duration;
 use std::io::{Write, stdout};
 use std::string::String;
+#[cfg(unix)]
+use std::{fs::File, os::fd::AsRawFd, time::Duration as StdDuration};
 
 pub struct Interface<'a> {
     history: &'a History,
@@ -441,6 +445,9 @@ impl<'a> Interface<'a> {
     }
 
     fn select(&mut self) {
+        #[cfg(unix)]
+        let tty = File::open("/dev/tty").expect("McFly error: failed to open controlling terminal");
+
         let mut screen = stdout();
         terminal::enable_raw_mode().unwrap();
         queue!(screen, EnterAlternateScreen, Clear(ClearType::All)).unwrap();
@@ -453,6 +460,32 @@ impl<'a> Interface<'a> {
         screen.flush().unwrap();
 
         loop {
+            #[cfg(unix)]
+            {
+                // Crossterm can spin indefinitely on EOF after a tty hangup.
+                // A bounded poll lets us inspect the tty before calling read().
+                let ready = poll(StdDuration::from_millis(250));
+                let mut fd = libc::pollfd {
+                    fd: tty.as_raw_fd(),
+                    events: libc::POLLIN,
+                    revents: 0,
+                };
+                let result = unsafe { libc::poll(&mut fd, 1, 0) };
+                if result > 0 && fd.revents & (libc::POLLHUP | libc::POLLERR | libc::POLLNVAL) != 0
+                {
+                    std::process::exit(128 + libc::SIGHUP);
+                }
+                if result < 0 {
+                    let error = std::io::Error::last_os_error();
+                    if error.kind() != std::io::ErrorKind::Interrupted {
+                        panic!("McFly error: failed to poll terminal: {error}");
+                    }
+                }
+                if !ready.unwrap_or_else(|e| panic!("McFly error: failed to poll input: {e}")) {
+                    continue;
+                }
+            }
+
             let event =
                 read().unwrap_or_else(|e| panic!("McFly error: failed to read input {:?}", e));
             self.debug_cursor(&mut screen);
