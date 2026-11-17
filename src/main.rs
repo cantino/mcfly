@@ -1,5 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
+#[cfg(not(target_os = "linux"))]
+use std::thread;
+#[cfg(not(target_os = "linux"))]
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mcfly::dumper::Dumper;
@@ -12,6 +16,53 @@ use mcfly::settings::Settings;
 use mcfly::shell_history;
 use mcfly::stats_generator::StatsGenerator;
 use mcfly::trainer::Trainer;
+
+// zsh can ignore SIGHUP while it is waiting for a widget command. Child
+// processes inherit that disposition, which means McFly may survive after the
+// terminal that launched it has gone away. Install our own handler so a
+// terminal hangup always terminates the foreground McFly process as well.
+#[cfg(unix)]
+extern "C" fn handle_sighup(_: libc::c_int) {
+    unsafe {
+        libc::_exit(128 + libc::SIGHUP);
+    }
+}
+
+#[cfg(unix)]
+fn install_signal_handlers() {
+    unsafe {
+        libc::signal(
+            libc::SIGHUP,
+            handle_sighup as *const () as libc::sighandler_t,
+        );
+    }
+}
+
+#[cfg(unix)]
+fn monitor_parent_process() {
+    let parent_pid = unsafe { libc::getppid() };
+
+    #[cfg(target_os = "linux")]
+    unsafe {
+        // Arrange for the kernel to notify us if the shell exits before us.
+        // This covers terminal implementations which orphan the child without
+        // sending SIGHUP to its process group.
+        libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGHUP);
+        if libc::getppid() != parent_pid {
+            handle_sighup(libc::SIGHUP);
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    thread::spawn(move || {
+        loop {
+            thread::sleep(Duration::from_millis(100));
+            if unsafe { libc::getppid() } != parent_pid {
+                handle_sighup(libc::SIGHUP);
+            }
+        }
+    });
+}
 
 fn handle_addition(settings: &Settings) {
     let history = History::load(settings.history_format);
@@ -109,6 +160,12 @@ fn handle_stats(settings: &Settings) {
 }
 
 fn main() {
+    #[cfg(unix)]
+    {
+        install_signal_handlers();
+        monitor_parent_process();
+    }
+
     let mut settings = Settings::parse_args();
 
     settings.load_config();
