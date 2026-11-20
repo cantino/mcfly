@@ -721,8 +721,10 @@ impl Settings {
 #[cfg(not(windows))]
 #[must_use]
 pub fn pwd() -> String {
-    env::var("PWD")
-        .unwrap_or_else(|err| panic!("McFly error: Unable to determine current directory ({err})"))
+    env::var_os("PWD")
+        .expect("McFly error: Unable to determine current directory (PWD is not set)")
+        .to_string_lossy()
+        .into_owned()
 }
 
 #[cfg(windows)]
