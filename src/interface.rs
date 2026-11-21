@@ -445,8 +445,18 @@ impl<'a> Interface<'a> {
     }
 
     fn select(&mut self) {
+        // Watch the same descriptor crossterm reads from: stdin if it is a terminal,
+        // otherwise /dev/tty (crossterm cannot read input if neither is a terminal).
         #[cfg(unix)]
-        let tty = File::open("/dev/tty").expect("McFly error: failed to open controlling terminal");
+        let dev_tty = if unsafe { libc::isatty(libc::STDIN_FILENO) } == 1 {
+            None
+        } else {
+            File::open("/dev/tty").ok()
+        };
+        #[cfg(unix)]
+        let tty_fd = dev_tty
+            .as_ref()
+            .map_or(libc::STDIN_FILENO, |tty| tty.as_raw_fd());
 
         let mut screen = stdout();
         terminal::enable_raw_mode().unwrap();
@@ -466,7 +476,7 @@ impl<'a> Interface<'a> {
                 // A bounded poll lets us inspect the tty before calling read().
                 let ready = poll(StdDuration::from_millis(250));
                 let mut fd = libc::pollfd {
-                    fd: tty.as_raw_fd(),
+                    fd: tty_fd,
                     events: libc::POLLIN,
                     revents: 0,
                 };
