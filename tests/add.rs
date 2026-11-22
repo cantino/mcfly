@@ -59,15 +59,28 @@ fn add_records_history_with_non_utf8_pwd() {
     // Run from a real directory whose name is invalid UTF-8, so `PWD` matches
     // the working directory. Shells (including script-based cross runners)
     // reset `PWD` when it does not refer to the current directory.
+    //
+    // Some filesystems (e.g. APFS on macOS) reject such names with EILSEQ.
+    // There, fall back to running from `root` with `PWD` pointing at the
+    // nonexistent path; mcfly reads `PWD` without checking it exists.
     let pwd = root.0.join(OsStr::from_bytes(b"working-dir-\xff"));
-    fs::create_dir(&pwd).unwrap();
+    let cwd = match fs::create_dir(&pwd) {
+        Ok(()) => pwd.clone(),
+        Err(err) => {
+            eprintln!(
+                "cannot create non-UTF-8 directory ({err}); running from {root:?}",
+                root = root.0
+            );
+            root.0.clone()
+        }
+    };
     let data_dir = root.0.join(".mcfly");
     fs::create_dir(&data_dir).unwrap();
     let history = root.0.join("bash_history");
     fs::write(&history, "").unwrap();
 
     let output = mcfly_command()
-        .current_dir(&pwd)
+        .current_dir(&cwd)
         .env("HOME", &root.0)
         .env("PWD", pwd)
         .env("HISTFILE", &history)
