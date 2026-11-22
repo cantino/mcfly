@@ -23,7 +23,11 @@ impl Drop for TestDirectory {
 // `QEMU_*` variables (such as `QEMU_LD_PREFIX`) that the runner needs.
 fn mcfly_command() -> Command {
     let bin = env!("CARGO_BIN_EXE_mcfly");
-    let runner = env::vars().find_map(|(key, value)| {
+    // `vars_os` rather than `vars`: the latter panics on any non-UTF-8 entry,
+    // such as an inherited `PWD` like the one this test exercises.
+    let runner = env::vars_os().find_map(|(key, value)| {
+        let key = key.to_str()?;
+        let value = value.into_string().ok()?;
         (key.starts_with("CARGO_TARGET_") && key.ends_with("_RUNNER") && !value.trim().is_empty())
             .then_some(value)
     });
