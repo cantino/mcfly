@@ -52,14 +52,18 @@ fn add_records_history_with_non_utf8_pwd() {
     fs::create_dir(&root).unwrap();
     let root = TestDirectory(root);
 
+    // Run from a real directory whose name is invalid UTF-8, so `PWD` matches
+    // the working directory. Shells (including script-based cross runners)
+    // reset `PWD` when it does not refer to the current directory.
     let pwd = root.0.join(OsStr::from_bytes(b"working-dir-\xff"));
+    fs::create_dir(&pwd).unwrap();
     let data_dir = root.0.join(".mcfly");
     fs::create_dir(&data_dir).unwrap();
     let history = root.0.join("bash_history");
     fs::write(&history, "").unwrap();
 
     let output = mcfly_command()
-        .current_dir(&root.0)
+        .current_dir(&pwd)
         .env("HOME", &root.0)
         .env("PWD", pwd)
         .env("HISTFILE", &history)
