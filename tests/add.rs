@@ -18,13 +18,16 @@ impl Drop for TestDirectory {
 // Cross-compiled test binaries run under an emulator configured through
 // `CARGO_TARGET_<TRIPLE>_RUNNER`. Cargo only applies it to the test binary,
 // so spawn the mcfly binary through the same runner when one is set.
+//
+// The returned command has a cleared environment, except for `PATH` and
+// `QEMU_*` variables (such as `QEMU_LD_PREFIX`) that the runner needs.
 fn mcfly_command() -> Command {
     let bin = env!("CARGO_BIN_EXE_mcfly");
     let runner = env::vars().find_map(|(key, value)| {
         (key.starts_with("CARGO_TARGET_") && key.ends_with("_RUNNER") && !value.trim().is_empty())
             .then_some(value)
     });
-    match runner {
+    let mut command = match runner {
         Some(runner) => {
             let mut parts = runner.split_whitespace();
             let mut command = Command::new(parts.next().unwrap());
@@ -32,7 +35,14 @@ fn mcfly_command() -> Command {
             command
         }
         None => Command::new(bin),
+    };
+    command.env_clear();
+    for (key, value) in env::vars_os() {
+        if key == "PATH" || key.to_string_lossy().starts_with("QEMU_") {
+            command.env(key, value);
+        }
     }
+    command
 }
 
 #[test]
@@ -50,7 +60,6 @@ fn add_records_history_with_non_utf8_pwd() {
 
     let output = mcfly_command()
         .current_dir(&root.0)
-        .env_clear()
         .env("HOME", &root.0)
         .env("PWD", pwd)
         .env("HISTFILE", &history)
